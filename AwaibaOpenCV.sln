@@ -1,0 +1,59 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2012 for Windows Desktop
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AwaibaOpenCV", "AwaibaOpenCV\AwaibaOpenCV.vcxproj", "{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{10C29E02-D69A-4095-BD25-C6908AB4EDE9} = {10C29E02-D69A-4095-BD25-C6908AB4EDE9}
+		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD} = {1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}
+		{2075DDF7-11B0-4828-AAA4-49CD07360939} = {2075DDF7-11B0-4828-AAA4-49CD07360939}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LieGroup", "LieGroup\LieGroup.vcxproj", "{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MechanicsBasedKinematics", "MechanicsBasedKinematics\MechanicsBasedKinematics.vcxproj", "{10C29E02-D69A-4095-BD25-C6908AB4EDE9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Utilities", "Utilities\Utilities.vcxproj", "{2075DDF7-11B0-4828-AAA4-49CD07360939}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Debug|Win32.ActiveCfg = Debug|x64
+		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Debug|x64.ActiveCfg = Debug|x64
+		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Debug|x64.Build.0 = Debug|x64
+		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Release|Win32.ActiveCfg = Release|x64
+		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Release|x64.ActiveCfg = Release|x64
+		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Release|x64.Build.0 = Release|x64
+		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}.Debug|Win32.Build.0 = Debug|Win32
+		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}.Debug|x64.ActiveCfg = Debug|x64
+		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}.Debug|x64.Build.0 = Debug|x64
+		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}.Release|Win32.ActiveCfg = Release|Win32
+		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}.Release|Win32.Build.0 = Release|Win32
+		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}.Release|x64.ActiveCfg = Release|x64
+		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}.Release|x64.Build.0 = Release|x64
+		{10C29E02-D69A-4095-BD25-C6908AB4EDE9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{10C29E02-D69A-4095-BD25-C6908AB4EDE9}.Debug|Win32.Build.0 = Debug|Win32
+		{10C29E02-D69A-4095-BD25-C6908AB4EDE9}.Debug|x64.ActiveCfg = Debug|x64
+		{10C29E02-D69A-4095-BD25-C6908AB4EDE9}.Debug|x64.Build.0 = Debug|x64
+		{10C29E02-D69A-4095-BD25-C6908AB4EDE9}.Release|Win32.ActiveCfg = Release|Win32
+		{10C29E02-D69A-4095-BD25-C6908AB4EDE9}.Release|Win32.Build.0 = Release|Win32
+		{10C29E02-D69A-4095-BD25-C6908AB4EDE9}.Release|x64.ActiveCfg = Release|x64
+		{10C29E02-D69A-4095-BD25-C6908AB4EDE9}.Release|x64.Build.0 = Release|x64
+		{2075DDF7-11B0-4828-AAA4-49CD07360939}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2075DDF7-11B0-4828-AAA4-49CD07360939}.Debug|Win32.Build.0 = Debug|Win32
+		{2075DDF7-11B0-4828-AAA4-49CD07360939}.Debug|x64.ActiveCfg = Debug|x64
+		{2075DDF7-11B0-4828-AAA4-49CD07360939}.Debug|x64.Build.0 = Debug|x64
+		{2075DDF7-11B0-4828-AAA4-49CD07360939}.Release|Win32.ActiveCfg = Release|Win32
+		{2075DDF7-11B0-4828-AAA4-49CD07360939}.Release|Win32.Build.0 = Release|Win32
+		{2075DDF7-11B0-4828-AAA4-49CD07360939}.Release|x64.ActiveCfg = Release|x64
+		{2075DDF7-11B0-4828-AAA4-49CD07360939}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

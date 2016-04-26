@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" GroupingSetting="Access">
+  <Class Name="CTR">
+    <Position X="8.75" Y="0.5" Width="2.25" />
+    <Compartments>
+      <Compartment Name="Protected" Collapsed="true" />
+      <Compartment Name="Private" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>IAAQAAADABCAQQIgBEAQAAADQAJgAAACAQEAIggAAAA=</HashCode>
+      <FileName>CTR.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CTRFactory">
+    <Position X="6.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAABAAAAAAAAAAAAAAAgAAAAAAAAAAA=</HashCode>
+      <FileName>CTRFactory.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MechanicsBasedKinematics">
+    <Position X="11.75" Y="0.5" Width="2.75" />
+    <Compartments>
+      <Compartment Name="Private" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAIAAAEACAQABEAwAAFAECBAACAAAACiEARAQCCIgI=</HashCode>
+      <FileName>MechanicsBasedKinematics.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Parameter">
+    <Position X="6.5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAUACAAAAAAAAgAAAA=</HashCode>
+      <FileName>Parameter.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Part">
+    <Position X="3" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEQAAAAIAAAAAAAAAAAAAAAAAABAAAAAAAAAACAAAA=</HashCode>
+      <FileName>Part.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Section">
+    <Position X="1.75" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAA=</HashCode>
+      <FileName>Section.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Tube">
+    <Position X="4" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAABAAAAAAAAAAAAAAAEAAAQAAAQAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tube.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Typedef Name="ParameterMap" Collapsed="true">
+    <Position X="6.5" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Part.h</FileName>
+    </TypeIdentifier>
+  </Typedef>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
