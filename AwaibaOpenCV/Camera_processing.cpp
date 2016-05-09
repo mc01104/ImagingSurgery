@@ -63,6 +63,8 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 
 	m_running = true;
 	m_record = false;
+	m_teleop = false;
+	m_newdir = true; 
 
 	m_board="NanoUSB2";
 	m_ControlLED=false;
@@ -78,7 +80,7 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 	if (op.getStatus())
 	{
 		::std::cout << "Successfully parsed camera info file" << endl;
-		saveDir = op.getSaveDir();
+		m_saveDir = op.getSaveDir();
 		g_r = op.getWhiteBalance()[0];
 		g_g = op.getWhiteBalance()[1];
 		g_b = op.getWhiteBalance()[2];
@@ -87,7 +89,7 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 	else
 	{
 		::std::cout << "Information could not be parsed from camera info data, reverting to default" << endl;
-		saveDir = "C:\\AwaibaData\\";
+		m_saveDir = "C:\\AwaibaData\\";
 		g_r = 1.0f;
 		g_g = 0.99f;
 		g_b = 1.29f;
@@ -95,13 +97,6 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 	}
 
 	robot_rotation = 0.0;
-
-	::std::stringstream ss;
-	time_t rawTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	ss << saveDir << std::put_time(std::localtime(&rawTime), "%Y-%m-%d_%H-%M-%S") << "\\";
-	imgDir = ss.str();
-
-	CreateDirectoryA(imgDir.c_str(), NULL) ;
 
 	// All errors are reported as std::exception.
 	try
@@ -194,6 +189,16 @@ bool Camera_processing::getControlLED() { return m_ControlLED;}
 
 
 
+bool Camera_processing::createSaveDir()
+{
+	::std::stringstream ss;
+	time_t rawTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	ss << m_saveDir << std::put_time(std::localtime(&rawTime), "%Y-%m-%d_%H-%M-%S") << "\\";
+	m_imgDir = ss.str();
+	return CreateDirectoryA(m_imgDir.c_str(), NULL) ;
+}
+
+
 // Prcess input keyboard
 void Camera_processing::processInput(char key)
 {
@@ -203,6 +208,7 @@ void Camera_processing::processInput(char key)
 		m_running=false;
 		break;
 	case 'r':
+		if (m_record) m_newdir = true;
 		m_record = !m_record;
 		break;
 
@@ -279,6 +285,10 @@ void Camera_processing::acquireImages(void )
 				array_to_merge.push_back(G);
 				array_to_merge.push_back(R);
 
+				mutex_robotjoints.lock();
+				std::vector<double> configuration = m_configuration;
+				mutex_robotjoints.unlock();
+
 				mutex_img.lock();
 				cv::merge(&array_to_merge[0], array_to_merge.size(), RgbFrame);
 				newImg = true;
@@ -287,6 +297,7 @@ void Camera_processing::acquireImages(void )
 					ImgBuf el;
 					el.img = RgbFrame.clone();
 					el.timestamp = argbFrame1.GetTimeStamp();
+					el.robot_joints = configuration;
 					m_ImgBuffer.push(el);
 				}
 				mutex_img.unlock();
@@ -313,6 +324,8 @@ void Camera_processing::displayImages(void)
 	namedWindow( "Display", 0 );
 
 	bool display = false;
+	bool rec = false;
+	bool teleop = false;
 
 	Point center = Point( frame.cols/2, frame.rows/2 );
     Mat rot_mat = getRotationMatrix2D( center, rotation - robot_rotation*180.0/3.141592, 1.0 );
@@ -324,15 +337,27 @@ void Camera_processing::displayImages(void)
 		{
 			newImg = false;
 			display = true;
+			rec = m_record;
 			RgbFrame.copyTo(frame);
 		}
 		mutex_img.unlock();
+
+		mutex_teleop.lock();
+		teleop = m_teleop;
+		mutex_teleop.unlock();
 
 		if (display)
 		{
 			display = false;
 			rot_mat = getRotationMatrix2D( center, rotation - robot_rotation*180.0/3.141592, 1.0 );
 			warpAffine( frame, frame_rotated, rot_mat, frame_rotated.size() );
+
+			if (rec) // draw a red circle on frame when recording
+				cv::circle( frame_rotated, Point( 240, 10 ), 5, Scalar( 0, 0, 255 ),  -1);
+			
+			if (teleop) // draw a green circle on frame when teleoperating
+				cv::circle( frame_rotated, Point( 220, 10 ), 5, Scalar( 0, 255, 0 ),  -1);
+
 			cv::imshow( "Display", frame_rotated );
 			key = waitKey(1);
 			processInput(key);
@@ -344,12 +369,13 @@ void Camera_processing::recordImages(void)
 {
 	Mat frame;
 	ArgbFrame::time_type timestamp = 0;
+	std::vector<double> robot_joint;
 
 	::std::vector<int> compression_params;
     compression_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
     compression_params.push_back(3);
 
-	std::chrono::milliseconds ms(10);
+	auto start_record = std::chrono::high_resolution_clock::now();
 
 	while(m_running)
 	{
@@ -357,18 +383,56 @@ void Camera_processing::recordImages(void)
 
 		if(m_record)
 		{
+
 			if ( m_ImgBuffer.tryPop(element))
 			{
+
+				// create a new directory if necessary
+				if(m_newdir) 
+				{
+					createSaveDir();
+					start_record = std::chrono::high_resolution_clock::now();
+					m_newdir = false;
+				}
+
+				// if recording gets too long, create a new directory to avoid too many packed images in a single one
+				auto now = std::chrono::high_resolution_clock::now();
+				auto duration_minutes = std::chrono::duration_cast<std::chrono::minutes>(now - start_record);
+				if (duration_minutes.count()>=4) 
+				{
+					m_newdir = true;
+					start_record = now;
+				}
+
 				frame = element.img;
 				timestamp = element.timestamp;
+				robot_joint = element.robot_joints;
 
-				::std::string filename = imgDir + std::to_string(timestamp) + ".png";
+				::std::string filename = m_imgDir + std::to_string(timestamp) + ".png";
+				::std::string filename_joints = m_imgDir + std::to_string(timestamp) + ".txt";
+
 				try {
-					imwrite(filename, frame, compression_params);
+					bool result = imwrite(filename, frame, compression_params);
+
+					if (!result) 
+					{
+						mutex_img.lock();
+						m_record = false;
+						mutex_img.unlock();
+						throw std::runtime_error ("Could not write to file !");
+					}
+
+					ofstream joints_file;
+					joints_file.open (filename_joints);
+					for(std::vector<double>::const_iterator i = robot_joint.begin(); i != robot_joint.end(); ++i) {
+						 joints_file << *i << ',';
+					}
+					joints_file << '\n';
+					joints_file.close();
 				}
 				catch (runtime_error& ex) 
 				{
-					::std::cout << "Exception converting image to PNG format:" <<  ex.what() << ::std::endl;
+					::std::cout << "Exception in image recording:" <<  ex.what() << ::std::endl;
 				}
 			}
 		}
@@ -475,6 +539,10 @@ bool Camera_processing::networkKinematics(void)
 		::std::string conf_str(recvbuf);
 		::std::vector<double> configuration = DoubleVectorFromString(conf_str);
 
+		mutex_teleop.lock();
+		m_teleop = ( configuration.size()>0 ? (bool) configuration.back() : false);
+		mutex_teleop.unlock();
+
 		// Convert the received the configuration to comply with the definition of the mechanics based kinematics implementation
 		double rotation[3] = {0};
 		double translation[3] = {0};
@@ -486,6 +554,10 @@ bool Camera_processing::networkKinematics(void)
 		double baseRotation = rotation[2];
 	
 		robot_rotation = tipRotation;
+
+		mutex_robotjoints.lock();
+		m_configuration = configuration;
+		mutex_robotjoints.unlock();
 		
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission

@@ -23,6 +23,7 @@ using namespace cv;
 struct ImgBuf {
   Mat img;
   Core::ArgbFrame::time_type timestamp;
+  std::vector<double> robot_joints;
 } ;
 
 class Camera_processing {
@@ -31,13 +32,16 @@ private:
 
 
 	/********** Members private *********/
-	bool m_running;
-	bool m_record;
+	bool m_running; 
+	bool m_record; // recording images
+	bool m_teleop; // robot teleoperation is ON/OFF
+	bool m_newdir; // flag for saying that a savedir should be created
 
+	std::vector<double> m_configuration; // most recent robot configuration
 	Queue<ImgBuf> m_ImgBuffer; // images and timestamp buffer
 
-	::std::string saveDir;
-	::std::string imgDir;
+	::std::string m_saveDir;
+	::std::string m_imgDir;
 
 	// Camera management
     ::std::string m_board;
@@ -58,6 +62,8 @@ private:
 
 	// mutex for image sharing between threads
 	::std::mutex mutex_img;
+	::std::mutex mutex_robotjoints;
+	::std::mutex mutex_teleop;
 
 	/********** Functions private *********/
 	
@@ -72,6 +78,8 @@ private:
 
 	// camera management functions
 	void changeExposure(float delta);
+
+	bool createSaveDir();
 
 public:
 
