@@ -41,6 +41,23 @@
 using namespace cimg_library;
 #define cimg_use_png
 
+// VTK includes 
+#include <vtkSmartPointer.h>
+#include <vtkLine.h>
+#include <vtkCellArray.h>
+#include <vtkParametricSpline.h>
+#include <vtkParametricFunctionSource.h>
+#include <vtkTubeFilter.h>
+#include <vtkLineSource.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkProperty.h>
+
+
 
 // Project includes
 #include "Camera_processing.h"
@@ -147,6 +164,7 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		::std::thread t_display (&Camera_processing::displayImages, this);
 		::std::thread t_record (&Camera_processing::recordImages, this);
 		::std::thread t_network (&Camera_processing::networkKinematics, this);
+		::std::thread t_vtk (&Camera_processing::robotDisplay, this);
 
 		t_acquire.join();
 		t_display.join();
@@ -451,6 +469,9 @@ bool Camera_processing::networkKinematics(void)
 	CTR* robot = CTRFactory::buildCTR("");
 	MechanicsBasedKinematics* kinematics = new MechanicsBasedKinematics(robot, 100); // the integration grid consists of 100 points (increase if you have convergence problems)
 
+	int npoints = 35;
+	std::vector<double> robot_arclength;
+	std::vector<SE3> SolutionFrames(npoints);
 
 	/**********
 	Declare and initialize connection socket
@@ -550,10 +571,17 @@ bool Camera_processing::networkKinematics(void)
 
 		// compute kinematics and get tip rotation of innermost tube
 		kinematics->ComputeKinematics(rotation, translation);
-		double tipRotation = kinematics->GetInnerTubeRotation();
-		double baseRotation = rotation[2];
+		robot_rotation = kinematics->GetInnerTubeRotation();
 	
-		robot_rotation = tipRotation;
+
+		double smax = robot->GetLength();
+		for (int i = 0; i<npoints;i++) robot_arclength.push_back((1.0*i)/npoints*smax);
+		kinematics->GetBishopFrame(robot_arclength, SolutionFrames);
+
+		mutex_robotshape.lock();
+		m_SolutionFrames = SolutionFrames;
+		mutex_robotshape.unlock();
+
 
 		mutex_robotjoints.lock();
 		m_configuration = configuration;
@@ -572,4 +600,73 @@ bool Camera_processing::networkKinematics(void)
     WSACleanup();
 
     return 0;
+}
+
+
+
+void Camera_processing::robotDisplay(void)
+{
+
+	vtkSmartPointer<vtkActor> tubeActor = vtkSmartPointer<vtkActor>::New();
+	
+	// Create a renderer, render window, and interactor
+	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+	renderWindow->AddRenderer(renderer);
+	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	renderWindowInteractor->SetRenderWindow(renderWindow);
+
+	renderer->SetBackground(0,1,0);
+
+	// Render and interact
+	renderWindow->Render();
+	renderWindowInteractor->Initialize();
+
+
+	while(m_running)
+	{
+		mutex_robotshape.lock();
+		std::vector<SE3> SolutionFrames = m_SolutionFrames;
+		mutex_robotshape.unlock();
+
+		tubeActor = TubeDraw(SolutionFrames);
+		renderer->AddActor(tubeActor);
+
+		renderWindowInteractor->GetRenderWindow()->Render();
+
+	}
+
+}
+
+vtkSmartPointer<vtkActor> Camera_processing::TubeDraw(std::vector<SE3> SolutionFrames)
+{
+    int npts = SolutionFrames.size();
+    vtkSmartPointer<vtkPoints> Points = vtkSmartPointer<vtkPoints>::New();
+	Points->SetNumberOfPoints(npts);
+    for (int i=0;i<npts;i++)
+		Points->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1],SolutionFrames[i].GetPosition()[2]);
+
+	// interpolate a spline between points
+	vtkSmartPointer<vtkParametricSpline> spline = vtkSmartPointer<vtkParametricSpline>::New();
+	spline->SetPoints(Points);
+	vtkSmartPointer<vtkParametricFunctionSource> functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
+	functionSource->SetParametricFunction(spline);
+	functionSource->Update();
+
+	// create atube with right diameter
+	vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
+	tubeFilter->SetInputConnection(functionSource->GetOutputPort());
+	tubeFilter->SetRadius(1.8); 
+	tubeFilter->SetNumberOfSides(50);
+	tubeFilter->Update();
+
+	// set tube color and create mapper and actor
+	vtkSmartPointer<vtkPolyDataMapper> tubeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	tubeMapper->SetInputConnection(tubeFilter->GetOutputPort());
+	vtkSmartPointer<vtkActor> tubeActor = vtkSmartPointer<vtkActor>::New();
+	tubeActor->GetProperty()->SetColor(1.0,0,0);
+	tubeActor->SetMapper(tubeMapper);
+
+
+	return tubeActor;	
 }

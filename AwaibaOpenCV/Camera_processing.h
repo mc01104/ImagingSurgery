@@ -16,6 +16,9 @@
 #define _CRTDBG_MAP_ALLOC
 #include "awcorecpp.h"
 
+#include "LieGroup.h"
+#include "Utilities.h"
+
 using namespace Core;
 using namespace cv;
 //using namespace std;
@@ -60,10 +63,13 @@ private:
 	double robot_rotation;
 	bool newImg;
 
+	std::vector<SE3> m_SolutionFrames;
+
 	// mutex for image sharing between threads
 	::std::mutex mutex_img;
 	::std::mutex mutex_robotjoints;
 	::std::mutex mutex_teleop;
+	::std::mutex mutex_robotshape;
 
 	/********** Functions private *********/
 	
@@ -72,6 +78,7 @@ private:
 	void displayImages(void);
 	void recordImages(void);
 	bool networkKinematics(void);
+	void robotDisplay(void);
 
 	// keyboard input processing
 	void processInput(char key);
@@ -80,6 +87,10 @@ private:
 	void changeExposure(float delta);
 
 	bool createSaveDir();
+
+	// vtk drawing functions
+	vtkSmartPointer<vtkActor> TubeDraw(std::vector<SE3> SolutionFrames);
+
 
 public:
 
