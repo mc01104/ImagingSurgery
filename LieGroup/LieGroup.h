@@ -43,10 +43,10 @@ class	SE3;
 class	Inertia;
 class	AInertia;
 
-Inertia BoxInertia(real density, const Vec3 &size);
-Inertia SphereInertia(real density, real rad);
-Inertia CylinderInertia(real density, real rad, real height);
-Inertia	CapsuleInertia(real density, real rad, real height);
+Inertia BoxInertia(double density, const Vec3 &size);
+Inertia SphereInertia(double density, double rad);
+Inertia CylinderInertia(double density, double rad, double height);
+Inertia	CapsuleInertia(double density, double rad, double height);
 
 class Vec2
 {
@@ -56,7 +56,7 @@ public:
 	/*!
 	constructor : (c0, c1, c2)
 	*/
-	explicit		 Vec2(real c0, real c1);
+	explicit		 Vec2(double c0, double c1);
 
 
 
@@ -68,12 +68,12 @@ public:
 	/*!
 	constructor : (c, c, c)
 	*/
-	explicit		 Vec2(real c);
+	explicit		 Vec2(double c);
 
 	/*!
 	constructor : (v[0], v[1], v[2])
 	*/
-	explicit		 Vec2(const real v[]);
+	explicit		 Vec2(const double v[]);
 
 	/** @name Operators
 	*/
@@ -91,8 +91,8 @@ public:
 	/*!
 	access to the idx th element.
 	*/
-	real			&operator [] (int idx);
-	const real	&operator [] (int) const;
+	double			&operator [] (int idx);
+	const double	&operator [] (int) const;
 
 	/*!
 	substitution operator
@@ -112,22 +112,22 @@ public:
 	/*!
 	*= operator
 	*/
-	const Vec2		&operator *= (real);
+	const Vec2		&operator *= (double);
 
 	/*!
-	/= operator with real
+	/= operator with double
 	*/
-	const Vec2		&operator /= (real c);
+	const Vec2		&operator /= (double c);
 
 	/*!
 	multiplication operator
 	*/
-	Vec2			 operator * (real) const;
+	Vec2			 operator * (double) const;
 
 	/*!
 	division operator
 	*/
-	Vec2			 operator / (real) const;
+	Vec2			 operator / (double) const;
 
 	/*!
 	addition operator
@@ -144,9 +144,9 @@ public:
 	normalize the vector.
 	\return length of the vector.
 	*/
-	real			 Normalize(void);
+	double			 Normalize(void);
 
-	void			 SetValues(real v0, real v1);
+	void			 SetValues(double v0, double v1);
 
 	/*!
 	standard output operator
@@ -154,14 +154,14 @@ public:
 	friend ostream	&operator << (ostream &, const Vec2 &);
 
 	/*!
-	real multiplication
+	double multiplication
 	*/
-	friend Vec2		 operator * (real c, const Vec2 &p);
+	friend Vec2		 operator * (double c, const Vec2 &p);
 
 	/*!
 	get a magnitude of p.
 	*/
-	friend real		 Norm(const Vec2 &p);
+	friend double		 Norm(const Vec2 &p);
 
 	/*!
 	get a normalized vector from p.
@@ -176,23 +176,23 @@ public:
 	/*!
 	get an inner product of p and q.
 	*/
-	friend real	 Inner(const Vec2 &p, const Vec2 &a);
+	friend double	 Inner(const Vec2 &p, const Vec2 &a);
 
 	/*!
 
 	get a value of cosine theta between two vectors
 	*/
-	friend real	 Cosine(const Vec2 &p, const Vec2 &q);
+	friend double	 Cosine(const Vec2 &p, const Vec2 &q);
 
 	/*!
 	get a value of cosine theta between two vectors
 	*/
-	friend real	 Sine(const Vec2 &p, const Vec2 &q);
+	friend double	 Sine(const Vec2 &p, const Vec2 &q);
 
 	/*!
 	get a squared sum of all the elements in p.
 	*/
-	friend real	 SquareSum(const Vec2 &);
+	friend double	 SquareSum(const Vec2 &);
 
 	bool operator == (const Vec2 &v) const;
 
@@ -200,7 +200,7 @@ public:
 
 
 private:
-	real			_v[2];
+	double			_v[2];
 };
 
 /*!
@@ -217,7 +217,7 @@ public:
 	/*!
 		constructor : (c0, c1, c2)
 	*/
-	explicit		 Vec3(real c0, real c1, real c2);
+	explicit		 Vec3(double c0, double c1, double c2);
 
 	
 
@@ -229,12 +229,12 @@ public:
  	/*!
 		constructor : (c, c, c)
 	*/
-	explicit		 Vec3(real c);
+	explicit		 Vec3(double c);
 
  	/*!
 		constructor : (v[0], v[1], v[2])
 	*/
-	explicit		 Vec3(const real v[]);
+	explicit		 Vec3(const double v[]);
 
 	/** @name Operators
 	*/
@@ -252,8 +252,8 @@ public:
  	/*!
 		access to the idx th element.
 	*/
-	real			&operator [] (int idx);
-	const real	&operator [] (int) const;
+	double			&operator [] (int idx);
+	const double	&operator [] (int) const;
 
  	/*!
 		substitution operator
@@ -264,7 +264,7 @@ public:
 		substitute operator
 		set all the elements to be c.
 	*/
-	const Vec3		&operator = (real c);
+	const Vec3		&operator = (double c);
 
  	/*!
 		substitute operator
@@ -285,22 +285,22 @@ public:
  	/*!
 		*= operator
 	*/
-	const Vec3		&operator *= (real);
+	const Vec3		&operator *= (double);
 
 	/*!
-		/= operator with real
+		/= operator with double
 	*/
-	const Vec3		&operator /= (real c);
+	const Vec3		&operator /= (double c);
 
  	/*!
 		multiplication operator
 	*/
-	Vec3			 operator * (real) const;
+	Vec3			 operator * (double) const;
 
 	/*!
 		division operator
 	*/
-	Vec3			 operator / (real) const;
+	Vec3			 operator / (double) const;
 
  	/*!
 		addition operator
@@ -317,9 +317,9 @@ public:
 		normalize the vector.
 		\return length of the vector.
 	*/
-	real			 Normalize(void);
+	double			 Normalize(void);
 
-	void			 SetValues(real v0, real v1, real v2);
+	void			 SetValues(double v0, double v1, double v2);
 
 	////////////////////////////////////////////////////////////////////////// added by Jeongseok 2008-03-23
 	void			 Clone(const Vec3& rhs);
@@ -331,14 +331,14 @@ public:
 	friend ostream	&operator << (ostream &, const Vec3 &);
 
  	/*!
-		real multiplication
+		double multiplication
 	*/
-	friend Vec3		 operator * (real c, const Vec3 &p);
+	friend Vec3		 operator * (double c, const Vec3 &p);
 
 	/*!
 		get a magnitude of p.
 	*/
-	friend real	 Norm(const Vec3 &p);
+	friend double	 Norm(const Vec3 &p);
 
 	/*!
 		get a normalized vector from p.
@@ -353,23 +353,23 @@ public:
  	/*!
 		get an inner product of p and q.
 	*/
-	friend real	 Inner(const Vec3 &p, const Vec3 &a);
+	friend double	 Inner(const Vec3 &p, const Vec3 &a);
 
 	/*!
 
 		get a value of cosine theta between two vectors
 	*/
-	friend real	 Cosine(const Vec3 &p, const Vec3 &q);
+	friend double	 Cosine(const Vec3 &p, const Vec3 &q);
 
 	/*!
 		get a value of cosine theta between two vectors
 	*/
-	friend real	 Sine(const Vec3 &p, const Vec3 &q);
+	friend double	 Sine(const Vec3 &p, const Vec3 &q);
 
  	/*!
 		get a squared sum of all the elements in p.
 	*/
-	friend real	 SquareSum(const Vec3 &);
+	friend double	 SquareSum(const Vec3 &);
 
  	/*!
 		fast version of Ad(Inv(T), dse3(Vec3(0), F))
@@ -442,7 +442,7 @@ public:
 
 
 private:
-	real			_v[3];
+	double			_v[3];
 };
 
 /*!
@@ -457,7 +457,7 @@ public:
 	/*!
 		constructor : (c0, c1, c2)
 	*/
-	explicit		 Axis(real c0, real c1, real c2);
+	explicit		 Axis(double c0, double c1, double c2);
 
  	/*!
 		constructor : (c, c, c)
@@ -467,12 +467,12 @@ public:
  	/*!
 		constructor : (c, c, c)
 	*/
-	explicit		 Axis(real c);
+	explicit		 Axis(double c);
 
  	/*!
 		constructor : (v[0], v[1], v[2])
 	*/
-	explicit		 Axis(const real v[]);
+	explicit		 Axis(const double v[]);
 
 	/** @name Operators
 	*/
@@ -490,8 +490,8 @@ public:
  	/*!
 		access to the idx th element.
 	*/
-	real			&operator [] (int idx);
-	const real	&operator [] (int) const;
+	double			&operator [] (int idx);
+	const double	&operator [] (int) const;
 
  	/*!
 		substitution operator
@@ -507,17 +507,17 @@ public:
 		substitute operator
 		set all the elements to be c.
 	*/
-	const Axis		&operator = (real c);
+	const Axis		&operator = (double c);
 
  	/*!
 		*= operator
 	*/
-	const Axis		&operator *= (real);
+	const Axis		&operator *= (double);
 
  	/*!
 		multiplication operator
 	*/
-	Axis			 operator * (real) const;
+	Axis			 operator * (double) const;
 
 	/*!
 		addition operator
@@ -544,7 +544,7 @@ public:
 		normalize the vector.
 		\return length of the vector.
 	*/
-	real			 Normalize(void);
+	double			 Normalize(void);
 
  	/*!
 		standard output operator
@@ -552,14 +552,14 @@ public:
 	friend ostream	&operator << (ostream &, const Axis &);
 
  	/*!
-		real multiplication
+		double multiplication
 	*/
-	friend Axis		 operator * (real c, const Axis &p);
+	friend Axis		 operator * (double c, const Axis &p);
 
 	/*!
 		get a magnitude of p.
 	*/
-	friend real	 Norm(const Axis &p);
+	friend double	 Norm(const Axis &p);
 
 	/*!
 		get a normalized vector from p.
@@ -574,14 +574,14 @@ public:
  	/*!
 		get an inner product of p and q.
 	*/
-	friend real	 Inner(const Axis &p, const Axis &a);
-	friend real	 Inner(const Vec3 &p, const Axis &a);
-	friend real	 Inner(const Axis &p, const Vec3 &a);
+	friend double	 Inner(const Axis &p, const Axis &a);
+	friend double	 Inner(const Vec3 &p, const Axis &a);
+	friend double	 Inner(const Axis &p, const Vec3 &a);
 
  	/*!
 		get a squared sum of all the elements in p.
 	*/
-	friend real	 SquareSum(const Axis &);
+	friend double	 SquareSum(const Axis &);
 
 	/*!
 		rotate p by T.
@@ -614,7 +614,7 @@ public:
 //////////////////////////////////////
 
 private:
-	real			_v[3];
+	double			_v[3];
 };
 
 /*!
@@ -639,12 +639,12 @@ public:
 	/*!
 		constructor : (c, c, c, c, c, c)
 	*/
-	explicit		 se3(real c);
+	explicit		 se3(double c);
 
 	/*!
 		constructor : (c0, c1, c2, c3, c4, c5)
 	*/
-	explicit		 se3(real c0, real c1, real c2, real c3, real c4, real c5);
+	explicit		 se3(double c0, double c1, double c2, double c3, double c4, double c5);
 
 	/*!
 		constructor : (w[0], w[1], w[2], v[0], v[1], v[2])
@@ -679,7 +679,7 @@ public:
  	/*!
 		substitution operator, fast version of = se3(c)
 	*/
-	const se3		&operator = (real c);
+	const se3		&operator = (double c);
 
  	/*!
 		+= operator
@@ -697,9 +697,9 @@ public:
 	const se3		&operator -= (const se3 &);
 
  	/*!
-		*= operator with real
+		*= operator with double
 	*/
-	const se3		&operator *= (real c);
+	const se3		&operator *= (double c);
 
 	/*!
 		addition operator
@@ -712,16 +712,16 @@ public:
 	se3				 operator - (const se3 &) const;
 
 	/*!
-		real multiplication operator
+		double multiplication operator
 	*/
-	se3				 operator * (real) const;
+	se3				 operator * (double) const;
 
  	/*!
 		access to the idx th element.
 	*/
-	real			&operator [] (int idx);
+	double			&operator [] (int idx);
 
-	const real	&operator [] (int) const;
+	const double	&operator [] (int) const;
 	
  	/*!
 		set itself to be Ad(T, V).
@@ -749,21 +749,21 @@ public:
 	friend ostream	&operator << (ostream &, const se3 &);
 
  	/*!
-		real multiplicaiton operator
+		double multiplicaiton operator
 	*/
-	friend se3		 operator * (real, const se3 &);
+	friend se3		 operator * (double, const se3 &);
 
  	/*!
 		inner product
 		\note \f$ \langle F, V\rangle = \langle V, F\rangle = \langle m, w\rangle + \langle f, v\rangle \f$
 		,where \f$F=(m,f)\in se(3)^*,\quad V=(w,v)\in se(3)\f$.
 	*/
-	friend real	 operator * (const dse3 &F, const se3 &V);
+	friend double	 operator * (const dse3 &F, const se3 &V);
 
  	/*!
 		inner product
 	*/
-	friend real	 operator * (const se3 &V, const dse3 &F);
+	friend double	 operator * (const se3 &V, const dse3 &F);
 
  	/*!
 		Exponential mapping
@@ -779,12 +779,12 @@ public:
 		fast version of Exp(t * s)
 		\note If the angular part of s is unit, Exp(s, t) will be fater than Exp(t * s)
 	*/
-	friend SE3		 Exp(const se3 &s, real t);
+	friend SE3		 Exp(const se3 &s, double t);
 
 	/*!
 		fast version of Exp(t * s), when |s| = 1
 	*/
-	friend SE3		 Exp(const Axis &s, real t);
+	friend SE3		 Exp(const Axis &s, double t);
 
  	/*!
 		Log mapping
@@ -825,7 +825,7 @@ public:
 	/*!
 		get squared sum of all the elements
 	*/
-	friend real	 SquareSum(const se3 &);
+	friend double	 SquareSum(const se3 &);
 
 	/*!
 		fast version of se3(Rotate(T, Vec3(S[0], S[1], S[2])), Rotate(T, Vec3(S[3], S[4], S[5])))
@@ -842,7 +842,7 @@ public:
 //////////////////////////////
 
 private:
-	real			_w[6];
+	double			_w[6];
 };
 
 /*!
@@ -866,12 +866,12 @@ public:
 	/*!
 		constructor : (c, c, c, c, c, c)
 	*/
-	explicit		 dse3(real c);
+	explicit		 dse3(double c);
 
 	/*!
 		constructor : (c0, c1, c2, c3, c4, c5)
 	*/
-	explicit		 dse3(real c0, real c1, real c2, real c3, real c4, real c5);
+	explicit		 dse3(double c0, double c1, double c2, double c3, double c4, double c5);
 
 	/*!
 		constructor : (m[0], m[1], m[2], f[0], f[1], f[2])
@@ -886,12 +886,12 @@ public:
 	/*!
 		constructor : Inertia(mass) * dV
 	*/
-	explicit		 dse3(real mass, const se3 &dV);
+	explicit		 dse3(double mass, const se3 &dV);
 
 	/*!
 		constructor :  (v[0], v[1], v[2], v[3], v[4], v[5])
 	*/
-	explicit		 dse3(const real v[]);
+	explicit		 dse3(const double v[]);
 
 	/*!
 		unary plus operator
@@ -925,7 +925,7 @@ public:
 	/*!
 		substitution operator, fast version of = dse3(c)
 	*/
-	const dse3		&operator = (real c);
+	const dse3		&operator = (double c);
 
 	/*!
 		+= operator
@@ -940,7 +940,7 @@ public:
 	/*!
 		*= operator
 	*/
-	const dse3		&operator *= (real);
+	const dse3		&operator *= (double);
 
 	/*!
 		addition operator
@@ -953,16 +953,16 @@ public:
 	dse3			 operator - (const dse3 &) const;
 
 	/*!
-		real multiplication operator
+		double multiplication operator
 	*/
-	dse3			 operator * (real) const;
+	dse3			 operator * (double) const;
 
 	/*!
 		access to the idx th element.
 	*/
-	real			&operator [] (int idx);
+	double			&operator [] (int idx);
 
-	const real	&operator [] (int) const;
+	const double	&operator [] (int) const;
 	
  	/*!
 		set itself to be dad(V, F).
@@ -980,14 +980,14 @@ public:
 	friend ostream	&operator << (ostream &, const dse3 &);
 
  	/*!
-		real multiplication operator
+		double multiplication operator
 	*/
-	friend dse3		 operator * (real, const dse3 &);
+	friend dse3		 operator * (double, const dse3 &);
 
 	/*!
 		fast version of F * se3(V, 0)
 	*/
-	friend real	 operator * (const dse3 &F, const Axis &V);
+	friend double	 operator * (const dse3 &F, const Axis &V);
 
 	/*!
 		dual adjoint mapping
@@ -1003,13 +1003,13 @@ public:
  	/*!
 		get a squared sum of all the elements in p.
 	*/
-	friend real	 SquareSum(const dse3 &);
+	friend double	 SquareSum(const dse3 &);
 	
 ////////////////////////////////
 		bool operator == (const dse3 &t) const;
 ////////////////////////////////
 private:
-	real			_m[6];
+	double			_m[6];
 };
 
 /*!
@@ -1038,13 +1038,13 @@ public:
 		constructor
 		rotation part
 	*/
-	explicit		 SE3(real, real, real, real, real, real, real, real, real);
+	explicit		 SE3(double, double, double, double, double, double, double, double, double);
 
 	/*!
 		constructor
 		rotation and position part
 	*/
-	explicit		 SE3(real, real, real, real, real, real, real, real, real, real, real, real);
+	explicit		 SE3(double, double, double, double, double, double, double, double, double, double, double, double);
 
  	/*!
 		constructor
@@ -1066,19 +1066,19 @@ public:
 		constructor
 		fast version of SE3(Vec3(c))
 	*/
-	explicit		 SE3(real c);
+	explicit		 SE3(double c);
 	explicit		 SE3(int c);
 
 	/*!
 		constructor
 		array T is assumed to be column based 4X4 matrix
 	*/
-	explicit		 SE3(const real T[]);
+	explicit		 SE3(const double T[]);
 
  	/*!
 		get the i-th row and the j-th column element.
 	*/
-	real			 operator () (int i, int j) const;
+	double			 operator () (int i, int j) const;
 
  	/*!
 		access to the i-th element, where it is assumed as an array.
@@ -1088,9 +1088,9 @@ public:
 		| T[2]	T[5]	T[8]	T[11] |
 		,where the left 3X3 matrix is the rotation matrix and the right 3 vector is the position.
 	*/
-	const real	&operator [] (int i) const;
+	const double	&operator [] (int i) const;
 
-	real			&operator [] (int);
+	double			&operator [] (int);
 
 	/*!
 		substitution operator
@@ -1216,7 +1216,7 @@ public:
 	/*!
 		Exponential mapping for unit length axis
 	*/
-	void			 Exp(const se3 &, real);
+	void			 Exp(const se3 &, double);
 
 	/*!
 		Fill in the array M
@@ -1247,23 +1247,23 @@ public:
 	/*!
 		Exponential mapping for unit length axis
 	*/
-	friend SE3		 Exp(const se3 &, real);
+	friend SE3		 Exp(const se3 &, double);
 
 	/*!
 		get rotation matrix rotated along x-axis by theta angle.
 		\note theta is represented in radian.
 	*/
-	friend SE3		 RotX(real);
+	friend SE3		 RotX(double);
 
 	/*!
 		get rotation matrix rotated along y-axis by theta angle.
 	*/
-	friend SE3		 RotY(real);
+	friend SE3		 RotY(double);
 
 	/*!
 		get rotation matrix rotated along z-axis by theta angle.
 	*/
-	friend SE3		 RotZ(real);
+	friend SE3		 RotZ(double);
 
 	/*!
 		Log mapping
@@ -1303,7 +1303,7 @@ public:
 ///////////////////////////////
 
 private:
-	real			_T[12];
+	double			_T[12];
 };
 
 typedef	Vec3	InvVec3;
@@ -1323,14 +1323,14 @@ public:
 	/*!
 		constructor : mass = Ixx = Iyy = Izz = m
 	*/
-	explicit		 Inertia(real m);
+	explicit		 Inertia(double m);
 
 	/*!
 		constructor
 	*/
-	explicit		 Inertia(real mass, real Ixx, real Iyy, real Izz);
+	explicit		 Inertia(double mass, double Ixx, double Iyy, double Izz);
 
-	explicit		 Inertia(real, real, real, real, real, real, real, real, real, real);
+	explicit		 Inertia(double, double, double, double, double, double, double, double, double, double);
 
 	/*!
 		constructor
@@ -1338,7 +1338,7 @@ public:
 		mass is not specified.
 		so you MUST specify mass value after this constructor.
 	*/
-	explicit		 Inertia(real, real, real, real, real, real);
+	explicit		 Inertia(double, double, double, double, double, double);
 
 	/*!
 		multiplication operator
@@ -1366,9 +1366,9 @@ public:
 	const Inertia	&operator = (const Inertia &);
 
 	/*!
-		real multiplication operator
+		double multiplication operator
 	*/
-	const Inertia	&operator *= (real);
+	const Inertia	&operator *= (double);
 	
 	/*!
 		access to ith element
@@ -1376,8 +1376,8 @@ public:
 					= offset		, i \in [6, 8]
 					= mass			, i = 9
 	*/
-	real			&operator [] (int);
-	const real	&operator [] (int) const;
+	double			&operator [] (int);
+	const double	&operator [] (int) const;
 
 	/*!
 		get coordinate transformed inertia
@@ -1399,7 +1399,7 @@ public:
 	/*!
 		get a mass.
 	*/
-	real			 GetMass(void) const;
+	double			 GetMass(void) const;
 
 	/*!
 		get the diagonals, that is, Ixx, Iyy and Izz.
@@ -1414,12 +1414,12 @@ public:
 	/*!
 		set a mass.
 	*/
-	void			 SetMass(real);
+	void			 SetMass(double);
 
 	/*!
 		Set angular moment of inertia, i.e. Ixx, Iyy, Izz, Ixy, Iyz, and Izx.
 	*/
-	void			 SetAngularMoment(real, real, real, real, real, real);
+	void			 SetAngularMoment(double, double, double, double, double, double);
 
 	/*!
 		set the offset r.
@@ -1427,9 +1427,9 @@ public:
 	void			 SetOffset(Vec3);
 
 	/*!
-		real multiplication operator
+		double multiplication operator
 	*/
-	friend Inertia	 operator * (real, const Inertia &);
+	friend Inertia	 operator * (double, const Inertia &);
 
 	/*!
 		get inverse of J.
@@ -1441,21 +1441,21 @@ public:
 		\param d density of the geometry
 		\param sz size of the box
 	*/
-	friend Inertia	 BoxInertia(real d, const Vec3 &sz);
+	friend Inertia	 BoxInertia(double d, const Vec3 &sz);
 
 	/*!
 	get an inertia of box shaped geometry.
 	\param d density of the geometry
 	\param sz half size of the box
 	*/
-	friend Inertia	 BoxInertia_Half(real d, const Vec3 &sz);
+	friend Inertia	 BoxInertia_Half(double d, const Vec3 &sz);
 
 	/*!
 		get an inertia of sphere shaped geometry.
 		\param d density of the geometry
 		\param r radius of the sphere
 	*/
-	friend Inertia	 SphereInertia(real d, real r);
+	friend Inertia	 SphereInertia(double d, double r);
 
 	/*!
 		get an inertia of cylindrical geometry.
@@ -1463,7 +1463,7 @@ public:
 		\param r radius of the cylinder
 		\param h height of the cylinder
 	*/
-	friend Inertia	 CylinderInertia(real d, real r, real h);
+	friend Inertia	 CylinderInertia(double d, double r, double h);
 
 	/*!
 	get an inertia of capsular geometry.
@@ -1471,10 +1471,10 @@ public:
 	\param r radius of the capsule
 	\param h height of the capsule
 	*/
-	friend Inertia	 CapsuleInertia(real d, real r, real h);
+	friend Inertia	 CapsuleInertia(double d, double r, double h);
 
 private:
-	real			_I[10];
+	double			_I[10];
 };
 
 /*!
@@ -1487,12 +1487,12 @@ class AInertia
 {
 public:
 					 AInertia();
-	explicit		 AInertia(real);
+	explicit		 AInertia(double);
 					 AInertia(const Inertia &);
-	explicit		 AInertia(real, real, real, real, real, real, real, real, real, real, real, real, real, real, real, real, real, real, real, real, real);
+	explicit		 AInertia(double, double, double, double, double, double, double, double, double, double, double, double, double, double, double, double, double, double, double, double, double);
 
-	real			&operator [] (int);
-	const real	&operator [] (int) const;
+	double			&operator [] (int);
+	const double	&operator [] (int) const;
 	const AInertia	&operator + (void) const;
 	AInertia		 operator - (void) const;
 	dse3			 operator * (const se3 &) const;
@@ -1522,7 +1522,7 @@ public:
 	friend AInertia	 KroneckerProduct(const dse3 &, const dse3 &);
 	
 private:
-	real			_J[21];
+	double			_J[21];
 };
 
 
@@ -1534,8 +1534,8 @@ public:
 	// constructors
 	SO3();
 	SO3(const SO3 &R);
-	SO3(const real R[]);
-	SO3(real R0, real R1, real R2, real R3, real R4, real R5, real R6, real R7, real R8);
+	SO3(const double R[]);
+	SO3(double R0, double R1, double R2, double R3, double R4, double R5, double R6, double R7, double R8);
 
 	////////////////////////////////////////////////////////////////////////// Jeongseok Lee 2008-03-24
 	// operators
@@ -1547,11 +1547,11 @@ public:
 	| R[2]	R[5]	R[8] |
 	,where the left 3X3 matrix is the rotation matrix.
 	*/
-	const real	&operator [] (int i) const;
-	real			&operator [] (int);
+	const double	&operator [] (int i) const;
+	double			&operator [] (int);
 	//////////////////////////////////////////////////////////////////////////
-	const real &operator () (int i, int j) const;
-	real &operator () (int i, int j);
+	const double &operator () (int i, int j) const;
+	double &operator () (int i, int j);
 	SO3 &operator = (const SO3 &R);
 	bool operator == (const SO3 &R) const;
 	const SO3 &operator *= (const SO3 &R);
@@ -1568,9 +1568,9 @@ public:
 	Vec3			GetY(void) const;
 	Vec3			GetZ(void) const;
 	//////////////////////////////////////////////////////////////////////////
-	friend SO3 Exp(real w0, real w1, real w2);
+	friend SO3 Exp(double w0, double w1, double w2);
 	friend SO3 Exp(const Vec3 &w);
-	friend SO3 Exp(const Vec3 &w, real theta);
+	friend SO3 Exp(const Vec3 &w, double theta);
 	friend Vec3 Log(const SO3 &R);
 	friend Vec3 iEulerZYX(const SO3 &R);
 	friend Vec3 iEulerZYZ(const SO3 &R);
@@ -1579,7 +1579,7 @@ public:
 	friend class SE3;
 
 private:
-	real _R[9];
+	double _R[9];
 };
 
 #include "LieGroup.inl"

@@ -8,7 +8,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 
-//typedef double real;
+//typedef double double;
 
 inline Vec2::Vec2()
 {
@@ -16,21 +16,21 @@ inline Vec2::Vec2()
 
 inline Vec2::Vec2(int d)
 {
-	_v[0] = _v[1] = (real)d;
+	_v[0] = _v[1] = (double)d;
 }
 
-inline Vec2::Vec2(real d)
+inline Vec2::Vec2(double d)
 {
 	_v[0] = _v[1] = d;
 }
 
-inline Vec2::Vec2(const real v[])
+inline Vec2::Vec2(const double v[])
 {
 	_v[0] = v[0];
 	_v[1] = v[1];
 }
 
-inline Vec2::Vec2(real v0, real v1)
+inline Vec2::Vec2(double v0, double v1)
 {
 	_v[0] = v0;
 	_v[1] = v1;
@@ -46,12 +46,12 @@ inline Vec2 Vec2::operator - (void) const
 	return Vec2(-_v[0], -_v[1]);
 }
 
-inline real &Vec2::operator [] (int i)
+inline double &Vec2::operator [] (int i)
 {
 	return _v[i];
 }
 
-inline const real &Vec2::operator [] (int i) const
+inline const double &Vec2::operator [] (int i) const
 {
 	return _v[i];
 }
@@ -77,26 +77,26 @@ inline const Vec2 &Vec2::operator -= (const Vec2 &v)
 	return *this;
 }
 
-inline const Vec2 &Vec2::operator *= (real d)
+inline const Vec2 &Vec2::operator *= (double d)
 {
 	_v[0] *= d;
 	_v[1] *= d;
 	return *this;
 }
 
-inline const Vec2 &Vec2::operator /= (real d)
+inline const Vec2 &Vec2::operator /= (double d)
 {
 	_v[0] /= d;
 	_v[1] /= d;
 	return *this;
 }
 
-inline Vec2 Vec2::operator * (real d) const
+inline Vec2 Vec2::operator * (double d) const
 {
 	return Vec2(d * _v[0], d * _v[1]);
 }
 
-inline Vec2 Vec2::operator / (real d) const
+inline Vec2 Vec2::operator / (double d) const
 {
 	if ( d == 0.0) {
 		return Vec2(0.0);
@@ -114,9 +114,9 @@ inline Vec2 Vec2::operator - (const Vec2 &v) const
 	return Vec2(_v[0] - v[0], _v[1] - v[1]);
 }
 
-inline real Vec2::Normalize(void)
+inline double Vec2::Normalize(void)
 {
-	real mag = sqrt(_v[0] * _v[0] + _v[1] * _v[1]);	
+	double mag = sqrt(_v[0] * _v[0] + _v[1] * _v[1]);	
 	if ( mag < SR_EPS )	// make a unit vector in z-direction
 	{
 		_v[0] = 0.0;
@@ -129,25 +129,25 @@ inline real Vec2::Normalize(void)
 	return mag;
 }
 
-inline void Vec2::SetValues(real v0, real v1)
+inline void Vec2::SetValues(double v0, double v1)
 {
 	_v[0] = v0;
 	_v[1] = v1;
 }
 
-inline Vec2 operator * (real d, const Vec2 &v)
+inline Vec2 operator * (double d, const Vec2 &v)
 {
 	return Vec2(d * v[0], d * v[1]);
 }
 
-inline real Norm(const Vec2 &v)
+inline double Norm(const Vec2 &v)
 {
 	return sqrt(v[0] * v[0] + v[1] * v[1]);
 }
 
 inline Vec2 Normalize(const Vec2 &v)
 {
-	real mag = sqrt(v[0] * v[0] + v[1] * v[1]);
+	double mag = sqrt(v[0] * v[0] + v[1] * v[1]);
 	if ( mag < SR_EPS )	// make a unit vector in z-direction
 		return Vec2(0.0, 0.0);
 
@@ -160,22 +160,22 @@ inline Vec3 Cross(const Vec2 &p, const Vec2 &q)
 	return Vec3(0.0, 0.0, p[0] * q[1] - p[1] * q[0]);
 }
 
-inline real Inner(const Vec2 &p, const Vec2 &q)
+inline double Inner(const Vec2 &p, const Vec2 &q)
 {
 	return (p[0] * q[0] + p[1] * q[1]);
 }
 
-inline real Cosine(const Vec2 &p, const Vec2 &q)
+inline double Cosine(const Vec2 &p, const Vec2 &q)
 {
 	return (Inner(p,q)/(Norm(p)*Norm(q)));
 }
 
-inline real Sine(const Vec2 &p, const Vec2 &q)
+inline double Sine(const Vec2 &p, const Vec2 &q)
 {
 	return sqrt(1-Cosine(p,q)*Cosine(p,q));
 }
 
-inline real SquareSum(const Vec2 &p)
+inline double SquareSum(const Vec2 &p)
 {
 	return (p[0] * p[0] + p[1] * p[1]);
 }
@@ -191,22 +191,22 @@ inline Vec3::Vec3()
 
 inline Vec3::Vec3(int d)
 {
-	_v[0] = _v[1] = _v[2] = (real)d;
+	_v[0] = _v[1] = _v[2] = (double)d;
 }
 
-inline Vec3::Vec3(real d)
+inline Vec3::Vec3(double d)
 {
 	_v[0] = _v[1] = _v[2] = d;
 }
 
-inline Vec3::Vec3(const real v[])
+inline Vec3::Vec3(const double v[])
 {
 	_v[0] = v[0];
 	_v[1] = v[1];
 	_v[2] = v[2];
 }
 
-inline Vec3::Vec3(real v0, real v1, real v2)
+inline Vec3::Vec3(double v0, double v1, double v2)
 {
 	_v[0] = v0;
 	_v[1] = v1;
@@ -223,12 +223,12 @@ inline Vec3 Vec3::operator - (void) const
 	return Vec3(-_v[0], -_v[1], -_v[2]);
 }
 
-inline real &Vec3::operator [] (int i)
+inline double &Vec3::operator [] (int i)
 {
 	return _v[i];
 }
 
-inline const real &Vec3::operator [] (int i) const
+inline const double &Vec3::operator [] (int i) const
 {
 	return _v[i];
 }
@@ -249,7 +249,7 @@ inline const Vec3 &Vec3::operator = (const SE3 &T)
 	return *this;
 }
 
-inline const Vec3 &Vec3::operator = (real d)
+inline const Vec3 &Vec3::operator = (double d)
 {
 	_v[0] = _v[1] = _v[2] = d;
 	return *this;
@@ -271,7 +271,7 @@ inline const Vec3 &Vec3::operator -= (const Vec3 &v)
 	return *this;
 }
 
-inline const Vec3 &Vec3::operator *= (real d)
+inline const Vec3 &Vec3::operator *= (double d)
 {
 	_v[0] *= d;
 	_v[1] *= d;
@@ -279,7 +279,7 @@ inline const Vec3 &Vec3::operator *= (real d)
 	return *this;
 }
 
-inline const Vec3 &Vec3::operator /= (real d)
+inline const Vec3 &Vec3::operator /= (double d)
 {
 	_v[0] /= d;
 	_v[1] /= d;
@@ -287,12 +287,12 @@ inline const Vec3 &Vec3::operator /= (real d)
 	return *this;
 }
 
-inline Vec3 Vec3::operator * (real d) const
+inline Vec3 Vec3::operator * (double d) const
 {
 	return Vec3(d * _v[0], d * _v[1], d * _v[2]);
 }
 
-inline Vec3 Vec3::operator / (real d) const
+inline Vec3 Vec3::operator / (double d) const
 {
 	if ( d == 0.0) {
 		return Vec3(0.0);
@@ -310,9 +310,9 @@ inline Vec3 Vec3::operator - (const Vec3 &v) const
 	return Vec3(_v[0] - v[0], _v[1] - v[1], _v[2] - v[2]);
 }
 
-inline real Vec3::Normalize(void)
+inline double Vec3::Normalize(void)
 {
-	real mag = sqrt(_v[0] * _v[0] + _v[1] * _v[1] + _v[2] * _v[2]);	
+	double mag = sqrt(_v[0] * _v[0] + _v[1] * _v[1] + _v[2] * _v[2]);	
 	if ( mag < SR_EPS )	// make a unit vector in z-direction
 	{
 		_v[0] = 0.0;
@@ -328,7 +328,7 @@ inline real Vec3::Normalize(void)
 	return mag;
 }
 
-inline void Vec3::SetValues(real v0, real v1, real v2)
+inline void Vec3::SetValues(double v0, double v1, double v2)
 {
 	_v[0] = v0;
 	_v[1] = v1;
@@ -356,19 +356,19 @@ inline Vec3 InvRotate(const SE3 &T, const Vec3 &v)
 		T[6] * v[0] + T[7] * v[1] + T[8] * v[2]);
 }
 
-inline Vec3 operator * (real d, const Vec3 &v)
+inline Vec3 operator * (double d, const Vec3 &v)
 {
 	return Vec3(d * v[0], d * v[1], d * v[2]);
 }
 
-inline real Norm(const Vec3 &v)
+inline double Norm(const Vec3 &v)
 {
 	return sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
 inline Vec3 Normalize(const Vec3 &v)
 {
-	real mag = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+	double mag = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 	if ( mag < SR_EPS )	// make a unit vector in z-direction
 		return Vec3(0.0, 0.0, 1.0);
 
@@ -383,22 +383,22 @@ inline Vec3 Cross(const Vec3 &p, const Vec3 &q)
 		p[0] * q[1] - p[1] * q[0]);
 }
 
-inline real Inner(const Vec3 &p, const Vec3 &q)
+inline double Inner(const Vec3 &p, const Vec3 &q)
 {
 	return (p[0] * q[0] + p[1] * q[1] + p[2] * q[2]);
 }
 
-inline real Cosine(const Vec3 &p, const Vec3 &q)
+inline double Cosine(const Vec3 &p, const Vec3 &q)
 {
 	return (Inner(p,q)/(Norm(p)*Norm(q)));
 }
 
-inline real Sine(const Vec3 &p, const Vec3 &q)
+inline double Sine(const Vec3 &p, const Vec3 &q)
 {
 	return sqrt(1-Cosine(p,q)*Cosine(p,q));
 }
 
-inline real SquareSum(const Vec3 &p)
+inline double SquareSum(const Vec3 &p)
 {
 	return (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
 }
@@ -448,17 +448,17 @@ inline se3::se3()
 {
 }
 
-inline se3::se3(real k)
+inline se3::se3(double k)
 {
 	_w[0] = _w[1] = _w[2] = _w[3] = _w[4] = _w[5] = k;
 }
 
 inline se3::se3(int k)
 {
-	_w[0] = _w[1] = _w[2] = _w[3] = _w[4] = _w[5] = (real)k;
+	_w[0] = _w[1] = _w[2] = _w[3] = _w[4] = _w[5] = (double)k;
 }
 
-inline se3::se3(real w0, real w1, real w2, real w3, real w4, real w5)
+inline se3::se3(double w0, double w1, double w2, double w3, double w4, double w5)
 {
 	_w[0] = w0;
 	_w[1] = w1;
@@ -517,7 +517,7 @@ inline const se3 &se3::operator = (const Axis &s)
 	return *this;
 }
 
-inline const se3 &se3::operator = (real d)
+inline const se3 &se3::operator = (double d)
 {
 	_w[0] = _w[1] = _w[2] = _w[3] = _w[4] = _w[5] = d;
 	return *this;
@@ -553,7 +553,7 @@ inline const se3 &se3::operator -= (const se3 &s)
 	return *this;
 }
 
-inline const se3 &se3::operator *= (real d)
+inline const se3 &se3::operator *= (double d)
 {
 	_w[0] *= d;
 	_w[1] *= d;
@@ -574,17 +574,17 @@ inline se3 se3::operator - (const se3 &s) const
 	return se3(_w[0] - s[0], _w[1] - s[1], _w[2] - s[2], _w[3] - s[3], _w[4] - s[4], _w[5] - s[5]);
 }
 
-inline se3 se3::operator * (real d) const
+inline se3 se3::operator * (double d) const
 {
 	return se3(d * _w[0], d * _w[1], d * _w[2], d * _w[3], d * _w[4], d * _w[5]);
 }
 
-inline real &se3::operator [] (int i)
+inline double &se3::operator [] (int i)
 {
 	return _w[i];
 }
 
-inline const real &se3::operator [] (int i) const
+inline const double &se3::operator [] (int i) const
 {
 	return _w[i];
 }
@@ -603,7 +603,7 @@ inline void se3::Ad(const SE3 &T, const se3 &s)
 // re = Inv(T) * s * T
 inline void se3::InvAd(const SE3 &T, const se3 &s)
 {
-	real _tmp[3] = {	s[3] + s[1] * T[11] - s[2] * T[10], 
+	double _tmp[3] = {	s[3] + s[1] * T[11] - s[2] * T[10], 
 		s[4] + s[2] * T[9] - s[0] * T[11], 
 		s[5] + s[0] * T[10] - s[1] * T[9] };
 	_w[0] = T[0] * s[0] + T[1] * s[1] + T[2] * s[2];
@@ -634,33 +634,33 @@ inline void se3::ad(const se3 &s1, const Axis &s2)
 	_w[5] = s2[1] * s1[3] - s2[0] * s1[4];
 }
 
-inline se3 operator * (real d, const se3 &s)
+inline se3 operator * (double d, const se3 &s)
 {
 	return se3(d * s[0], d * s[1], d * s[2], d * s[3], d * s[4], d * s[5]);
 }
 
-inline real operator * (const dse3 &t, const se3 &s)
+inline double operator * (const dse3 &t, const se3 &s)
 {
 	return (t[0] * s[0] + t[1] * s[1] + t[2] * s[2] + t[3] * s[3] + t[4] * s[4] + t[5] * s[5]);
 }
 
-inline real operator * (const dse3 &t, const Axis &s)
+inline double operator * (const dse3 &t, const Axis &s)
 {
 	return (t[0] * s[0] + t[1] * s[1] + t[2] * s[2]);
 }
 
-inline real operator * (const se3 &s, const dse3 &t)
+inline double operator * (const se3 &s, const dse3 &t)
 {
 	return (t[0] * s[0] + t[1] * s[1] + t[2] * s[2] + t[3] * s[3] + t[4] * s[4] + t[5] * s[5]);
 }
 
 inline se3 Log(const SE3 &T)
 {
-	real theta = 0.5 * (T[0] + T[4] + T[8] - 1.0), t_st;
+	double theta = 0.5 * (T[0] + T[4] + T[8] - 1.0), t_st;
 
 	if ( theta < SR_EPS - 1.0 )
 	{
-		real w[3];
+		double w[3];
 		if ( T[0] > 1.0 - SR_EPS )
 		{
 			w[0] = SR_PI;
@@ -680,9 +680,9 @@ inline se3 Log(const SE3 &T)
 			w[2] = SR_PI_SQRT2 * sqrt((T[6] * T[6] + T[7] * T[7]) / (1.0 - T[8]));
 		}
 
-		real w2[] = { w[0] * w[0], w[1] * w[1], w[2] * w[2] }, w3[] = { w2[0] * w[0], w2[1] * w[1], w2[2] * w[2] }, v[] = { w[1] * w[2], w[2] * w[0], w[0] * w[1] };
-		real id = (real)0.25 * SR_PI_SQR / (w2[0] * w2[0] + w2[1] * w2[1] + w2[2] * w2[2] + 2.0 * (w2[0] * w2[1] + w2[1] * w2[2] + w2[2] * w2[0]));
-		real p[] = { T[9] * id, T[10] * id, T[11] * id };
+		double w2[] = { w[0] * w[0], w[1] * w[1], w[2] * w[2] }, w3[] = { w2[0] * w[0], w2[1] * w[1], w2[2] * w[2] }, v[] = { w[1] * w[2], w[2] * w[0], w[0] * w[1] };
+		double id = (double)0.25 * SR_PI_SQR / (w2[0] * w2[0] + w2[1] * w2[1] + w2[2] * w2[2] + 2.0 * (w2[0] * w2[1] + w2[1] * w2[2] + w2[2] * w2[0]));
+		double p[] = { T[9] * id, T[10] * id, T[11] * id };
 
 		return se3(	w[0], w[1], w[2],
 			2.0 * (2.0 * w2[0] * p[0] + (w3[2] + v[1] * w[0] + v[0] * w[1] + 2.0 * v[2]) * p[1] + (2.0 * v[1] - w3[1] - w[0] * v[2] - w[2] * v[0]) * p[2]),
@@ -701,9 +701,9 @@ inline se3 Log(const SE3 &T)
 		}
 		//
 		theta = acos(theta);
-		if ( theta < SR_EPS )	t_st = (real)3.0 / ((real)6.0 - theta * theta);
+		if ( theta < SR_EPS )	t_st = (double)3.0 / ((double)6.0 - theta * theta);
 		else					t_st = theta / (2.0 * sin(theta));
-		real stct, st = sin(theta), w[] = { T[5] - T[7], T[6] - T[2], T[1] - T[3] }, w2[] = { w[0] * w[0], w[1] * w[1], w[2] * w[2] }, w3[] = { w[1] * w[2], w[2] * w[0], w[0] * w[1] };
+		double stct, st = sin(theta), w[] = { T[5] - T[7], T[6] - T[2], T[1] - T[3] }, w2[] = { w[0] * w[0], w[1] * w[1], w[2] * w[2] }, w3[] = { w[1] * w[2], w[2] * w[0], w[0] * w[1] };
 		w[0] = t_st * w[0];	w[1] = t_st * w[1];	w[2] = t_st * w[2];
 
 		if ( theta < SR_EPS )	stct = theta / 48.0;
@@ -718,7 +718,7 @@ inline se3 Log(const SE3 &T)
 
 inline Axis LogR(const SE3 &T)
 {
-	real theta = 0.5 * (T[0] + T[4] + T[8] - 1.0), t_st;
+	double theta = 0.5 * (T[0] + T[4] + T[8] - 1.0), t_st;
 
 	if ( theta < SR_EPS - 1.0 )
 	{
@@ -731,7 +731,7 @@ inline Axis LogR(const SE3 &T)
 	} else
 	{
 		theta = acos(theta);
-		if ( theta < SR_EPS )	t_st = (real)3.0 / ((real)6.0 - theta * theta);
+		if ( theta < SR_EPS )	t_st = (double)3.0 / ((double)6.0 - theta * theta);
 		else					t_st = theta / (2.0 * sin(theta));
 		return Axis(t_st * (T[5] - T[7]), t_st * (T[6] - T[2]), t_st * (T[1] - T[3]));
 	}
@@ -740,7 +740,7 @@ inline Axis LogR(const SE3 &T)
 // re = T * s * Inv(T)
 inline se3 Ad(const SE3 &T, const se3 &s)
 {
-	real tmp[3] = {	T[0] * s[0] + T[3] * s[1] + T[6] * s[2], 
+	double tmp[3] = {	T[0] * s[0] + T[3] * s[1] + T[6] * s[2], 
 		T[1] * s[0] + T[4] * s[1] + T[7] * s[2], 
 		T[2] * s[0] + T[5] * s[1] + T[8] * s[2] };
 	return se3(	tmp[0], tmp[1], tmp[2],
@@ -751,7 +751,7 @@ inline se3 Ad(const SE3 &T, const se3 &s)
 
 inline se3 Ad(const SE3 &T, const Axis &s)
 {
-	real tmp[3] = {	T[0] * s[0] + T[3] * s[1] + T[6] * s[2], 
+	double tmp[3] = {	T[0] * s[0] + T[3] * s[1] + T[6] * s[2], 
 		T[1] * s[0] + T[4] * s[1] + T[7] * s[2], 
 		T[2] * s[0] + T[5] * s[1] + T[8] * s[2] };
 	return se3(	tmp[0], tmp[1], tmp[2],
@@ -763,7 +763,7 @@ inline se3 Ad(const SE3 &T, const Axis &s)
 // re = Inv(T) * s * T
 inline se3 InvAd(const SE3 &T, const se3 &s)
 {
-	real tmp[3] = {	s[3] + s[1] * T[11] - s[2] * T[10], 
+	double tmp[3] = {	s[3] + s[1] * T[11] - s[2] * T[10], 
 		s[4] + s[2] * T[9] - s[0] * T[11], 
 		s[5] + s[0] * T[10] - s[1] * T[9] };
 	return se3(	T[0] * s[0] + T[1] * s[1] + T[2] * s[2],
@@ -784,7 +784,7 @@ inline se3 ad(const se3 &s1, const se3 &s2)
 		s1[0] * s2[4] - s1[1] * s2[3] - s2[0] * s1[4] + s2[1] * s1[3]);
 }
 
-inline real SquareSum(const se3 &s)
+inline double SquareSum(const se3 &s)
 {
 	return (s[0] * s[0] + s[1] * s[1] + s[2] * s[2] + s[3] * s[3] + s[4] * s[4] + s[5] * s[5]);
 }
@@ -813,17 +813,17 @@ inline dse3::dse3()
 {
 }
 
-inline dse3::dse3(real k)
+inline dse3::dse3(double k)
 {
 	_m[0] = _m[1] = _m[2] = _m[3] = _m[4] = _m[5] = k;
 }
 
 inline dse3::dse3(int k)
 {
-	_m[0] = _m[1] = _m[2] = _m[3] = _m[4] = _m[5] = (real)k;
+	_m[0] = _m[1] = _m[2] = _m[3] = _m[4] = _m[5] = (double)k;
 }
 
-inline dse3::dse3(real m0, real m1, real m2, real m3, real m4, real m5)
+inline dse3::dse3(double m0, double m1, double m2, double m3, double m4, double m5)
 {
 	_m[0] = m0;
 	_m[1] = m1;
@@ -853,7 +853,7 @@ inline dse3::dse3(const Vec3 &m, const Vec3 &f)
 	_m[5] = f[2];
 }
 
-inline dse3::dse3(real mass, const se3 &dV)
+inline dse3::dse3(double mass, const se3 &dV)
 {
 	_m[0] = mass * dV[0];
 	_m[1] = mass * dV[1];
@@ -863,7 +863,7 @@ inline dse3::dse3(real mass, const se3 &dV)
 	_m[5] = mass * dV[5];
 }
 
-inline dse3::dse3(const real v[])
+inline dse3::dse3(const double v[])
 {
 	_m[0] = v[0];
 	_m[1] = v[1];
@@ -923,7 +923,7 @@ inline const dse3 &dse3::operator = (const Vec3 &t)
 	return *this;
 }
 
-inline const dse3 &dse3::operator = (real d)
+inline const dse3 &dse3::operator = (double d)
 {
 	_m[0] = _m[1] = _m[2] = _m[3] = _m[4] = _m[5] = d;
 	return *this;
@@ -951,7 +951,7 @@ inline const dse3 &dse3::operator -= (const dse3 &t)
 	return *this;
 }
 
-inline const dse3 &dse3::operator *= (real d)
+inline const dse3 &dse3::operator *= (double d)
 {
 	_m[0] *= d;
 	_m[1] *= d;
@@ -972,17 +972,17 @@ inline dse3 dse3::operator - (const dse3 &t) const
 	return dse3(_m[0] - t[0], _m[1] - t[1], _m[2] - t[2], _m[3] - t[3], _m[4] - t[4], _m[5] - t[5]);
 }	
 
-inline dse3 dse3::operator * (real d) const
+inline dse3 dse3::operator * (double d) const
 {
 	return dse3(d * _m[0], d * _m[1], d * _m[2], d * _m[3], d * _m[4], d * _m[5]);
 }
 
-inline real &dse3::operator [] (int i)
+inline double &dse3::operator [] (int i)
 {
 	return _m[i];
 }
 
-inline const real &dse3::operator [] (int i) const
+inline const double &dse3::operator [] (int i) const
 {
 	return _m[i];
 }
@@ -1009,7 +1009,7 @@ inline void dse3::dad(const se3 &s, const dse3 &t)
 
 inline void dse3::dAd(const SE3 &T, const dse3 &t)
 {
-	real tmp[3] = {	t[0] - T[10] * t[5] + T[11] * t[4], 
+	double tmp[3] = {	t[0] - T[10] * t[5] + T[11] * t[4], 
 		t[1] - T[11] * t[3] + T[9] * t[5], 
 		t[2] - T[9] * t[4] + T[10] * t[3] };
 	_m[0] = T[0] * tmp[0] + T[1] * tmp[1] + T[2] * tmp[2];
@@ -1020,14 +1020,14 @@ inline void dse3::dAd(const SE3 &T, const dse3 &t)
 	_m[5] = T[6] * t[3] + T[7] * t[4] + T[8] * t[5];
 }
 
-inline dse3 operator * (real d, const dse3 &t)
+inline dse3 operator * (double d, const dse3 &t)
 {
 	return dse3(d * t[0], d * t[1], d * t[2], d * t[3], d * t[4], d * t[5]);
 }
 
 inline dse3 dAd(const SE3 &T, const dse3 &t)
 {
-	real tmp[3] = {	t[0] - T[10] * t[5] + T[11] * t[4], 
+	double tmp[3] = {	t[0] - T[10] * t[5] + T[11] * t[4], 
 		t[1] - T[11] * t[3] + T[9] * t[5], 
 		t[2] - T[9] * t[4] + T[10] * t[3] };
 	return dse3(T[0] * tmp[0] + T[1] * tmp[1] + T[2] * tmp[2],
@@ -1040,7 +1040,7 @@ inline dse3 dAd(const SE3 &T, const dse3 &t)
 
 inline dse3 dAd(const SE3 &T, const Vec3 &f)
 {
-	real tmp[3] = {	- T[10] * f[2] + T[11] * f[1], 
+	double tmp[3] = {	- T[10] * f[2] + T[11] * f[1], 
 		- T[11] * f[0] + T[9] * f[2], 
 		- T[9] * f[1] + T[10] * f[0] };
 	return dse3(T[0] * tmp[0] + T[1] * tmp[1] + T[2] * tmp[2],
@@ -1053,7 +1053,7 @@ inline dse3 dAd(const SE3 &T, const Vec3 &f)
 
 inline dse3 InvdAd(const SE3 &T, const dse3 &t)
 {
-	real tmp[3] = {	T[0] * t[3] + T[3] * t[4] + T[6] * t[5], 
+	double tmp[3] = {	T[0] * t[3] + T[3] * t[4] + T[6] * t[5], 
 		T[1] * t[3] + T[4] * t[4] + T[7] * t[5], 
 		T[2] * t[3] + T[5] * t[4] + T[8] * t[5] };
 	return dse3(T[10] * tmp[2] - T[11] * tmp[1] + T[0] * t[0] + T[3] * t[1] + T[6] * t[2],
@@ -1072,7 +1072,7 @@ inline dse3 InvdAd(const Vec3 &p, const Vec3 &f)
 		f[2]);
 }
 
-inline real SquareSum(const dse3 &t)
+inline double SquareSum(const dse3 &t)
 {
 	return (t[0] * t[0] + t[1] * t[1] + t[2] * t[2] + t[3] * t[3] + t[4] * t[4] + t[5] * t[5]);
 }
@@ -1099,7 +1099,7 @@ inline SE3::SE3(const SE3 &T)
 	_T[11] = T[11];
 }
 
-inline SE3::SE3(real T0, real T1, real T2, real T4, real T5, real T6, real T8, real T9, real T10, real T12, real T13, real T14)
+inline SE3::SE3(double T0, double T1, double T2, double T4, double T5, double T6, double T8, double T9, double T10, double T12, double T13, double T14)
 {
 	_T[0] = T0;
 	_T[1] = T1;
@@ -1115,7 +1115,7 @@ inline SE3::SE3(real T0, real T1, real T2, real T4, real T5, real T6, real T8, r
 	_T[11] = T14;
 }
 
-inline SE3::SE3(real T0, real T1, real T2, real T4, real T5, real T6, real T8, real T9, real T10)
+inline SE3::SE3(double T0, double T1, double T2, double T4, double T5, double T6, double T8, double T9, double T10)
 {
 	_T[0] = T0;
 	_T[1] = T1;
@@ -1172,7 +1172,7 @@ inline SE3::SE3(const Vec3 &Rx, const Vec3 &Ry, const Vec3 &Rz, const Vec3 &p)
 	_T[11] = p[2];
 }
 
-inline SE3::SE3(real p)
+inline SE3::SE3(double p)
 {
 	_T[0] = _T[4] = _T[8] = 1.0;
 	_T[1] = _T[2] = _T[3] = _T[5] = _T[6] = _T[7] = 0.0;
@@ -1183,10 +1183,10 @@ inline SE3::SE3(int p)
 {
 	_T[0] = _T[4] = _T[8] = 1.0;
 	_T[1] = _T[2] = _T[3] = _T[5] = _T[6] = _T[7] = 0.0;
-	_T[9] = _T[10] = _T[11] = (real)p;
+	_T[9] = _T[10] = _T[11] = (double)p;
 }
 
-inline SE3::SE3(const real T[])
+inline SE3::SE3(const double T[])
 {
 	_T[0] = T[0];
 	_T[1] = T[1];
@@ -1202,18 +1202,18 @@ inline SE3::SE3(const real T[])
 	_T[11] = T[14];
 }
 
-inline real SE3::operator () (int i, int j) const
+inline double SE3::operator () (int i, int j) const
 {
 	if ( i == 3 ) return j == 3 ? 1.0 : 0.0;
 	return _T[i + (3 * j)];
 }
 
-inline const real &SE3::operator [] (int i) const
+inline const double &SE3::operator [] (int i) const
 {
 	return _T[i];
 }
 
-inline real &SE3::operator [] (int i)
+inline double &SE3::operator [] (int i)
 {
 	return _T[i];
 }
@@ -1263,7 +1263,7 @@ inline SE3 SE3::operator * (const SE3 &T) const
 
 inline SE3 SE3::operator / (const SE3 &T) const
 {
-	real tmp[] = {_T[0] * T[0] + _T[3] * T[3] + _T[6] * T[6],
+	double tmp[] = {_T[0] * T[0] + _T[3] * T[3] + _T[6] * T[6],
 		_T[1] * T[0] + _T[4] * T[3] + _T[7] * T[6],
 		_T[2] * T[0] + _T[5] * T[3] + _T[8] * T[6],
 		_T[0] * T[1] + _T[3] * T[4] + _T[6] * T[7],
@@ -1310,7 +1310,7 @@ inline Vec3 SE3::operator * (const Vec3 &p) const
 
 inline const SE3 &SE3::operator *= (const SE3 &T)
 {
-	real x0, x1, x2;
+	double x0, x1, x2;
 	_T[9] += _T[0] * T[9] + _T[3] * T[10] + _T[6] * T[11];
 	_T[10] += _T[1] * T[9] + _T[4] * T[10] + _T[7] * T[11];
 	_T[11] += _T[2] * T[9] + _T[5] * T[10] + _T[8] * T[11];
@@ -1331,7 +1331,7 @@ inline const SE3 &SE3::operator *= (const SE3 &T)
 
 inline const SE3 &SE3::operator /= (const SE3 &T)
 {
-	real tmp[] = {_T[0] * T[0] + _T[3] * T[3] + _T[6] * T[6],
+	double tmp[] = {_T[0] * T[0] + _T[3] * T[3] + _T[6] * T[6],
 		_T[1] * T[0] + _T[4] * T[3] + _T[7] * T[6],
 		_T[2] * T[0] + _T[5] * T[3] + _T[8] * T[6],
 		_T[0] * T[1] + _T[3] * T[4] + _T[6] * T[7],
@@ -1351,7 +1351,7 @@ inline const SE3 &SE3::operator /= (const SE3 &T)
 
 inline const SE3 &SE3::operator %= (const SE3 &T)
 {
-	real tmp[12] = { _T[0], _T[1], _T[2], _T[3], _T[4], _T[5], _T[6], _T[7], _T[8], T[9] - _T[9], T[10] - _T[10], T[11] - _T[11] };
+	double tmp[12] = { _T[0], _T[1], _T[2], _T[3], _T[4], _T[5], _T[6], _T[7], _T[8], T[9] - _T[9], T[10] - _T[10], T[11] - _T[11] };
 	_T[0] = tmp[0] * T[0] + tmp[1] * T[1] + tmp[2] * T[2];
 	_T[1] = tmp[3] * T[0] + tmp[4] * T[1] + tmp[5] * T[2];
 	_T[2] = tmp[6] * T[0] + tmp[7] * T[1] + tmp[8] * T[2];
@@ -1487,16 +1487,16 @@ inline Vec3 SE3::GetPosition(void) const
 
 inline void SE3::Exp(const se3 &S)
 {
-	real s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] }, theta = sqrt(s2[0] + s2[1] + s2[2]), st_t, ct_t, vt_t;
+	double s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] }, theta = sqrt(s2[0] + s2[1] + s2[2]), st_t, ct_t, vt_t;
 
 	if ( theta < SR_EPS )
 	{
-		st_t = 1.0 - theta * theta / (real)6.0;
-		ct_t = 0.5 - theta * theta / (real)24.0;
-		vt_t = (S[0] * S[3] + S[1] * S[4] + S[2] * S[5]) * (1.0 - theta * theta / (real)20.0) / (real)6.0;
+		st_t = 1.0 - theta * theta / (double)6.0;
+		ct_t = 0.5 - theta * theta / (double)24.0;
+		vt_t = (S[0] * S[3] + S[1] * S[4] + S[2] * S[5]) * (1.0 - theta * theta / (double)20.0) / (double)6.0;
 	} else
 	{
-		real itheta = 1.0 / theta;
+		double itheta = 1.0 / theta;
 		st_t = sin(theta) * itheta;
 		itheta *= itheta;
 		ct_t = (1.0 - cos(theta)) * itheta;
@@ -1517,11 +1517,11 @@ inline void SE3::Exp(const se3 &S)
 	_T[11] = st_t * S[5] + vt_t * S[2] + ct_t * (S[0] * S[4] - S[1] * S[3]);
 }
 
-inline void SE3::Exp(const se3 &S, real theta)
+inline void SE3::Exp(const se3 &S, double theta)
 {
-	real s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] };
+	double s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] };
 	if ( fabs(s2[0] + s2[1] + s2[2] - 1.0) > SR_EPS ) return Exp(theta * S);
-	real st = sin(theta), vt = 1.0 - cos(theta), ut = (theta - st) * (S[0] * S[3] + S[1] * S[4] + S[2] * S[5]), sts[] = { st * S[0], st * S[1], st * S[2] };
+	double st = sin(theta), vt = 1.0 - cos(theta), ut = (theta - st) * (S[0] * S[3] + S[1] * S[4] + S[2] * S[5]), sts[] = { st * S[0], st * S[1], st * S[2] };
 
 	_T[0] = 1.0 + vt * (s2[0] - 1.0);
 	_T[1] = vt * S[0] * S[1] + sts[2];
@@ -1558,33 +1558,33 @@ inline void SE3::ToArray(TYPE M[]) const
 	M[15] = (TYPE)1.0;
 }
 
-inline SE3 RotX(real t)
+inline SE3 RotX(double t)
 {
-	real c = cos(t), s = sin(t);
+	double c = cos(t), s = sin(t);
 	return SE3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c);
 }
 
-inline SE3 RotY(real t)
+inline SE3 RotY(double t)
 {
-	real c = cos(t), s = sin(t);
+	double c = cos(t), s = sin(t);
 	return SE3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c);
 }
 
-inline SE3 RotZ(real t)
+inline SE3 RotZ(double t)
 {
-	real c = cos(t), s = sin(t);
+	double c = cos(t), s = sin(t);
 	return SE3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0);
 }
 
 inline SE3 EulerZYX(const Vec3 &angle)
 {
-	real ca = cos(angle[0]), sa = sin(angle[0]), cb = cos(angle[1]), sb = sin(angle[1]), cg = cos(angle[2]), sg = sin(angle[2]);
+	double ca = cos(angle[0]), sa = sin(angle[0]), cb = cos(angle[1]), sb = sin(angle[1]), cg = cos(angle[2]), sg = sin(angle[2]);
 	return SE3(ca * cb, sa * cb, -sb, ca * sb * sg - sa * cg, sa * sb * sg + ca * cg, cb * sg, ca * sb * cg + sa * sg, sa * sb * cg - ca * sg, cb * cg);
 }
 
 inline SE3 EulerZYZ(const Vec3 &angle)
 {
-	real ca = cos(angle[0]), sa = sin(angle[0]), cb = cos(angle[1]), sb = sin(angle[1]), cg = cos(angle[2]), sg = sin(angle[2]);
+	double ca = cos(angle[0]), sa = sin(angle[0]), cb = cos(angle[1]), sb = sin(angle[1]), cg = cos(angle[2]), sg = sin(angle[2]);
 	return SE3(ca * cb * cg - sa * sg, sa * cb * cg + ca * sg, -sb * cg,	-ca * cb * sg - sa * cg, ca * cg - sa * cb * sg, sb * sg, ca * sb, sa * sb, cb);
 }
 
@@ -1597,13 +1597,13 @@ inline SE3 EulerXYZ(const Vec3 &angle, const Vec3 &position)
 
 inline SE3 EulerZYX(const Vec3 &angle, const Vec3 &pos)
 {
-	real ca = cos(angle[0]), sa = sin(angle[0]), cb = cos(angle[1]), sb = sin(angle[1]), cg = cos(angle[2]), sg = sin(angle[2]);
+	double ca = cos(angle[0]), sa = sin(angle[0]), cb = cos(angle[1]), sb = sin(angle[1]), cg = cos(angle[2]), sg = sin(angle[2]);
 	return SE3(ca * cb, sa * cb, -sb, ca * sb * sg - sa * cg, sa * sb * sg + ca * cg, cb * sg, ca * sb * cg + sa * sg, sa * sb * cg - ca * sg, cb * cg, pos[0], pos[1], pos[2]);
 }
 
 inline SE3 EulerZYZ(const Vec3 &angle, const Vec3 &pos)
 {
-	real ca = cos(angle[0]), sa = sin(angle[0]), cb = cos(angle[1]), sb = sin(angle[1]), cg = cos(angle[2]), sg = sin(angle[2]);
+	double ca = cos(angle[0]), sa = sin(angle[0]), cb = cos(angle[1]), sb = sin(angle[1]), cg = cos(angle[2]), sg = sin(angle[2]);
 	return SE3(ca * cb * cg - sa * sg, sa * cb * cg + ca * sg, -sb * cg,	-ca * cb * sg - sa * cg, ca * cg - sa * cb * sg, sb * sg, ca * sb, sa * sb, cb, pos[0], pos[1], pos[2]);
 }
 
@@ -1612,16 +1612,16 @@ inline SE3 EulerZYZ(const Vec3 &angle, const Vec3 &pos)
 // , when S = (w, v), t = |w|
 inline SE3 Exp(const se3 &S)
 {
-	real s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] }, theta = sqrt(s2[0] + s2[1] + s2[2]), st_t, ct_t, vt_t;
+	double s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] }, theta = sqrt(s2[0] + s2[1] + s2[2]), st_t, ct_t, vt_t;
 
 	if ( theta < SR_EPS )
 	{
-		st_t = 1.0 - theta * theta / (real)6.0;
-		ct_t = 0.5 - theta * theta / (real)24.0;
-		vt_t = (S[0] * S[3] + S[1] * S[4] + S[2] * S[5]) * (1.0 - theta * theta / (real)20.0) / (real)6.0;
+		st_t = 1.0 - theta * theta / (double)6.0;
+		ct_t = 0.5 - theta * theta / (double)24.0;
+		vt_t = (S[0] * S[3] + S[1] * S[4] + S[2] * S[5]) * (1.0 - theta * theta / (double)20.0) / (double)6.0;
 	} else
 	{
-		real itheta = 1.0 / theta;
+		double itheta = 1.0 / theta;
 		st_t = sin(theta) * itheta;
 		itheta *= itheta;
 		ct_t = (1.0 - cos(theta)) * itheta;
@@ -1636,11 +1636,11 @@ inline SE3 Exp(const se3 &S)
 		st_t * S[5] + vt_t * S[2] + ct_t * (S[0] * S[4] - S[1] * S[3]));
 }
 
-inline SE3 Exp(const se3 &S, real theta)
+inline SE3 Exp(const se3 &S, double theta)
 {
-	real s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] };
+	double s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] };
 	if ( fabs(s2[0] + s2[1] + s2[2] - 1.0) > SR_EPS ) return Exp(theta * S);
-	real st = sin(theta), vt = 1.0 - cos(theta), ut = (theta - st) * (S[0] * S[3] + S[1] * S[4] + S[2] * S[5]), sts[] = { st * S[0], st * S[1], st * S[2] };
+	double st = sin(theta), vt = 1.0 - cos(theta), ut = (theta - st) * (S[0] * S[3] + S[1] * S[4] + S[2] * S[5]), sts[] = { st * S[0], st * S[1], st * S[2] };
 	return SE3( 1.0 + vt * (s2[0] - 1.0), vt * S[0] * S[1] + sts[2], vt * S[0] * S[2] - sts[1],
 		vt * S[0] * S[1] - sts[2], 1.0 + vt * (s2[1] - 1.0), vt * S[1] * S[2] + sts[0], 
 		vt * S[0] * S[2] + sts[1], vt * S[1] * S[2] - sts[0], 1.0 + vt * (s2[2] - 1.0),
@@ -1652,12 +1652,12 @@ inline SE3 Exp(const se3 &S, real theta)
 // I + sin(t) / t * [S] + (1 - cos(t)) / t^2 * [S]^2, where t = |S|
 inline SE3 Exp(const Axis &S)
 {
-	real s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] }, theta = sqrt(s2[0] + s2[1] + s2[2]), st_t, ct_t;
+	double s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] }, theta = sqrt(s2[0] + s2[1] + s2[2]), st_t, ct_t;
 
 	if ( theta < SR_EPS )
 	{
-		st_t = 1.0 - theta * theta / (real)6.0;
-		ct_t = 0.5 - theta * theta / (real)24.0;
+		st_t = 1.0 - theta * theta / (double)6.0;
+		ct_t = 0.5 - theta * theta / (double)24.0;
 	} else
 	{
 		st_t = sin(theta) / theta;
@@ -1669,11 +1669,11 @@ inline SE3 Exp(const Axis &S)
 		ct_t * S[0] * S[2] + st_t * S[1], ct_t * S[1] * S[2] - st_t * S[0], 1.0 - ct_t * (s2[0] + s2[1]));
 }
 
-inline SE3 Exp(const Axis &S, real theta)
+inline SE3 Exp(const Axis &S, double theta)
 {
-	real s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] };
+	double s2[] = { S[0] * S[0], S[1] * S[1], S[2] * S[2] };
 	if ( fabs(s2[0] + s2[1] + s2[2] - 1.0) > SR_EPS ) return Exp(theta * S);
-	real st = sin(theta), vt = 1.0 - cos(theta), sts[] = { st * S[0], st * S[1], st * S[2] };
+	double st = sin(theta), vt = 1.0 - cos(theta), sts[] = { st * S[0], st * S[1], st * S[2] };
 	return SE3( 1.0 + vt * (s2[0] - 1.0), vt * S[0] * S[1] + sts[2], vt * S[0] * S[2] - sts[1],
 		vt * S[0] * S[1] - sts[2], 1.0 + vt * (s2[1] - 1.0), vt * S[1] * S[2] + sts[0], 
 		vt * S[0] * S[2] + sts[1], vt * S[1] * S[2] - sts[0], 1.0 + vt * (s2[2] - 1.0));
@@ -1697,14 +1697,14 @@ inline Inertia::Inertia()
 	_I[0] = _I[1] = _I[2] = _I[3] = _I[4] = _I[5] = _I[6] = _I[7] = _I[8] = _I[9] = 0.0;
 }
 
-inline Inertia::Inertia(real m)
+inline Inertia::Inertia(double m)
 {
 	assert(m >= 0 && "A mass of this inertia tensor is not positive definite.");
 	_I[9] = _I[0] = _I[1] = _I[2] = m;
 	_I[3] = _I[4] = _I[5] = _I[6] = _I[7] = _I[8] = 0.0;
 }
 
-inline Inertia::Inertia(real mass, real Ixx, real Iyy, real Izz)
+inline Inertia::Inertia(double mass, double Ixx, double Iyy, double Izz)
 {
 	assert(mass >= 0 && Ixx >= 0 && Iyy >= 0 && Izz >= 0 && "A mass of this inertia tensor is not positive definite.");
 	_I[9] = mass;
@@ -1712,7 +1712,7 @@ inline Inertia::Inertia(real mass, real Ixx, real Iyy, real Izz)
 	_I[3] = _I[4] = _I[5] = _I[6] = _I[7] = _I[8] = 0.0;
 }
 
-inline Inertia::Inertia(real Ixx, real Iyy, real Izz, real Ixy, real Iyz, real Izx)
+inline Inertia::Inertia(double Ixx, double Iyy, double Izz, double Ixy, double Iyz, double Izx)
 {
 	_I[0] = Ixx;
 	_I[1] = Iyy;
@@ -1725,7 +1725,7 @@ inline Inertia::Inertia(real Ixx, real Iyy, real Izz, real Ixy, real Iyz, real I
 	_I[6] = _I[7] = _I[8] = 0.0;
 }
 
-inline Inertia::Inertia(real I0, real I1, real I2, real I3, real I4, real I5, real r0, real r1, real r2, real m)
+inline Inertia::Inertia(double I0, double I1, double I2, double I3, double I4, double I5, double r0, double r1, double r2, double m)
 {
 	_I[0] = I0;
 	_I[1] = I1;
@@ -1741,21 +1741,21 @@ inline Inertia::Inertia(real I0, real I1, real I2, real I3, real I4, real I5, re
 //
 //inline Inertia Inertia::Transform(const SE3 &T) const
 //{
-//	real j0 = _I[0] + _I[9] * T[11] * T[11] + _I[9] * T[10] * T[10] - 2.0 * _I[8] * T[11] - 2.0 * _I[7] * T[10];
-//	real j1 = _I[1] + _I[9] * T[11] * T[11] + _I[9] * T[9] * T[9] - 2.0 * _I[8] * T[11] - 2.0 * _I[6] * T[9];
-//	real j2 = _I[2] + _I[9] * T[10] * T[10] + _I[9] * T[9] * T[9] - 2.0 * _I[7] * T[10] - 2.0 * _I[6] * T[9];
-//	real j3 = _I[3] + T[10] * _I[6] + T[9] * _I[7] - _I[9] * T[10] * T[9];
-//	real j4 = _I[4] + T[11] * _I[6] + T[9] * _I[8] - _I[9] * T[11] * T[9];
-//	real j5 = _I[5] + T[11] * _I[7] + T[10] * _I[8] - _I[9] * T[11] * T[10];
-//	real t0 = T[0] * j0 + T[1] * j3 + T[2] * j4;
-//	real t1 = T[3] * j0 + T[4] * j3 + T[5] * j4;
-//	real t2 = T[6] * j0 + T[7] * j3 + T[8] * j4;
-//	real t3 = T[0] * j3 + T[1] * j1 + T[2] * j5;
-//	real t4 = T[3] * j3 + T[4] * j1 + T[5] * j5;
-//	real t5 = T[6] * j3 + T[7] * j1 + T[8] * j5;
-//	real t6 = T[0] * j4 + T[1] * j5 + T[2] * j2;
-//	real t7 = T[3] * j4 + T[4] * j5 + T[5] * j2;
-//	real t8 = T[6] * j4 + T[7] * j5 + T[8] * j2;
+//	double j0 = _I[0] + _I[9] * T[11] * T[11] + _I[9] * T[10] * T[10] - 2.0 * _I[8] * T[11] - 2.0 * _I[7] * T[10];
+//	double j1 = _I[1] + _I[9] * T[11] * T[11] + _I[9] * T[9] * T[9] - 2.0 * _I[8] * T[11] - 2.0 * _I[6] * T[9];
+//	double j2 = _I[2] + _I[9] * T[10] * T[10] + _I[9] * T[9] * T[9] - 2.0 * _I[7] * T[10] - 2.0 * _I[6] * T[9];
+//	double j3 = _I[3] + T[10] * _I[6] + T[9] * _I[7] - _I[9] * T[10] * T[9];
+//	double j4 = _I[4] + T[11] * _I[6] + T[9] * _I[8] - _I[9] * T[11] * T[9];
+//	double j5 = _I[5] + T[11] * _I[7] + T[10] * _I[8] - _I[9] * T[11] * T[10];
+//	double t0 = T[0] * j0 + T[1] * j3 + T[2] * j4;
+//	double t1 = T[3] * j0 + T[4] * j3 + T[5] * j4;
+//	double t2 = T[6] * j0 + T[7] * j3 + T[8] * j4;
+//	double t3 = T[0] * j3 + T[1] * j1 + T[2] * j5;
+//	double t4 = T[3] * j3 + T[4] * j1 + T[5] * j5;
+//	double t5 = T[6] * j3 + T[7] * j1 + T[8] * j5;
+//	double t6 = T[0] * j4 + T[1] * j5 + T[2] * j2;
+//	double t7 = T[3] * j4 + T[4] * j5 + T[5] * j2;
+//	double t8 = T[6] * j4 + T[7] * j5 + T[8] * j2;
 //
 //	return Inertia(	t0 * T[0] + t3 * T[1] + t6 * T[2],
 //		t1 * T[3] + t4 * T[4] + t7 * T[5],
@@ -1801,12 +1801,12 @@ inline dse3 Inertia::operator * (const Vec3 &s) const
 	return dse3(Cross(tmp2,tmp),tmp); // TODO:
 }
 
-inline real &Inertia::operator [] (int i)
+inline double &Inertia::operator [] (int i)
 {
 	return _I[i];
 }
 
-inline const real	&Inertia::operator [] (int i) const
+inline const double	&Inertia::operator [] (int i) const
 {
 	return _I[i];
 }
@@ -1851,7 +1851,7 @@ inline const Inertia &Inertia::operator = (const Inertia &I)
 //		_I[9] + I[9]);
 //}
 
-inline const Inertia &Inertia::operator *= (real x)
+inline const Inertia &Inertia::operator *= (double x)
 {
 	_I[0] *= x;
 	_I[1] *= x;
@@ -1866,7 +1866,7 @@ inline const Inertia &Inertia::operator *= (real x)
 	return *this;
 }
 
-inline Inertia operator * (real x, const Inertia &I)
+inline Inertia operator * (double x, const Inertia &I)
 {
 	return Inertia(	x * I[0], 
 		x * I[1], 
@@ -1880,7 +1880,7 @@ inline Inertia operator * (real x, const Inertia &I)
 		x * I[9]);
 }
 
-inline real Inertia::GetMass(void) const
+inline double Inertia::GetMass(void) const
 {
 	return _I[9];
 }
@@ -1895,7 +1895,7 @@ inline Vec3 Inertia::GetOffset(void) const
 	return Vec3(_I[6]/_I[9], _I[7]/_I[9], _I[8]/_I[9]);
 }
 
-inline void Inertia::SetMass(real m)
+inline void Inertia::SetMass(double m)
 {
     _I[6] = _I[6]/_I[9] * m;
     _I[7] = _I[7]/_I[9] * m;
@@ -1903,7 +1903,7 @@ inline void Inertia::SetMass(real m)
 	_I[9] = m;
 }
 
-inline void Inertia::SetAngularMoment(real Ixx, real Iyy, real Izz, real Ixy, real Iyz, real Izx)
+inline void Inertia::SetAngularMoment(double Ixx, double Iyy, double Izz, double Ixy, double Iyz, double Izx)
 {
 	_I[0] = Ixx;
 	_I[1] = Iyy;
@@ -1924,7 +1924,7 @@ inline AInertia::AInertia()
 {
 }
 
-inline AInertia::AInertia(real d)
+inline AInertia::AInertia(double d)
 {
 	_J[0] = _J[1] = _J[2] = _J[3] = _J[4] = _J[5] = _J[6] = _J[7] = _J[8] = _J[9] = _J[10] = _J[11] = _J[12] = _J[13] = _J[14] = _J[15] = _J[16] = _J[17] = _J[18] = _J[19] = _J[20] = d;
 }
@@ -1939,7 +1939,7 @@ inline AInertia::AInertia(const Inertia &I)
 	_J[20] = I[9];
 }
 
-inline AInertia::AInertia(real a0, real a1, real a2, real a3, real a4, real a5, real a6, real a7, real a8, real a9, real a10, real a11, real a12, real a13, real a14, real a15, real a16, real a17, real a18, real a19, real a20)
+inline AInertia::AInertia(double a0, double a1, double a2, double a3, double a4, double a5, double a6, double a7, double a8, double a9, double a10, double a11, double a12, double a13, double a14, double a15, double a16, double a17, double a18, double a19, double a20)
 {
 	_J[0] = a0;		_J[1] = a1;		_J[2] = a2;
 	_J[3] = a3;		_J[4] = a4;		_J[5] = a5;
@@ -1980,12 +1980,12 @@ inline dse3 AInertia::operator * (const Axis &a) const
 		_J[5] * a[0] + _J[10] * a[1] + _J[14] * a[2]);
 }
 
-inline real &AInertia::operator [] (int i)
+inline double &AInertia::operator [] (int i)
 {
 	return _J[i];
 }
 
-inline const real	&AInertia::operator [] (int i) const
+inline const double	&AInertia::operator [] (int i) const
 {
 	return _J[i];
 }
@@ -2047,42 +2047,42 @@ inline void AInertia::ToArray(TYPE M[]) const
 
 inline AInertia AInertia::Transform(const SE3 &T) const
 {
-	real d0 = _J[3] + T[11] * _J[16] - T[10] * _J[17];
-	real d1 = _J[8] - T[11] * _J[15] + T[9] * _J[17];
-	real d2 = _J[12] + T[10] * _J[15] - T[9] * _J[16];
-	real d3 = _J[4] + T[11] * _J[18] - T[10] * _J[19];
-	real d4 = _J[9] - T[11] * _J[16] + T[9] * _J[19];
-	real d5 = _J[13] + T[10] * _J[16] - T[9] * _J[18];
-	real d6 = _J[5] + T[11] * _J[19] - T[10] * _J[20];
-	real d7 = _J[10] - T[11] * _J[17] + T[9] * _J[20];
-	real d8 = _J[14] + T[10] * _J[17] - T[9] * _J[19];
-	real e0 = _J[0] + T[11] * _J[4] - T[10] * _J[5] + d3 * T[11] - d6 * T[10];
-	real e3 = _J[1] + T[11] * _J[9] - T[10] * _J[10] - d0 * T[11] + d6 * T[9];
-	real e4 = _J[6] - T[11] * _J[8] + T[9] * _J[10] - d1 * T[11] + d7 * T[9];
-	real e6 = _J[2] + T[11] * _J[13] - T[10] * _J[14] + d0 * T[10] - d3 * T[9];
-	real e7 = _J[7] - T[11] * _J[12] + T[9] * _J[14] + d1 * T[10] - d4 * T[9];
-	real e8 = _J[11] + T[10] * _J[12] - T[9] * _J[13] + d2 * T[10] - d5 * T[9];
-	real f0 = T[0] * e0 + T[1] * e3 + T[2] * e6;
-	real f1 = T[0] * e3 + T[1] * e4 + T[2] * e7;
-	real f2 = T[0] * e6 + T[1] * e7 + T[2] * e8;
-	real f3 = T[0] * d0 + T[1] * d1 + T[2] * d2;
-	real f4 = T[0] * d3 + T[1] * d4 + T[2] * d5;
-	real f5 = T[0] * d6 + T[1] * d7 + T[2] * d8;
-	real f6 = T[3] * e0 + T[4] * e3 + T[5] * e6;
-	real f7 = T[3] * e3 + T[4] * e4 + T[5] * e7;
-	real f8 = T[3] * e6 + T[4] * e7 + T[5] * e8;
-	real g0 = T[3] * d0 + T[4] * d1 + T[5] * d2;
-	real g1 = T[3] * d3 + T[4] * d4 + T[5] * d5;
-	real g2 = T[3] * d6 + T[4] * d7 + T[5] * d8;
-	real g3 = T[6] * d0 + T[7] * d1 + T[8] * d2;
-	real g4 = T[6] * d3 + T[7] * d4 + T[8] * d5;
-	real g5 = T[6] * d6 + T[7] * d7 + T[8] * d8;
-	real h0 = T[0] * _J[15] + T[1] * _J[16] + T[2] * _J[17];
-	real h1 = T[0] * _J[16] + T[1] * _J[18] + T[2] * _J[19];
-	real h2 = T[0] * _J[17] + T[1] * _J[19] + T[2] * _J[20];
-	real h3 = T[3] * _J[15] + T[4] * _J[16] + T[5] * _J[17];
-	real h4 = T[3] * _J[16] + T[4] * _J[18] + T[5] * _J[19];
-	real h5 = T[3] * _J[17] + T[4] * _J[19] + T[5] * _J[20];
+	double d0 = _J[3] + T[11] * _J[16] - T[10] * _J[17];
+	double d1 = _J[8] - T[11] * _J[15] + T[9] * _J[17];
+	double d2 = _J[12] + T[10] * _J[15] - T[9] * _J[16];
+	double d3 = _J[4] + T[11] * _J[18] - T[10] * _J[19];
+	double d4 = _J[9] - T[11] * _J[16] + T[9] * _J[19];
+	double d5 = _J[13] + T[10] * _J[16] - T[9] * _J[18];
+	double d6 = _J[5] + T[11] * _J[19] - T[10] * _J[20];
+	double d7 = _J[10] - T[11] * _J[17] + T[9] * _J[20];
+	double d8 = _J[14] + T[10] * _J[17] - T[9] * _J[19];
+	double e0 = _J[0] + T[11] * _J[4] - T[10] * _J[5] + d3 * T[11] - d6 * T[10];
+	double e3 = _J[1] + T[11] * _J[9] - T[10] * _J[10] - d0 * T[11] + d6 * T[9];
+	double e4 = _J[6] - T[11] * _J[8] + T[9] * _J[10] - d1 * T[11] + d7 * T[9];
+	double e6 = _J[2] + T[11] * _J[13] - T[10] * _J[14] + d0 * T[10] - d3 * T[9];
+	double e7 = _J[7] - T[11] * _J[12] + T[9] * _J[14] + d1 * T[10] - d4 * T[9];
+	double e8 = _J[11] + T[10] * _J[12] - T[9] * _J[13] + d2 * T[10] - d5 * T[9];
+	double f0 = T[0] * e0 + T[1] * e3 + T[2] * e6;
+	double f1 = T[0] * e3 + T[1] * e4 + T[2] * e7;
+	double f2 = T[0] * e6 + T[1] * e7 + T[2] * e8;
+	double f3 = T[0] * d0 + T[1] * d1 + T[2] * d2;
+	double f4 = T[0] * d3 + T[1] * d4 + T[2] * d5;
+	double f5 = T[0] * d6 + T[1] * d7 + T[2] * d8;
+	double f6 = T[3] * e0 + T[4] * e3 + T[5] * e6;
+	double f7 = T[3] * e3 + T[4] * e4 + T[5] * e7;
+	double f8 = T[3] * e6 + T[4] * e7 + T[5] * e8;
+	double g0 = T[3] * d0 + T[4] * d1 + T[5] * d2;
+	double g1 = T[3] * d3 + T[4] * d4 + T[5] * d5;
+	double g2 = T[3] * d6 + T[4] * d7 + T[5] * d8;
+	double g3 = T[6] * d0 + T[7] * d1 + T[8] * d2;
+	double g4 = T[6] * d3 + T[7] * d4 + T[8] * d5;
+	double g5 = T[6] * d6 + T[7] * d7 + T[8] * d8;
+	double h0 = T[0] * _J[15] + T[1] * _J[16] + T[2] * _J[17];
+	double h1 = T[0] * _J[16] + T[1] * _J[18] + T[2] * _J[19];
+	double h2 = T[0] * _J[17] + T[1] * _J[19] + T[2] * _J[20];
+	double h3 = T[3] * _J[15] + T[4] * _J[16] + T[5] * _J[17];
+	double h4 = T[3] * _J[16] + T[4] * _J[18] + T[5] * _J[19];
+	double h5 = T[3] * _J[17] + T[4] * _J[19] + T[5] * _J[20];
 
 	return AInertia(f0 * T[0] + f1 * T[1] + f2 * T[2],
 		f0 * T[3] + f1 * T[4] + f2 * T[5],
@@ -2109,42 +2109,42 @@ inline AInertia AInertia::Transform(const SE3 &T) const
 
 inline void AInertia::AddTransform(const AInertia &J, const SE3 &T)
 {	
-	real d0 = J[3] + T[11] * J[16] - T[10] * J[17];
-	real d1 = J[8] - T[11] * J[15] + T[9] * J[17];
-	real d2 = J[12] + T[10] * J[15] - T[9] * J[16];
-	real d3 = J[4] + T[11] * J[18] - T[10] * J[19];
-	real d4 = J[9] - T[11] * J[16] + T[9] * J[19];
-	real d5 = J[13] + T[10] * J[16] - T[9] * J[18];
-	real d6 = J[5] + T[11] * J[19] - T[10] * J[20];
-	real d7 = J[10] - T[11] * J[17] + T[9] * J[20];
-	real d8 = J[14] + T[10] * J[17] - T[9] * J[19];
-	real e0 = J[0] + T[11] * J[4] - T[10] * J[5] + d3 * T[11] - d6 * T[10];
-	real e3 = J[1] + T[11] * J[9] - T[10] * J[10] - d0 * T[11] + d6 * T[9];
-	real e4 = J[6] - T[11] * J[8] + T[9] * J[10] - d1 * T[11] + d7 * T[9];
-	real e6 = J[2] + T[11] * J[13] - T[10] * J[14] + d0 * T[10] - d3 * T[9];
-	real e7 = J[7] - T[11] * J[12] + T[9] * J[14] + d1 * T[10] - d4 * T[9];
-	real e8 = J[11] + T[10] * J[12] - T[9] * J[13] + d2 * T[10] - d5 * T[9];
-	real f0 = T[0] * e0 + T[1] * e3 + T[2] * e6;
-	real f1 = T[0] * e3 + T[1] * e4 + T[2] * e7;
-	real f2 = T[0] * e6 + T[1] * e7 + T[2] * e8;
-	real f3 = T[0] * d0 + T[1] * d1 + T[2] * d2;
-	real f4 = T[0] * d3 + T[1] * d4 + T[2] * d5;
-	real f5 = T[0] * d6 + T[1] * d7 + T[2] * d8;
-	real f6 = T[3] * e0 + T[4] * e3 + T[5] * e6;
-	real f7 = T[3] * e3 + T[4] * e4 + T[5] * e7;
-	real f8 = T[3] * e6 + T[4] * e7 + T[5] * e8;
-	real g0 = T[3] * d0 + T[4] * d1 + T[5] * d2;
-	real g1 = T[3] * d3 + T[4] * d4 + T[5] * d5;
-	real g2 = T[3] * d6 + T[4] * d7 + T[5] * d8;
-	real g3 = T[6] * d0 + T[7] * d1 + T[8] * d2;
-	real g4 = T[6] * d3 + T[7] * d4 + T[8] * d5;
-	real g5 = T[6] * d6 + T[7] * d7 + T[8] * d8;
-	real h0 = T[0] * J[15] + T[1] * J[16] + T[2] * J[17];
-	//	real h1 = T[0] * J[16] + T[1] * J[18] + T[2] * J[19];
-	//	real h2 = T[0] * J[17] + T[1] * J[19] + T[2] * J[20];
-	real h3 = T[3] * J[15] + T[4] * J[16] + T[5] * J[17];
-	//	real h4 = T[3] * J[16] + T[4] * J[18] + T[5] * J[19];
-	//	real h5 = T[3] * J[17] + T[4] * J[19] + T[5] * J[20];
+	double d0 = J[3] + T[11] * J[16] - T[10] * J[17];
+	double d1 = J[8] - T[11] * J[15] + T[9] * J[17];
+	double d2 = J[12] + T[10] * J[15] - T[9] * J[16];
+	double d3 = J[4] + T[11] * J[18] - T[10] * J[19];
+	double d4 = J[9] - T[11] * J[16] + T[9] * J[19];
+	double d5 = J[13] + T[10] * J[16] - T[9] * J[18];
+	double d6 = J[5] + T[11] * J[19] - T[10] * J[20];
+	double d7 = J[10] - T[11] * J[17] + T[9] * J[20];
+	double d8 = J[14] + T[10] * J[17] - T[9] * J[19];
+	double e0 = J[0] + T[11] * J[4] - T[10] * J[5] + d3 * T[11] - d6 * T[10];
+	double e3 = J[1] + T[11] * J[9] - T[10] * J[10] - d0 * T[11] + d6 * T[9];
+	double e4 = J[6] - T[11] * J[8] + T[9] * J[10] - d1 * T[11] + d7 * T[9];
+	double e6 = J[2] + T[11] * J[13] - T[10] * J[14] + d0 * T[10] - d3 * T[9];
+	double e7 = J[7] - T[11] * J[12] + T[9] * J[14] + d1 * T[10] - d4 * T[9];
+	double e8 = J[11] + T[10] * J[12] - T[9] * J[13] + d2 * T[10] - d5 * T[9];
+	double f0 = T[0] * e0 + T[1] * e3 + T[2] * e6;
+	double f1 = T[0] * e3 + T[1] * e4 + T[2] * e7;
+	double f2 = T[0] * e6 + T[1] * e7 + T[2] * e8;
+	double f3 = T[0] * d0 + T[1] * d1 + T[2] * d2;
+	double f4 = T[0] * d3 + T[1] * d4 + T[2] * d5;
+	double f5 = T[0] * d6 + T[1] * d7 + T[2] * d8;
+	double f6 = T[3] * e0 + T[4] * e3 + T[5] * e6;
+	double f7 = T[3] * e3 + T[4] * e4 + T[5] * e7;
+	double f8 = T[3] * e6 + T[4] * e7 + T[5] * e8;
+	double g0 = T[3] * d0 + T[4] * d1 + T[5] * d2;
+	double g1 = T[3] * d3 + T[4] * d4 + T[5] * d5;
+	double g2 = T[3] * d6 + T[4] * d7 + T[5] * d8;
+	double g3 = T[6] * d0 + T[7] * d1 + T[8] * d2;
+	double g4 = T[6] * d3 + T[7] * d4 + T[8] * d5;
+	double g5 = T[6] * d6 + T[7] * d7 + T[8] * d8;
+	double h0 = T[0] * J[15] + T[1] * J[16] + T[2] * J[17];
+	//	double h1 = T[0] * J[16] + T[1] * J[18] + T[2] * J[19];
+	//	double h2 = T[0] * J[17] + T[1] * J[19] + T[2] * J[20];
+	double h3 = T[3] * J[15] + T[4] * J[16] + T[5] * J[17];
+	//	double h4 = T[3] * J[16] + T[4] * J[18] + T[5] * J[19];
+	//	double h5 = T[3] * J[17] + T[4] * J[19] + T[5] * J[20];
 
 	_J[0] += f0 * T[0] + f1 * T[1] + f2 * T[2];
 	_J[1] += f0 * T[3] + f1 * T[4] + f2 * T[5];
@@ -2182,12 +2182,12 @@ inline se3 AInertia::operator * (const dse3 &f) const
 // 0.5 * ( x * ~y + y * ~x )
 inline AInertia KroneckerProduct(const dse3 &x, const dse3 &y)
 {
-	real y_m0 = 0.5 * y[0];
-	real y_m1 = 0.5 * y[1];
-	real y_m2 = 0.5 * y[2];
-	real y_m3 = 0.5 * y[3];
-	real y_m4 = 0.5 * y[4];
-	real y_m5 = 0.5 * y[5];
+	double y_m0 = 0.5 * y[0];
+	double y_m1 = 0.5 * y[1];
+	double y_m2 = 0.5 * y[2];
+	double y_m3 = 0.5 * y[3];
+	double y_m4 = 0.5 * y[4];
+	double y_m5 = 0.5 * y[5];
 
 	return AInertia(x[0] * y[0], 
 		x[0] * y_m1 + x[1] * y_m0, 
@@ -2215,12 +2215,12 @@ inline AInertia KroneckerProduct(const dse3 &x, const dse3 &y)
 // *this -= KroneckerProduct(x, y)
 inline void AInertia::SubtractKroneckerProduct(const dse3 &x, const dse3 &y)
 {
-	real y_m0 = 0.5 * y[0];
-	real y_m1 = 0.5 * y[1];
-	real y_m2 = 0.5 * y[2];
-	real y_m3 = 0.5 * y[3];
-	real y_m4 = 0.5 * y[4];
-	real y_m5 = 0.5 * y[5];
+	double y_m0 = 0.5 * y[0];
+	double y_m1 = 0.5 * y[1];
+	double y_m2 = 0.5 * y[2];
+	double y_m3 = 0.5 * y[3];
+	double y_m4 = 0.5 * y[4];
+	double y_m5 = 0.5 * y[5];
 
 	_J[0]  -= x[0] * y[0]; 
 	_J[1]  -= x[0] * y_m1 + x[1] * y_m0; 
@@ -2247,41 +2247,41 @@ inline void AInertia::SubtractKroneckerProduct(const dse3 &x, const dse3 &y)
 
 inline se3 AInertia::operator % (const dse3 &b) const
 {
-	real a00 = _J[6] * _J[11] - _J[7] * _J[7];
-	real a01 = _J[2] * _J[7] - _J[1] * _J[11];
-	real a02 = _J[1] * _J[7] - _J[2] * _J[6];	
-	real idet = 1.0 / (_J[0] * a00 + _J[1] * a01 + _J[2] * a02);
-	real a11 = idet * (_J[0] * _J[11] - _J[2] * _J[2]);
-	real a12 = idet * (_J[2] * _J[1] - _J[0] * _J[7]);
-	real a22 = idet * (_J[0] * _J[6] - _J[1] * _J[1]);
+	double a00 = _J[6] * _J[11] - _J[7] * _J[7];
+	double a01 = _J[2] * _J[7] - _J[1] * _J[11];
+	double a02 = _J[1] * _J[7] - _J[2] * _J[6];	
+	double idet = 1.0 / (_J[0] * a00 + _J[1] * a01 + _J[2] * a02);
+	double a11 = idet * (_J[0] * _J[11] - _J[2] * _J[2]);
+	double a12 = idet * (_J[2] * _J[1] - _J[0] * _J[7]);
+	double a22 = idet * (_J[0] * _J[6] - _J[1] * _J[1]);
 	a00 *= idet;
 	a01 *= idet;
 	a02 *= idet;	
-	real t00 = a00 * _J[3] + a01 * _J[8] + a02 * _J[12];
-	real t01 = a00 * _J[4] + a01 * _J[9] + a02 * _J[13];
-	real t02 = a00 * _J[5] + a01 * _J[10] + a02 * _J[14];
-	real t10 = a01 * _J[3] + a11 * _J[8] + a12 * _J[12];
-	real t11 = a01 * _J[4] + a11 * _J[9] + a12 * _J[13];
-	real t12 = a01 * _J[5] + a11 * _J[10] + a12 * _J[14];
-	real t20 = a02 * _J[3] + a12 * _J[8] + a22 * _J[12];
-	real t21 = a02 * _J[4] + a12 * _J[9] + a22 * _J[13];
-	real t22 = a02 * _J[5] + a12 * _J[10] + a22 * _J[14];	
-	real r0 = a00 * b[0] + a01 * b[1] + a02 * b[2];
-	real r1 = a01 * b[0] + a11 * b[1] + a12 * b[2];
-	real r2 = a02 * b[0] + a12 * b[1] + a22 * b[2];
+	double t00 = a00 * _J[3] + a01 * _J[8] + a02 * _J[12];
+	double t01 = a00 * _J[4] + a01 * _J[9] + a02 * _J[13];
+	double t02 = a00 * _J[5] + a01 * _J[10] + a02 * _J[14];
+	double t10 = a01 * _J[3] + a11 * _J[8] + a12 * _J[12];
+	double t11 = a01 * _J[4] + a11 * _J[9] + a12 * _J[13];
+	double t12 = a01 * _J[5] + a11 * _J[10] + a12 * _J[14];
+	double t20 = a02 * _J[3] + a12 * _J[8] + a22 * _J[12];
+	double t21 = a02 * _J[4] + a12 * _J[9] + a22 * _J[13];
+	double t22 = a02 * _J[5] + a12 * _J[10] + a22 * _J[14];	
+	double r0 = a00 * b[0] + a01 * b[1] + a02 * b[2];
+	double r1 = a01 * b[0] + a11 * b[1] + a12 * b[2];
+	double r2 = a02 * b[0] + a12 * b[1] + a22 * b[2];
 	a00 = r0;
 	a01 = r1;
 	a02 = r2;	
-	real x0 = b[3] - _J[3] * r0 - _J[8] * r1 - _J[12] * r2;
-	real x1 = b[4] - _J[4] * r0 - _J[9] * r1 - _J[13] * r2;
-	real x2 = b[5] - _J[5] * r0 - _J[10] * r1 - _J[14] * r2;	
-	real c00 = _J[15] - _J[3] * t00 - _J[8] * t10 - _J[12] * t20;
-	real c01 = _J[16] - _J[3] * t01 - _J[8] * t11 - _J[12] * t21;
-	real c11 = _J[18] - _J[4] * t01 - _J[9] * t11 - _J[13] * t21;
-	real c02 = _J[17] - _J[3] * t02 - _J[8] * t12 - _J[12] * t22;
-	real c12 = _J[19] - _J[4] * t02 - _J[9] * t12 - _J[13] * t22;
-	real c22 = _J[20] - _J[5] * t02 - _J[10] * t12 - _J[14] * t22;
-	real r3 = c02 * c01 - c00 * c12;
+	double x0 = b[3] - _J[3] * r0 - _J[8] * r1 - _J[12] * r2;
+	double x1 = b[4] - _J[4] * r0 - _J[9] * r1 - _J[13] * r2;
+	double x2 = b[5] - _J[5] * r0 - _J[10] * r1 - _J[14] * r2;	
+	double c00 = _J[15] - _J[3] * t00 - _J[8] * t10 - _J[12] * t20;
+	double c01 = _J[16] - _J[3] * t01 - _J[8] * t11 - _J[12] * t21;
+	double c11 = _J[18] - _J[4] * t01 - _J[9] * t11 - _J[13] * t21;
+	double c02 = _J[17] - _J[3] * t02 - _J[8] * t12 - _J[12] * t22;
+	double c12 = _J[19] - _J[4] * t02 - _J[9] * t12 - _J[13] * t22;
+	double c22 = _J[20] - _J[5] * t02 - _J[10] * t12 - _J[14] * t22;
+	double r3 = c02 * c01 - c00 * c12;
 	r0 = c11 * c22 - c12 * c12;
 	r1 = c02 * c12 - c01 * c22;
 	r2 = c01 * c12 - c02 * c11;
@@ -2299,39 +2299,39 @@ inline se3 AInertia::operator % (const dse3 &b) const
 
 inline AInertia Inv(const Inertia &I)
 {
-	real im = 1.0 / I[9];
-	real ims = sqrt(im);
-	real r0 = ims * I[6];
-	real r1 = ims * I[7];
-	real r2 = ims * I[8];
-	real a00 = I[0] - (r1 * r1 + r2 * r2);
-	real a11 = I[1] - (r0 * r0 + r2 * r2);
-	real a22 = I[2] - (r0 * r0 + r1 * r1);
-	real a01 = I[3] + r0 * r1;
-	real a02 = I[4] + r0 * r2;
-	real a12 = I[5] + r1 * r2;
-	real j0 = a11 * a22 - a12 * a12;
-	real j6 = a02 * a12 - a01 * a22;
-	real j12 = a01 * a12 - a02 * a11;	
-	real idet = 1.0 / (a00 * j0 + a01 * j6 + a02 * j12);
+	double im = 1.0 / I[9];
+	double ims = sqrt(im);
+	double r0 = ims * I[6];
+	double r1 = ims * I[7];
+	double r2 = ims * I[8];
+	double a00 = I[0] - (r1 * r1 + r2 * r2);
+	double a11 = I[1] - (r0 * r0 + r2 * r2);
+	double a22 = I[2] - (r0 * r0 + r1 * r1);
+	double a01 = I[3] + r0 * r1;
+	double a02 = I[4] + r0 * r2;
+	double a12 = I[5] + r1 * r2;
+	double j0 = a11 * a22 - a12 * a12;
+	double j6 = a02 * a12 - a01 * a22;
+	double j12 = a01 * a12 - a02 * a11;	
+	double idet = 1.0 / (a00 * j0 + a01 * j6 + a02 * j12);
 	j0 *= idet;
 	j6 *= idet;
 	j12 *= idet;
-	real j7 = idet * (a00 * a22 - a02 * a02);
-	real j13 = idet * (a02 * a01 - a00 * a12);
-	real j14 = idet * (a00 * a11 - a01 * a01);
+	double j7 = idet * (a00 * a22 - a02 * a02);
+	double j13 = idet * (a02 * a01 - a00 * a12);
+	double j14 = idet * (a00 * a11 - a01 * a01);
 	r0 *= ims;
 	r1 *= ims;
 	r2 *= ims;
-	real j18 = j12 * r1 - j6 * r2;
-	real j19 = j13 * r1 - j7 * r2;
-	real j20 = j14 * r1 - j13 * r2;
-	real j24 = j0 * r2 - j12 * r0;
-	real j25 = j6 * r2 - j13 * r0;
-	real j26 = j12 * r2 - j14 * r0;
-	real j30 = j6 * r0 - j0 * r1;
-	real j31 = j7 * r0 - j6 * r1;
-	real j32 = j13 * r0 - j12 * r1;
+	double j18 = j12 * r1 - j6 * r2;
+	double j19 = j13 * r1 - j7 * r2;
+	double j20 = j14 * r1 - j13 * r2;
+	double j24 = j0 * r2 - j12 * r0;
+	double j25 = j6 * r2 - j13 * r0;
+	double j26 = j12 * r2 - j14 * r0;
+	double j30 = j6 * r0 - j0 * r1;
+	double j31 = j7 * r0 - j6 * r1;
+	double j32 = j13 * r0 - j12 * r1;
 
 	return AInertia(j0, j6, j12, j18, j24, j30, j7, j13, j19, j25, j31, j14, j20, j26, j32, r1 * j20 - r2 * j19 + im, r1 * j26 - r2 * j25, r1 * j32 - r2 * j31, r2 * j24 - r0 * j26 + im, r2 * j30 - r0 * j32, r0 * j31 - r1 * j30 + im);
 }
@@ -2365,22 +2365,22 @@ inline Axis::Axis()
 
 inline Axis::Axis(int d)
 {
-	_v[0] = _v[1] = _v[2] = (real)d;
+	_v[0] = _v[1] = _v[2] = (double)d;
 }
 
-inline Axis::Axis(real d)
+inline Axis::Axis(double d)
 {
 	_v[0] = _v[1] = _v[2] = d;
 }
 
-inline Axis::Axis(const real v[])
+inline Axis::Axis(const double v[])
 {
 	_v[0] = v[0];
 	_v[1] = v[1];
 	_v[2] = v[2];
 }
 
-inline Axis::Axis(real v0, real v1, real v2)
+inline Axis::Axis(double v0, double v1, double v2)
 {
 	_v[0] = v0;
 	_v[1] = v1;
@@ -2397,12 +2397,12 @@ inline Axis Axis::operator - (void) const
 	return Axis(-_v[0], -_v[1], -_v[2]);
 }
 
-inline real &Axis::operator [] (int i)
+inline double &Axis::operator [] (int i)
 {
 	return _v[i];
 }
 
-inline const real &Axis::operator [] (int i) const
+inline const double &Axis::operator [] (int i) const
 {
 	return _v[i];
 }
@@ -2423,13 +2423,13 @@ inline const Axis &Axis::operator = (const se3 &v)
 	return *this;
 }
 
-inline const Axis &Axis::operator = (real d)
+inline const Axis &Axis::operator = (double d)
 {
 	_v[0] = _v[1] = _v[2] = d;
 	return *this;
 }
 
-inline const Axis &Axis::operator *= (real d)
+inline const Axis &Axis::operator *= (double d)
 {
 	_v[0] *= d;
 	_v[1] *= d;
@@ -2437,14 +2437,14 @@ inline const Axis &Axis::operator *= (real d)
 	return *this;
 }
 
-inline Axis Axis::operator * (real d) const
+inline Axis Axis::operator * (double d) const
 {
 	return Axis(d * _v[0], d * _v[1], d * _v[2]);
 }
 
-inline real Axis::Normalize(void)
+inline double Axis::Normalize(void)
 {
-	real mag = sqrt(_v[0] * _v[0] + _v[1] * _v[1] + _v[2] * _v[2]);	
+	double mag = sqrt(_v[0] * _v[0] + _v[1] * _v[1] + _v[2] * _v[2]);	
 	if ( mag < SR_EPS )	// make a unit vector in z-direction
 	{
 		_v[0] = _v[1] = 0.0;
@@ -2472,19 +2472,19 @@ inline Axis InvRotate(const SE3 &T, const Axis &v)
 		T[6] * v[0] + T[7] * v[1] + T[8] * v[2]);
 }
 
-inline Axis operator * (real d, const Axis &v)
+inline Axis operator * (double d, const Axis &v)
 {
 	return Axis(d * v[0], d * v[1], d * v[2]);
 }
 
-inline real Norm(const Axis &v)
+inline double Norm(const Axis &v)
 {
 	return sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
 inline Axis Normalize(const Axis &v)
 {
-	real mag = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+	double mag = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 	if ( mag < SR_EPS )	// make a unit vector in z-direction
 		return Axis(0.0, 0.0, 1.0);
 
@@ -2499,22 +2499,22 @@ inline Axis Cross(const Axis &p, const Axis &q)
 		p[0] * q[1] - p[1] * q[0]);
 }
 
-inline real Inner(const Axis &p, const Axis &q)
+inline double Inner(const Axis &p, const Axis &q)
 {
 	return (p[0] * q[0] + p[1] * q[1] + p[2] * q[2]);
 }
 
-inline real Inner(const Vec3 &p, const Axis &q)
+inline double Inner(const Vec3 &p, const Axis &q)
 {
 	return (p[0] * q[0] + p[1] * q[1] + p[2] * q[2]);
 }
 
-inline real Inner(const Axis &p, const Vec3 &q)
+inline double Inner(const Axis &p, const Vec3 &q)
 {
 	return (p[0] * q[0] + p[1] * q[1] + p[2] * q[2]);
 }
 
-inline real SquareSum(const Axis &p)
+inline double SquareSum(const Axis &p)
 {
 	return (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
 }
@@ -2589,36 +2589,36 @@ inline SO3::SO3(const SO3 &R)
 	_R[2] = R._R[2];	_R[5] = R._R[5];	_R[8] = R._R[8];
 }
 
-inline SO3::SO3(const real R[])
+inline SO3::SO3(const double R[])
 { 
 	_R[0] = R[0]; _R[3] = R[3]; _R[6] = R[6];
 	_R[1] = R[1]; _R[4] = R[4]; _R[7] = R[7];
 	_R[2] = R[2]; _R[5] = R[5]; _R[8] = R[8];
 }
 
-inline SO3::SO3(real R0, real R1, real R2, real R3, real R4, real R5, real R6, real R7, real R8)
+inline SO3::SO3(double R0, double R1, double R2, double R3, double R4, double R5, double R6, double R7, double R8)
 {
 	_R[0] = R0; _R[1] = R1; _R[2] = R2; 
 	_R[3] = R3; _R[4] = R4; _R[5] = R5; 
 	_R[6] = R6; _R[7] = R7; _R[8] = R8;
 }
 
-inline const real &SO3::operator [] (int i) const
+inline const double &SO3::operator [] (int i) const
 {
 	return _R[i];
 }
 
-inline real &SO3::operator [] (int i)
+inline double &SO3::operator [] (int i)
 {
 	return _R[i];
 }
 
-inline const real &SO3::operator () (int i, int j) const
+inline const double &SO3::operator () (int i, int j) const
 { 
 	return _R[i+3*j];
 }
 
-inline real &SO3::operator () (int i, int j)
+inline double &SO3::operator () (int i, int j)
 { 
 	return _R[i+3*j]; 
 }
@@ -2688,13 +2688,13 @@ inline Vec3 SO3::GetZ(void) const
 	return Vec3(_R[6], _R[7], _R[8]);
 }
 
-inline SO3 Exp(real w0, real w1, real w2)
+inline SO3 Exp(double w0, double w1, double w2)
 {
-	real theta = (real)sqrt(w0 * w0 + w1 * w1 + w2 * w2);
+	double theta = (double)sqrt(w0 * w0 + w1 * w1 + w2 * w2);
 	if ( fabs(theta) < _TINY ) return SO3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
 
 	w0 /= theta; w1 /= theta; w2 /= theta;
-	real st = sin(theta), ct = cos(theta), vt = 1.0 - ct, t0 = w2 * st, t1 = w1 * st, t2 = w0 * st;
+	double st = sin(theta), ct = cos(theta), vt = 1.0 - ct, t0 = w2 * st, t1 = w1 * st, t2 = w0 * st;
 
 	return SO3( w0 * w0 * vt + ct, w0 * w1 * vt + t0, w0 * w2 * vt - t1,
 		w0 * w1 * vt - t0, w1 * w1 * vt + ct, w1 * w2 * vt + t2,
@@ -2707,7 +2707,7 @@ inline SO3 Exp(const Vec3 &w)
 }
 
 
-inline SO3 Exp(const Vec3 &w, real theta)
+inline SO3 Exp(const Vec3 &w, double theta)
 {
 	return Exp(w[0] * theta, w[1] * theta, w[2] * theta);
 }
@@ -2754,8 +2754,8 @@ inline bool Axis::operator == (const Axis &A) const
 //////////////////////////////////////////////////////////////////////////JS 2006.11.30
 inline Vec3 Log(const SO3 &R)
 {
-	real w1, w2, w3;
-	real trR = R._R[0] + R._R[4] + R._R[8];
+	double w1, w2, w3;
+	double trR = R._R[0] + R._R[4] + R._R[8];
 
 	// [w] = Log(R) when tr(R) = -1
 	//if(trR + 1 < _EPS)
@@ -2787,10 +2787,10 @@ inline Vec3 Log(const SO3 &R)
 	}
 
 
-	real theta = acos(0.5 * (R._R[0] + R._R[4] + R._R[8] - 1.0));
+	double theta = acos(0.5 * (R._R[0] + R._R[4] + R._R[8] - 1.0));
 	if ( fabs(theta) < _SMALL ) return Vec3(0.0, 0.0, 0.0);
 
-	real cof = theta / (2.0 * sin(theta));
+	double cof = theta / (2.0 * sin(theta));
 
 	return Vec3(cof * (R._R[5] - R._R[7]), cof * (R._R[6] - R._R[2]), cof * (R._R[1] - R._R[3]));
 }

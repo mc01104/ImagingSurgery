@@ -51,19 +51,20 @@ using namespace cimg_library;
 #include <vtkLineSource.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkPolyLine.h>
 #include <vtkActor.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkProperty.h>
+#include <vtkCommand.h>
 
 
 
 // Project includes
 #include "Camera_processing.h"
 #include "CSV_reader.h"
-//#include "LieGroup.h"
-//#include "Utilities.h"
 #include "HTransform.h"
 #include "MechanicsBasedKinematics.h"
 #include "CTRFactory.h"
@@ -71,6 +72,41 @@ using namespace cimg_library;
 using namespace Core;
 using namespace cv;
 //using namespace std;
+
+
+
+// VTK global variables (only way to get a thread running ...)
+
+::std::mutex mutex_vtkRender;
+
+
+#define VTK_CREATE(type, name) \
+    vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
+
+VTK_CREATE(vtkRenderer, renDisplay3D);
+VTK_CREATE(vtkRenderWindow, renderwindowDisplay3D);
+VTK_CREATE(vtkRenderWindowInteractor, irenDisplay3D);
+vtkInteractorStyleTrackballCamera *styleDisplay3D = vtkInteractorStyleTrackballCamera::New();
+
+
+class CommandSubclass2 : public vtkCommand
+{
+public:
+    vtkTypeMacro(CommandSubclass2, vtkCommand);
+
+    static CommandSubclass2 *New()
+    {
+        return new CommandSubclass2;
+    }
+
+    void Execute(vtkObject *caller, unsigned long vtkNotUsed(eventId), void *vtkNotUsed(callData))
+    {
+        vtkRenderWindowInteractor *iren = static_cast<vtkRenderWindowInteractor*>(caller);
+        iren->Render();
+    }
+};
+
+
 
 // Constructor and destructor
 Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
@@ -165,11 +201,14 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		::std::thread t_record (&Camera_processing::recordImages, this);
 		::std::thread t_network (&Camera_processing::networkKinematics, this);
 		::std::thread t_vtk (&Camera_processing::robotDisplay, this);
+		::std::thread t_vtk_render (&Camera_processing::vtkRender, this);
 
 		t_acquire.join();
 		t_display.join();
 		t_record.join();
 		t_network.join();
+		t_vtk_render.join();
+		t_vtk.join();
 
 	}
 	catch(const std::exception &ex)
@@ -498,7 +537,7 @@ bool Camera_processing::networkKinematics(void)
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    iResult = getaddrinfo("192.168.0.3", DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo("192.168.0.2", DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
@@ -575,6 +614,8 @@ bool Camera_processing::networkKinematics(void)
 	
 
 		double smax = robot->GetLength();
+		robot_arclength.clear();
+		SolutionFrames.clear();
 		for (int i = 0; i<npoints;i++) robot_arclength.push_back((1.0*i)/npoints*smax);
 		kinematics->GetBishopFrame(robot_arclength, SolutionFrames);
 
@@ -607,66 +648,91 @@ bool Camera_processing::networkKinematics(void)
 void Camera_processing::robotDisplay(void)
 {
 
-	vtkSmartPointer<vtkActor> tubeActor = vtkSmartPointer<vtkActor>::New();
-	
-	// Create a renderer, render window, and interactor
-	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-	renderWindow->AddRenderer(renderer);
-	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-	renderWindowInteractor->SetRenderWindow(renderWindow);
+	// populate Points with dummy data for initialization
+	unsigned int npts = 1;
+    vtkSmartPointer<vtkPoints> Points = vtkSmartPointer<vtkPoints>::New();
+	Points->SetNumberOfPoints(npts);
+    for (unsigned int i=0;i<npts;i++)
+		Points->SetPoint(i, i,i,i);
 
-	renderer->SetBackground(0,1,0);
+	vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
+	polyLine->GetPointIds()->SetNumberOfIds(npts);
+	for(unsigned int i = 0; i < npts; i++)
+    {
+		polyLine->GetPointIds()->SetId(i,i);
+    }
 
-	// Render and interact
-	renderWindow->Render();
-	renderWindowInteractor->Initialize();
+	vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
+	cells->InsertNextCell(polyLine);
 
+	// Create a polydata to store everything in
+	vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+	polyData->SetPoints(Points);
+	polyData->SetLines(cells);
 
+	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper->SetInputData(polyData);
+
+	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+	actor->GetProperty()->SetColor(1.0,0,0);
+	actor->SetMapper(mapper);
+
+	renDisplay3D->AddActor(actor);
+
+	auto start = std::chrono::high_resolution_clock::now();
 	while(m_running)
 	{
-		mutex_robotshape.lock();
-		std::vector<SE3> SolutionFrames = m_SolutionFrames;
-		mutex_robotshape.unlock();
+		auto duration_s = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+		if (duration_s.count()>=50) 
+		{
+			try
+			{
+				start = std::chrono::high_resolution_clock::now();
 
-		tubeActor = TubeDraw(SolutionFrames);
-		renderer->AddActor(tubeActor);
+				mutex_robotshape.lock();
+				std::vector<SE3> SolutionFrames = m_SolutionFrames;
+				mutex_robotshape.unlock();
 
-		renderWindowInteractor->GetRenderWindow()->Render();
+
+				npts = SolutionFrames.size();
+				vtkSmartPointer<vtkPoints> Points_ = vtkSmartPointer<vtkPoints>::New();
+				Points_->SetNumberOfPoints(npts);
+				for (unsigned int i=0;i<npts;i++)
+					Points_->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
+
+				vtkSmartPointer<vtkPolyLine> polyLine_ = vtkSmartPointer<vtkPolyLine>::New();
+				polyLine_->GetPointIds()->SetNumberOfIds(npts);
+				for(unsigned int i = 0; i < npts; i++)
+				{
+					polyLine_->GetPointIds()->SetId(i,i);
+				}
+
+				vtkSmartPointer<vtkCellArray> cells_ = vtkSmartPointer<vtkCellArray>::New();
+				cells_->InsertNextCell(polyLine_);
+
+				polyData->SetPoints(Points_);
+				polyData->SetLines(cells_);
+			}
+			catch (runtime_error& ex) 
+			{
+				::std::cout << "Exception in vtk display:" <<  ex.what() << ::std::endl;
+			} 
+		}
 
 	}
 
 }
 
-vtkSmartPointer<vtkActor> Camera_processing::TubeDraw(std::vector<SE3> SolutionFrames)
+void Camera_processing::vtkRender(void)
 {
-    int npts = SolutionFrames.size();
-    vtkSmartPointer<vtkPoints> Points = vtkSmartPointer<vtkPoints>::New();
-	Points->SetNumberOfPoints(npts);
-    for (int i=0;i<npts;i++)
-		Points->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1],SolutionFrames[i].GetPosition()[2]);
+	renderwindowDisplay3D->AddRenderer(renDisplay3D);
+	renderwindowDisplay3D->Render();
+	irenDisplay3D->SetRenderWindow(renderwindowDisplay3D);
+	irenDisplay3D->Initialize();
 
-	// interpolate a spline between points
-	vtkSmartPointer<vtkParametricSpline> spline = vtkSmartPointer<vtkParametricSpline>::New();
-	spline->SetPoints(Points);
-	vtkSmartPointer<vtkParametricFunctionSource> functionSource = vtkSmartPointer<vtkParametricFunctionSource>::New();
-	functionSource->SetParametricFunction(spline);
-	functionSource->Update();
+	vtkSmartPointer<CommandSubclass2> timerCallback = vtkSmartPointer<CommandSubclass2>::New();
+	irenDisplay3D->AddObserver ( vtkCommand::TimerEvent, timerCallback );
+	irenDisplay3D->CreateRepeatingTimer(100);
 
-	// create atube with right diameter
-	vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
-	tubeFilter->SetInputConnection(functionSource->GetOutputPort());
-	tubeFilter->SetRadius(1.8); 
-	tubeFilter->SetNumberOfSides(50);
-	tubeFilter->Update();
-
-	// set tube color and create mapper and actor
-	vtkSmartPointer<vtkPolyDataMapper> tubeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	tubeMapper->SetInputConnection(tubeFilter->GetOutputPort());
-	vtkSmartPointer<vtkActor> tubeActor = vtkSmartPointer<vtkActor>::New();
-	tubeActor->GetProperty()->SetColor(1.0,0,0);
-	tubeActor->SetMapper(tubeMapper);
-
-
-	return tubeActor;	
+	irenDisplay3D->Start();
 }

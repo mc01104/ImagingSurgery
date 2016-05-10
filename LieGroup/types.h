@@ -3,8 +3,8 @@
 
 #define SRLIB_DOUBLE
 #ifdef SRLIB_DOUBLE
-	// 기본형이 real 일 때,
-	typedef double			real;
+	// 기본형이 double 일 때,
+	//typedef double			double;
 	#define SR_EPS			(1E-6)
 	#define SR_ZERO			(0.0)
 	#define SR_HALF			(0.5)
@@ -22,7 +22,7 @@
 	#define SR_DEGREE		(57.2957795130823208768)	//< 180 / pi
 #else
 	// 기본형이 float 일 때,
-	typedef float			real;
+	//typedef float			double;
 	#define SR_EPS			(0.000001f)
 	#define SR_ZERO			(0.0f)
 	#define SR_HALF			(0.5f)
@@ -40,12 +40,12 @@
 	#define SR_DEGREE		(57.2957795130823208768f)	//< 180 / pi
 #endif
 
-inline real DEG2RAD(int d)	 { return (d * SR_RADIAN); }
-inline real RAD2DEG(int r)	 { return (r * SR_DEGREE); }
-inline real DEG2RAD(float d) { return (d * SR_RADIAN); }
-inline real RAD2DEG(float r) { return (r * SR_DEGREE); }
-inline real DEG2RAD(double d){ return (d * SR_RADIAN); }
-inline real RAD2DEG(double r){ return (r * SR_DEGREE); }
+inline double DEG2RAD(int d)	 { return (d * SR_RADIAN); }
+inline double RAD2DEG(int r)	 { return (r * SR_DEGREE); }
+inline double DEG2RAD(float d) { return (d * SR_RADIAN); }
+inline double RAD2DEG(float r) { return (r * SR_DEGREE); }
+inline double DEG2RAD(double d){ return (d * SR_RADIAN); }
+inline double RAD2DEG(double r){ return (r * SR_DEGREE); }
 
 typedef	short int			Int16;		//< 2 bytes integer -32768 ~ 32767
 typedef unsigned short int	UInt16;		//< 2 bytes integer 0 ~ 65535

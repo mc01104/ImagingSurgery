@@ -99,9 +99,9 @@ ostream &operator << (ostream &os, const SE3 &T)
 
 
 // Vec3 size: half of each dimension i.e. size[0] = width/2, size[1] = depth/2, size[2] = height/2
-Inertia BoxInertia(real density, const Vec3 &size)
+Inertia BoxInertia(double density, const Vec3 &size)
 {
-	real mass = (real)8.0 * density * size[0] * size[1] * size[2];
+	double mass = (double)8.0 * density * size[0] * size[1] * size[2];
 
 	return Inertia(
 		mass,	// mass
@@ -111,19 +111,19 @@ Inertia BoxInertia(real density, const Vec3 &size)
 		);
 }
 
-Inertia SphereInertia(real density, real rad)  
+Inertia SphereInertia(double density, double rad)  
 {
-	real mass = density * SR_FOURTHIRD * SR_PI * rad * rad * rad;
-	real i = (real)0.4 * mass * rad * rad;
+	double mass = density * SR_FOURTHIRD * SR_PI * rad * rad * rad;
+	double i = (double)0.4 * mass * rad * rad;
 
 	return Inertia(mass, i, i, i);
 }
 
-Inertia CylinderInertia(real density, real rad, real height)
+Inertia CylinderInertia(double density, double rad, double height)
 {
 	rad *= rad;
-	real mass = density * SR_PI * rad * height;
-	real ix = mass * height * height / (real)12.0 + (real)0.25 * mass * rad;
+	double mass = density * SR_PI * rad * height;
+	double ix = mass * height * height / (double)12.0 + (double)0.25 * mass * rad;
 
 	return Inertia(
 		mass,						// mass
@@ -134,18 +134,18 @@ Inertia CylinderInertia(real density, real rad, real height)
 }
 
 
-Inertia	 CapsuleInertia(real density, real rad, real height)
+Inertia	 CapsuleInertia(double density, double rad, double height)
 {
-	real cyl_mass = density * SR_PI * rad * rad * height;
-	real sph_mass	= density * SR_FOURTHIRD * SR_PI * rad * rad * rad;
+	double cyl_mass = density * SR_PI * rad * rad * height;
+	double sph_mass	= density * SR_FOURTHIRD * SR_PI * rad * rad * rad;
 
-	real ix = cyl_mass * height * height / (real)12.0 + (real)0.25 * cyl_mass * rad			// cylinder
-				+ (real)0.4 * sph_mass * rad * rad + (real)0.25 * sph_mass * height * height;	// sphere
+	double ix = cyl_mass * height * height / (double)12.0 + (double)0.25 * cyl_mass * rad			// cylinder
+				+ (double)0.4 * sph_mass * rad * rad + (double)0.25 * sph_mass * height * height;	// sphere
 
 	return Inertia(
 		cyl_mass + sph_mass,													// mass
 		ix,																		// ix
 		ix,																		// iy
-		0.5 * cyl_mass * rad * rad + (real)0.4 * sph_mass * rad * rad	// iz
+		0.5 * cyl_mass * rad * rad + (double)0.4 * sph_mass * rad * rad	// iz
 		);
 }

@@ -4,8 +4,11 @@
 #include <stdlib.h>
 #include <thread>
 #include <mutex>
-
 #include <queue>
+
+ #include <vtkAutoInit.h>
+ VTK_MODULE_INIT(vtkInteractionStyle);
+ VTK_MODULE_INIT(vtkRenderingOpenGL);
 
 #include "Queue.h"
 
@@ -17,7 +20,6 @@
 #include "awcorecpp.h"
 
 #include "LieGroup.h"
-#include "Utilities.h"
 
 using namespace Core;
 using namespace cv;
@@ -79,6 +81,7 @@ private:
 	void recordImages(void);
 	bool networkKinematics(void);
 	void robotDisplay(void);
+	void vtkRender(void);
 
 	// keyboard input processing
 	void processInput(char key);
@@ -87,10 +90,6 @@ private:
 	void changeExposure(float delta);
 
 	bool createSaveDir();
-
-	// vtk drawing functions
-	vtkSmartPointer<vtkActor> TubeDraw(std::vector<SE3> SolutionFrames);
-
 
 public:
 
