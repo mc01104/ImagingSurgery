@@ -49,6 +49,7 @@ using namespace cimg_library;
 #include <vtkParametricFunctionSource.h>
 #include <vtkTubeFilter.h>
 #include <vtkLineSource.h>
+#include <vtkPolyLineSource.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPolyLine.h>
@@ -650,34 +651,24 @@ void Camera_processing::robotDisplay(void)
 
 	// populate Points with dummy data for initialization
 	unsigned int npts = 1;
-    vtkSmartPointer<vtkPoints> Points = vtkSmartPointer<vtkPoints>::New();
-	Points->SetNumberOfPoints(npts);
-    for (unsigned int i=0;i<npts;i++)
-		Points->SetPoint(i, i,i,i);
+	vtkSmartPointer<vtkPolyLineSource> lineSource = vtkSmartPointer<vtkPolyLineSource>::New();
+	for (unsigned int i=0;i<npts;i++)
+		lineSource->SetPoint(i, i,i,i);
 
-	vtkSmartPointer<vtkPolyLine> polyLine = vtkSmartPointer<vtkPolyLine>::New();
-	polyLine->GetPointIds()->SetNumberOfIds(npts);
-	for(unsigned int i = 0; i < npts; i++)
-    {
-		polyLine->GetPointIds()->SetId(i,i);
-    }
 
-	vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-	cells->InsertNextCell(polyLine);
+	vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
+	tubeFilter->SetInputConnection(lineSource->GetOutputPort());
+	tubeFilter->SetRadius(0.9); //default is .5
+	tubeFilter->SetNumberOfSides(50);
+	tubeFilter->Update();
 
-	// Create a polydata to store everything in
-	vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
-	polyData->SetPoints(Points);
-	polyData->SetLines(cells);
+	// Create a mapper and actor
+	vtkSmartPointer<vtkPolyDataMapper> tubeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	tubeMapper->SetInputConnection(tubeFilter->GetOutputPort());
+	vtkSmartPointer<vtkActor> tubeActor = vtkSmartPointer<vtkActor>::New();
+	tubeActor->SetMapper(tubeMapper);
 
-	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper->SetInputData(polyData);
-
-	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-	actor->GetProperty()->SetColor(1.0,0,0);
-	actor->SetMapper(mapper);
-
-	renDisplay3D->AddActor(actor);
+	renDisplay3D->AddActor(tubeActor);
 
 	auto start = std::chrono::high_resolution_clock::now();
 	while(m_running)
@@ -695,23 +686,11 @@ void Camera_processing::robotDisplay(void)
 
 
 				npts = SolutionFrames.size();
-				vtkSmartPointer<vtkPoints> Points_ = vtkSmartPointer<vtkPoints>::New();
-				Points_->SetNumberOfPoints(npts);
+
+				lineSource->SetNumberOfPoints(0); // clear the linesource
+				lineSource->SetNumberOfPoints(npts); // set new data
 				for (unsigned int i=0;i<npts;i++)
-					Points_->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
-
-				vtkSmartPointer<vtkPolyLine> polyLine_ = vtkSmartPointer<vtkPolyLine>::New();
-				polyLine_->GetPointIds()->SetNumberOfIds(npts);
-				for(unsigned int i = 0; i < npts; i++)
-				{
-					polyLine_->GetPointIds()->SetId(i,i);
-				}
-
-				vtkSmartPointer<vtkCellArray> cells_ = vtkSmartPointer<vtkCellArray>::New();
-				cells_->InsertNextCell(polyLine_);
-
-				polyData->SetPoints(Points_);
-				polyData->SetLines(cells_);
+					lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
 			}
 			catch (runtime_error& ex) 
 			{
