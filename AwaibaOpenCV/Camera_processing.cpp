@@ -54,6 +54,7 @@ using namespace cimg_library;
 #include <vtkPolyDataMapper.h>
 #include <vtkPolyLine.h>
 #include <vtkActor.h>
+#include <vtkCubeSource.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
@@ -139,6 +140,8 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		g_g = op.getWhiteBalance()[1];
 		g_b = op.getWhiteBalance()[2];
 		rotation = op.getRotation();
+		ipaddress = op.getIPAddress();
+		renderShape = op.getRenderShape();
 	}
 	else
 	{
@@ -148,6 +151,7 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		g_g = 0.99f;
 		g_b = 1.29f;
 		rotation = 0.0f;
+		ipaddress = std::string("192.168.0.2");
 	}
 
 	robot_rotation = 0.0;
@@ -197,19 +201,38 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 
 		m_OK = true;
 
-		::std::thread t_acquire (&Camera_processing::acquireImages, this);
-		::std::thread t_display (&Camera_processing::displayImages, this);
-		::std::thread t_record (&Camera_processing::recordImages, this);
-		::std::thread t_network (&Camera_processing::networkKinematics, this);
-		::std::thread t_vtk (&Camera_processing::robotDisplay, this);
-		::std::thread t_vtk_render (&Camera_processing::vtkRender, this);
+		if (renderShape)
+		{
+			::std::thread t_acquire (&Camera_processing::acquireImages, this);
+			::std::thread t_display (&Camera_processing::displayImages, this);
+			::std::thread t_record (&Camera_processing::recordImages, this);
+			::std::thread t_network (&Camera_processing::networkKinematics, this);
+			::std::thread t_vtk (&Camera_processing::robotDisplay, this);
+			::std::thread t_vtk_render (&Camera_processing::vtkRender, this);
 
-		t_acquire.join();
-		t_display.join();
-		t_record.join();
-		t_network.join();
-		t_vtk_render.join();
-		t_vtk.join();
+			t_acquire.join();
+			t_display.join();
+			t_record.join();
+			t_network.join();
+			t_vtk_render.join();
+			t_vtk.join();
+		}
+
+		else
+		{
+			::std::thread t_acquire (&Camera_processing::acquireImages, this);
+			::std::thread t_display (&Camera_processing::displayImages, this);
+			::std::thread t_record (&Camera_processing::recordImages, this);
+			::std::thread t_network (&Camera_processing::networkKinematics, this);
+
+			t_acquire.join();
+			t_display.join();
+			t_record.join();
+			t_network.join();
+		}
+
+		::std::cout << "All threads exited. Closing..." << ::std::endl;
+		Sleep(1000);
 
 	}
 	catch(const std::exception &ex)
@@ -370,6 +393,8 @@ void Camera_processing::acquireImages(void )
 		}
 		catch(const std::exception &ex){}
 	}
+
+	::std::cout << "Images Acquisition Thread exited successfully" << ::std::endl;
 }
 
 
@@ -421,6 +446,8 @@ void Camera_processing::displayImages(void)
 			processInput(key);
 		}
 	}
+
+	::std::cout << "Images Display Thread exited successfully" << ::std::endl;
 }
 
 void Camera_processing::recordImages(void)
@@ -439,64 +466,60 @@ void Camera_processing::recordImages(void)
 	{
 		ImgBuf element;
 
-		if(m_record)
+		if ( m_ImgBuffer.tryPop(element))
 		{
 
-			if ( m_ImgBuffer.tryPop(element))
+			// create a new directory if necessary
+			if(m_newdir) 
 			{
+				createSaveDir();
+				start_record = std::chrono::high_resolution_clock::now();
+				m_newdir = false;
+			}
 
-				// create a new directory if necessary
-				if(m_newdir) 
+			// if recording gets too long, create a new directory to avoid too many packed images in a single one
+			auto now = std::chrono::high_resolution_clock::now();
+			auto duration_minutes = std::chrono::duration_cast<std::chrono::minutes>(now - start_record);
+			if (duration_minutes.count()>=4) 
+			{
+				m_newdir = true;
+				start_record = now;
+			}
+
+			frame = element.img;
+			timestamp = element.timestamp;
+			robot_joint = element.robot_joints;
+
+			::std::string filename = m_imgDir + std::to_string(timestamp) + ".png";
+			::std::string filename_joints = m_imgDir + std::to_string(timestamp) + ".txt";
+
+			try {
+
+				if (!imwrite(filename, frame, compression_params)) 
 				{
-					createSaveDir();
-					start_record = std::chrono::high_resolution_clock::now();
-					m_newdir = false;
+					m_record = false;
+					throw std::runtime_error ("Could not write to file !");
 				}
 
-				// if recording gets too long, create a new directory to avoid too many packed images in a single one
-				auto now = std::chrono::high_resolution_clock::now();
-				auto duration_minutes = std::chrono::duration_cast<std::chrono::minutes>(now - start_record);
-				if (duration_minutes.count()>=4) 
+				if (robot_joint.size()>0)
 				{
-					m_newdir = true;
-					start_record = now;
-				}
-
-				frame = element.img;
-				timestamp = element.timestamp;
-				robot_joint = element.robot_joints;
-
-				::std::string filename = m_imgDir + std::to_string(timestamp) + ".png";
-				::std::string filename_joints = m_imgDir + std::to_string(timestamp) + ".txt";
-
-				try {
-					bool result = imwrite(filename, frame, compression_params);
-
-					if (!result) 
-					{
-						mutex_img.lock();
-						m_record = false;
-						mutex_img.unlock();
-						throw std::runtime_error ("Could not write to file !");
-					}
-
 					ofstream joints_file;
 					joints_file.open (filename_joints);
 					for(std::vector<double>::const_iterator i = robot_joint.begin(); i != robot_joint.end(); ++i) {
-						 joints_file << *i << ',';
+							joints_file << *i << ',';
 					}
 					joints_file << '\n';
 					joints_file.close();
 				}
-				catch (runtime_error& ex) 
-				{
-					::std::cout << "Exception in image recording:" <<  ex.what() << ::std::endl;
-				}
+			}
+			catch (runtime_error& ex) 
+			{
+				::std::cout << "Exception in image recording:" <<  ex.what() << ::std::endl;
 			}
 		}
 	}
 
-	::std::cout << "Finished recording data" << ::std::endl;
+	::std::cout << "Recording Data Thread exited successfully" << ::std::endl;
 }
 
 
@@ -538,7 +561,7 @@ bool Camera_processing::networkKinematics(void)
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    iResult = getaddrinfo("192.168.0.2", DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
@@ -574,6 +597,8 @@ bool Camera_processing::networkKinematics(void)
         WSACleanup();
         return 1;
     }
+	std::cout << "Successfully connected to server" << std::endl;
+
 
 
 	do {
@@ -601,7 +626,7 @@ bool Camera_processing::networkKinematics(void)
 		::std::vector<double> configuration = DoubleVectorFromString(conf_str);
 
 		mutex_teleop.lock();
-		m_teleop = ( configuration.size()>0 ? (bool) configuration.back() : false);
+		m_teleop = ( configuration.size()>0 ? (bool) configuration.back() : false); //TODO: implementation bugin here maybe. Check with Georgios how is the data sent from the CTR program in non-teleop mode
 		mutex_teleop.unlock();
 
 		// Convert the received the configuration to comply with the definition of the mechanics based kinematics implementation
@@ -610,30 +635,31 @@ bool Camera_processing::networkKinematics(void)
 		MechanicsBasedKinematics::RelativeToAbsolute(robot, &configuration[0], rotation, translation);
 
 		// compute kinematics and get tip rotation of innermost tube
-		kinematics->ComputeKinematics(rotation, translation);
-		robot_rotation = kinematics->GetInnerTubeRotation();
-	
+		if (kinematics->ComputeKinematics(rotation, translation))
+		{
+			robot_rotation = kinematics->GetInnerTubeRotation();
+			double smax = robot->GetLength();
 
-		double smax = robot->GetLength();
-		robot_arclength.clear();
-		SolutionFrames.clear();
-		for (int i = 0; i<npoints;i++) robot_arclength.push_back((1.0*i)/npoints*smax);
-		kinematics->GetBishopFrame(robot_arclength, SolutionFrames);
+			robot_arclength.clear();
+			SolutionFrames.clear();
+			for (int i = 0; i<npoints;i++) robot_arclength.push_back((1.0*i)/npoints*smax);
 
-		mutex_robotshape.lock();
-		m_SolutionFrames = SolutionFrames;
-		mutex_robotshape.unlock();
+			kinematics->GetBishopFrame(robot_arclength, SolutionFrames);
+
+			mutex_robotshape.lock();
+			m_SolutionFrames = SolutionFrames;
+			mutex_robotshape.unlock();
 
 
-		mutex_robotjoints.lock();
-		m_configuration = configuration;
-		mutex_robotjoints.unlock();
+			mutex_robotjoints.lock();
+			m_configuration = configuration;
+			mutex_robotjoints.unlock();
+		}
 		
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
 		iResult = send( ConnectSocket, "haha", 5, 0 );
-		//::std::cout << iResult << "send" << ::std::endl;
 
     } while( (iResult > 0) && m_running);
 
@@ -641,6 +667,7 @@ bool Camera_processing::networkKinematics(void)
     closesocket(ConnectSocket);
     WSACleanup();
 
+	::std::cout << "Kinematics Thread exited successfully" << ::std::endl;
     return 0;
 }
 
@@ -658,14 +685,15 @@ void Camera_processing::robotDisplay(void)
 
 	vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
 	tubeFilter->SetInputConnection(lineSource->GetOutputPort());
-	tubeFilter->SetRadius(0.9); //default is .5
-	tubeFilter->SetNumberOfSides(50);
+	tubeFilter->SetRadius(0.9); 
+	tubeFilter->SetNumberOfSides(30);
 	tubeFilter->Update();
 
 	// Create a mapper and actor
 	vtkSmartPointer<vtkPolyDataMapper> tubeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 	tubeMapper->SetInputConnection(tubeFilter->GetOutputPort());
 	vtkSmartPointer<vtkActor> tubeActor = vtkSmartPointer<vtkActor>::New();
+	tubeActor->GetProperty()->SetColor(0.0,0.0,1.0);
 	tubeActor->SetMapper(tubeMapper);
 
 	renDisplay3D->AddActor(tubeActor);
@@ -687,10 +715,18 @@ void Camera_processing::robotDisplay(void)
 
 				npts = SolutionFrames.size();
 
-				lineSource->SetNumberOfPoints(0); // clear the linesource
-				lineSource->SetNumberOfPoints(npts); // set new data
-				for (unsigned int i=0;i<npts;i++)
-					lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
+				if (npts>2)
+				{
+					lineSource->SetNumberOfPoints(npts); // set new data
+					for (unsigned int i=0;i<npts;i++)
+						lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
+				}
+				else
+				{
+					lineSource->SetNumberOfPoints(2); // set new data
+					lineSource->SetPoint(0, 0.0,0.0,0.0);
+					lineSource->SetPoint(1, 0.0,0.0,1.0);
+				}
 			}
 			catch (runtime_error& ex) 
 			{
@@ -699,6 +735,7 @@ void Camera_processing::robotDisplay(void)
 		}
 
 	}
+	::std::cout << "VTK Robot Display Thread exited successfully" << ::std::endl;
 
 }
 
@@ -709,9 +746,66 @@ void Camera_processing::vtkRender(void)
 	irenDisplay3D->SetRenderWindow(renderwindowDisplay3D);
 	irenDisplay3D->Initialize();
 
+
+	vtkSmartPointer<vtkCubeSource> cubeSource = vtkSmartPointer<vtkCubeSource>::New();
+	cubeSource->SetCenter(0.0,0.0,125.0);
+	cubeSource->SetXLength(150.0);
+	cubeSource->SetYLength(150.0);
+	cubeSource->SetZLength(250.0);
+
+	vtkSmartPointer<vtkPolyDataMapper> mapper =  vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper->SetInputConnection(cubeSource->GetOutputPort());
+ 
+	vtkSmartPointer<vtkActor> actor =  vtkSmartPointer<vtkActor>::New();
+	actor->GetProperty()->SetColor(0.5,0.5,0.5);
+	actor->GetProperty()->SetOpacity(0.35);
+	actor->SetMapper(mapper);
+
+	renDisplay3D->AddActor(actor);
+
+
+
+	vtkSmartPointer<vtkCubeSource> cubeSource2 = vtkSmartPointer<vtkCubeSource>::New();
+	cubeSource2->SetCenter(12.5,0.0,0.0);
+	cubeSource2->SetXLength(25.0);
+	cubeSource2->SetYLength(1.0);
+	cubeSource2->SetZLength(1.0);
+
+	vtkSmartPointer<vtkPolyDataMapper> mapper2 =  vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper2->SetInputConnection(cubeSource2->GetOutputPort());
+ 
+	vtkSmartPointer<vtkActor> actor2 =  vtkSmartPointer<vtkActor>::New();
+	actor2->GetProperty()->SetColor(1.0,0.0,0.0);
+	actor2->GetProperty()->SetOpacity(0.65);
+	actor2->SetMapper(mapper2);
+
+	renDisplay3D->AddActor(actor2);
+
+
+
+	vtkSmartPointer<vtkCubeSource> cubeSource3 = vtkSmartPointer<vtkCubeSource>::New();
+	cubeSource3->SetCenter(0.0,12.5,0.0);
+	cubeSource3->SetXLength(1.0);
+	cubeSource3->SetYLength(25.0);
+	cubeSource3->SetZLength(1.0);
+
+	vtkSmartPointer<vtkPolyDataMapper> mapper3 =  vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper3->SetInputConnection(cubeSource3->GetOutputPort());
+ 
+	vtkSmartPointer<vtkActor> actor3 =  vtkSmartPointer<vtkActor>::New();
+	actor3->GetProperty()->SetColor(0.0,1.0,0.0);
+	actor3->GetProperty()->SetOpacity(0.65);
+	actor3->SetMapper(mapper3);
+
+	renDisplay3D->AddActor(actor3);
+
+
 	vtkSmartPointer<CommandSubclass2> timerCallback = vtkSmartPointer<CommandSubclass2>::New();
 	irenDisplay3D->AddObserver ( vtkCommand::TimerEvent, timerCallback );
 	irenDisplay3D->CreateRepeatingTimer(100);
 
 	irenDisplay3D->Start();
+
+
+	::std::cout << "VTK Rendering Thread exited successfully" << ::std::endl;
 }

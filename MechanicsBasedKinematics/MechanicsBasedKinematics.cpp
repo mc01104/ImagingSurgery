@@ -472,12 +472,19 @@ void MechanicsBasedKinematics::findNearestGridPoint(double s, int* beginIdx, dou
 
 void MechanicsBasedKinematics::GetBishopFrame(double s, SE3& bishopFrame, std::vector<SE3>& frames)
 {
-	int beginIdx;
-	double frac;
-	this->findNearestGridPoint(s, &beginIdx, &frac);
+	try
+	{
+		int beginIdx;
+		double frac;
+		this->findNearestGridPoint(s, &beginIdx, &frac);
 
-	se3 w1 = Log(Inv(frames[beginIdx])*frames[beginIdx+1]);
-	bishopFrame = frames[beginIdx] * Exp(frac*w1);
+		se3 w1 = Log(Inv(frames[beginIdx])*frames[beginIdx+1]);
+		bishopFrame = frames[beginIdx] * Exp(frac*w1);
+	}
+	catch (runtime_error& ex) 
+	{
+		::std::cout << "Exception in bishop frames"  <<  ex.what() << ::std::endl;
+	} 
 }
 
 void MechanicsBasedKinematics::ComputeBCJacobianNumerical(Eigen::MatrixXd& solution)

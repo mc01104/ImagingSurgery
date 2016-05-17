@@ -32,11 +32,15 @@ public:
 	std::string getSaveDir();
 	std::vector<float> getWhiteBalance();
 	float getRotation();
+	std::string getIPAddress();
+	bool getRenderShape();
 	bool getStatus();
 
 private:
 	std::string m_saveDir;
 	std::vector<float> m_whiteBal;
 	float m_rotation;
+	std::string m_ipaddress;
+	bool m_rendershape;
 	bool m_parsed;
 };

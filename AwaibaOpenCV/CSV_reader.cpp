@@ -71,6 +71,14 @@ ParseOptions::ParseOptions(std::string options_file)
 				{
 					m_rotation = stof(row[1]);
 				}
+				if (row[0] == "ipaddress")
+				{
+					m_ipaddress = row[1];
+				}
+				if (row[0] == "rendershape")
+				{
+					m_rendershape = (row[1] == "1");
+				}
 
 			}
 		}
@@ -98,6 +106,15 @@ float ParseOptions::getRotation()
 {
 	return m_rotation;
 }
+std::string ParseOptions::getIPAddress()
+{
+	return m_ipaddress;
+}
+bool ParseOptions::getRenderShape()
+{
+	return m_rendershape;
+}
+
 bool ParseOptions::getStatus()
 {
 	return m_parsed;

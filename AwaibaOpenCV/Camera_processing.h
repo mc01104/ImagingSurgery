@@ -62,6 +62,8 @@ private:
 	Mat RgbFrame;
 	float g_r, g_g, g_b; // white balance gains
 	float rotation; //initial rotation of the image
+	std::string ipaddress;
+	bool renderShape;
 	double robot_rotation;
 	bool newImg;
 

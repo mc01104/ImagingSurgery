@@ -31,8 +31,9 @@ void CTR::ComputeJointLimits ()
 
 bool CTR::CheckJointLimits(const double* translation) const
 {
+	double epsilon = 0.01;
 	for( int i = 0; i < this->numTubes; ++i)
-		if(translation[i] < this->lowerTubeTranslationLimit[i] || translation[i] > this->upperTubeTranslationLimit[i])
+		if(translation[i] < this->lowerTubeTranslationLimit[i]-epsilon || translation[i] > this->upperTubeTranslationLimit[i]+epsilon)
 		{
 			std::cout << "Out of joint limit!" << std::endl;
 			return false;
