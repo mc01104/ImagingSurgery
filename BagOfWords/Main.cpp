@@ -82,7 +82,7 @@ bool testBOW(std::string path, BOW_l bow, bool visualization = false)
 
 
 
-
+/*
 int main( int argc, char** argv )
 {
 
@@ -145,7 +145,7 @@ int main( int argc, char** argv )
 	//	testBOW(test_path_contact,bow);
 
 	//	::std::cout << "Test with Free file" << ::std::endl;
-	//	testBOW(test_path_free,bow);*/
+	//	testBOW(test_path_free,bow);
 	//}
 
 	//::std::cout << "Load from file test" << ::std::endl;
@@ -170,4 +170,4 @@ int main( int argc, char** argv )
 
 	system("pause");
 	return 0;
-}
+}*/

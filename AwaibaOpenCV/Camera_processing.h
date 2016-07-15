@@ -11,6 +11,7 @@
  VTK_MODULE_INIT(vtkRenderingOpenGL);
 
 #include "Queue.h"
+#include "BOW_lowlevel.h"
 
 // OpenCV includes
 #include <opencv2/core/core.hpp>
@@ -74,6 +75,13 @@ private:
 	::std::mutex mutex_robotjoints;
 	::std::mutex mutex_teleop;
 	::std::mutex mutex_robotshape;
+	::std::mutex m_mutex_force;
+
+	// Force estimation variables
+	BOW_l m_bow;
+	float m_contact;
+	float m_force_gain;
+	::cv::KalmanFilter m_kalman;
 
 	/********** Functions private *********/
 	
@@ -105,4 +113,7 @@ public:
 	void setControlLED(bool LED);
 	bool getControlLED();
 
+	void InitForceEstimator(::std::string svm_base_path, float force_gain=3.0, float processNoiseCov=0.5);
+	void UpdateForceEstimator(::cv::Mat img);
+	float PredictForce();
 };

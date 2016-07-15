@@ -76,6 +76,8 @@ using namespace cv;
 //using namespace std;
 
 
+std::string base_folder = ".\\SVM_params\\";
+::std::string base_path = base_folder + "output_";
 
 // VTK global variables (only way to get a thread running ...)
 
@@ -126,6 +128,10 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 
 	m_OK = false;
 	newImg = false;
+
+	InitForceEstimator(base_path);
+
+	::std::cout << "Force estimator initialized" << ::std::endl;
 
 
 	// Parse options in camera.csv file
@@ -415,15 +421,19 @@ void Camera_processing::displayImages(void)
 
 	while(m_running)
 	{
-		mutex_img.lock();
+		
 		if (newImg)
 		{
 			newImg = false;
 			display = true;
 			rec = m_record;
+			mutex_img.lock();
 			RgbFrame.copyTo(frame);
+			mutex_img.unlock();
+
+			if (! frame.empty()) UpdateForceEstimator(frame);
 		}
-		mutex_img.unlock();
+		
 
 		mutex_teleop.lock();
 		teleop = m_teleop;
@@ -431,6 +441,7 @@ void Camera_processing::displayImages(void)
 
 		if (display)
 		{
+
 			display = false;
 			rot_mat = getRotationMatrix2D( center, rotation - robot_rotation*180.0/3.141592, 1.0 );
 			warpAffine( frame, frame_rotated, rot_mat, frame_rotated.size() );
@@ -655,11 +666,19 @@ bool Camera_processing::networkKinematics(void)
 			m_configuration = configuration;
 			mutex_robotjoints.unlock();
 		}
+
+		float force = 0.0;
+		m_mutex_force.lock();
+		force = PredictForce();
+		m_mutex_force.unlock();
+
+		char s_force[5]; 
+		sprintf(s_force,"%.2f",force);
 		
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
-		iResult = send( ConnectSocket, "haha", 5, 0 );
+		iResult = send( ConnectSocket, s_force, 5, 0 );
 
     } while( (iResult > 0) && m_running);
 
@@ -808,4 +827,52 @@ void Camera_processing::vtkRender(void)
 
 
 	::std::cout << "VTK Rendering Thread exited successfully" << ::std::endl;
+}
+
+
+/******************
+Force estimation functions
+*//////////////////
+
+void Camera_processing::InitForceEstimator(::std::string svm_base_path, float force_gain, float processNoiseCov)
+{
+	try
+	{
+		m_bow.LoadFromFile(svm_base_path);
+
+		::std::cout << "test" << ::std::endl;
+		m_kalman = ::cv::KalmanFilter(1,1);
+		::std::cout << "test" << ::std::endl;
+		m_force_gain = force_gain;
+		::std::cout << "test" << ::std::endl;
+		cv::setIdentity(m_kalman.measurementMatrix);
+		::std::cout << "test" << ::std::endl;
+		cv::setIdentity(m_kalman.processNoiseCov, cv::Scalar::all(processNoiseCov));
+	}
+	catch (std::exception& e)
+	{
+		::std::cout << e.what() << std::endl;
+	}
+
+}
+
+void Camera_processing::UpdateForceEstimator(::cv::Mat img)
+{
+	::std::vector<::std::string> classes = m_bow.getClasses();
+	float response = 0.0;
+	if (m_bow.predictBOW(img,response)) 
+	{
+		if (classes[(int) response] == "Free") response = 0.0;
+		else response = 1.0;
+
+		m_mutex_force.lock();
+		m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
+		m_mutex_force.unlock();
+	}
+}
+
+float Camera_processing::PredictForce()
+{
+	cv::Mat prediction = m_kalman.predict();
+	return prediction.at<float>(0,0);
 }

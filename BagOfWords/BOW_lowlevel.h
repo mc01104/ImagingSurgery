@@ -41,7 +41,8 @@ private:
 	std::vector<std::string> m_imList;
 	std::vector<std::string> m_classList;
 
-	
+	::cv::Ptr<::cv::ml::KNearest> m_knn;
+
 	std::vector<float> m_scaling_means;
 	std::vector<float> m_scaling_stds;
 

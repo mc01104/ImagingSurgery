@@ -30,8 +30,8 @@ Loads the classifier and BOW vocabulary from files
 */
 bool BOW_l::LoadFromFile(::std::string path)
 {
-	try
-	{
+	//try
+	//{
 		m_svm = ::cv::ml::StatModel::load<::cv::ml::SVM>(path + "SVM.xml");
 
 		cv::FileStorage storage(path + "VOC.xml", cv::FileStorage::READ);
@@ -40,30 +40,47 @@ bool BOW_l::LoadFromFile(::std::string path)
 
 		m_bowide->setVocabulary(m_vocabulary);
 
-		storage = ::cv::FileStorage(path + "SCALE_means.xml", cv::FileStorage::READ);
-		storage["scale_m"] >> m_scaling_means;
-		storage.release();   
+		std::vector<int> v_word_labels;
+		for (int i=0;i<m_vocabulary.rows;i++) v_word_labels.push_back(i);
+		m_knn = ::cv::ml::KNearest::create();
+		m_knn->setDefaultK(1);
+		m_knn->train(m_vocabulary, ::cv::ml::ROW_SAMPLE, v_word_labels);
 
-		storage = ::cv::FileStorage(path + "SCALE_stds.xml", cv::FileStorage::READ);
-		storage["scale_stds"] >> m_scaling_stds;
-		storage.release();   
+		cv::FileStorage storage2(path + "SCALE_means.xml", cv::FileStorage::READ);
+		storage2["scale_m"] >> m_scaling_means;
+		storage2.release();   
+
+
+		cv::FileStorage storage3(path + "SCALE_stds.xml", cv::FileStorage::READ);
+		storage3["scale_stds"] >> m_scaling_stds;
+		storage3.release();   
+
 
 		m_classes.clear();
-		storage = ::cv::FileStorage(path + "CLASSES.xml", cv::FileStorage::READ);
-		::cv::FileNode n = storage["classes"];                         // Read string sequence - Get node
-		::cv::FileNodeIterator it = n.begin(), it_end = n.end(); // Go through the node
-		for (; it != it_end; ++it)
-			m_classes.push_back((::std::string)*it);
-		storage.release();   
 
+		cv::FileStorage storage4(path + "CLASSES.xml", cv::FileStorage::READ);
+		::cv::FileNode n = storage4["classes"];                         // Read string sequence - Get node
+		//::cv::FileNodeIterator it = n.begin(), it_end = n.end(); // Go through the node
+
+		m_classes.push_back("Free");
+		m_classes.push_back("Contact");
+		storage4.release();  
+		
+		//std::vector<std::string> v;
+		//n >> v;
+		/*for (int i=0;i<v.size();i++) m_classes.push_back(v[i].c_str());
+		storage4.release();   
+
+		::std::cout << "test" << ::std::endl;*/
 
 		return true;
-	}
+	/*}
 	catch ( const std::exception & e ) 
 	{
-		::std::cerr << e.what();
+		::std::cout << "test2" << ::std::endl;
+		::std::cout << e.what();
 		return false;
-	}
+	}*/
 }
 
 
@@ -277,18 +294,25 @@ bool BOW_l::predictBOW(::cv::Mat img, float& response)
 
 	::cv::Mat wordsInImg;
 
-	std::vector<int> v_word_labels;
-	for (int i=0;i<m_vocabulary.rows;i++) v_word_labels.push_back(i);
-
 	m_featureDetector->detect(img, keyPoints);
 	m_descriptorExtractor->compute(img, keyPoints,descriptors);
 
+	if (descriptors.rows<1)
+	{
+		response = 0.0;
+		return true;
+	}
 
-	// Vector quantization of words in image
-	::cv::Ptr<::cv::ml::KNearest> knn = ::cv::ml::KNearest::create();
-	knn->setDefaultK(1);
-	knn->train(m_vocabulary, ::cv::ml::ROW_SAMPLE, v_word_labels);
-	knn->findNearest(descriptors,1,wordsInImg);
+	try{
+		// Vector quantization of words in image
+		m_knn->findNearest(descriptors,1,wordsInImg);
+	}
+	catch (std::exception& e)
+	{
+		response = 0.0;
+		//::std::cout << e.what();
+		return false;
+	}
 
 	
 	// construction of response histogram
@@ -313,7 +337,6 @@ bool BOW_l::predictBOW(::cv::Mat img, float& response)
 	}
 
 
-	//m_bowide->compute(img, keyPoints, bowDescriptor);
 	response = 0.0;
 	try
 	{
@@ -321,7 +344,8 @@ bool BOW_l::predictBOW(::cv::Mat img, float& response)
 	}
 	catch ( const std::exception & e ) 
 	{
-		::std::cerr << e.what();
+		response = 0.0;
+		//::std::cout << e.what();
 		return false;
 	}
 
