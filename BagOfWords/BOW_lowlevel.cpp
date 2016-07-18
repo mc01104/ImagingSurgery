@@ -18,7 +18,7 @@ BOW_l::BOW_l()
 	m_bowide = new ::cv::BOWImgDescriptorExtractor(m_descriptorExtractor, m_descriptorMatcher);
 
 	m_knn = ::cv::ml::KNearest::create();
-	m_knn->setAlgorithmType(::cv::ml::KNearest::KDTREE);
+	m_knn->setAlgorithmType(::cv::ml::KNearest::BRUTE_FORCE);
 
 	m_trained = false;
 }
