@@ -45,10 +45,10 @@ bool BOW_l::LoadFromFile(::std::string path)
 
 
 		m_bowide->setVocabulary(m_vocabulary);
-				std::vector<int> v_word_labels;
+
+		std::vector<int> v_word_labels;
 		for (int i=0;i<m_vocabulary.rows;i++) v_word_labels.push_back(i);
 		::cv::Mat mat_words_labels(v_word_labels);
-
 		m_knn->setDefaultK(1);
 		m_knn->train(m_vocabulary, ::cv::ml::ROW_SAMPLE, mat_words_labels);
 
