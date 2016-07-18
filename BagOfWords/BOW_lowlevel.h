@@ -47,4 +47,6 @@ private:
 	std::vector<float> m_scaling_stds;
 
 	int m_dictionarySize;
+
+	bool m_trained;
 };

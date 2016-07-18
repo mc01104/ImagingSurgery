@@ -18,6 +18,9 @@ BOW_l::BOW_l()
 	m_bowide = new ::cv::BOWImgDescriptorExtractor(m_descriptorExtractor, m_descriptorMatcher);
 
 	m_knn = ::cv::ml::KNearest::create();
+	m_knn->setAlgorithmType(::cv::ml::KNearest::KDTREE);
+
+	m_trained = false;
 }
 
 
@@ -32,8 +35,8 @@ Loads the classifier and BOW vocabulary from files
 */
 bool BOW_l::LoadFromFile(::std::string path)
 {
-	//try
-	//{
+	try
+	{
 		m_svm = ::cv::ml::StatModel::load<::cv::ml::SVM>(path + "SVM.xml");
 
 		cv::FileStorage storage(path + "VOC.xml", cv::FileStorage::READ);
@@ -60,29 +63,24 @@ bool BOW_l::LoadFromFile(::std::string path)
 
 		m_classes.clear();
 
-		//cv::FileStorage storage4(path + "CLASSES.xml", cv::FileStorage::READ);
-		//::cv::FileNode n = storage4["classes"];                         // Read string sequence - Get node
-		//::cv::FileNodeIterator it = n.begin(), it_end = n.end(); // Go through the node
-
-		m_classes.push_back("Free");
-		m_classes.push_back("Contact");
-		//storage4.release();  
-		
-		//std::vector<std::string> v;
-		//n >> v;
-		/*for (int i=0;i<v.size();i++) m_classes.push_back(v[i].c_str());
+		cv::FileStorage storage4(path + "CLASSES.xml", cv::FileStorage::READ);
+		::cv::FileNode n = storage4["classes"];                         // Read string sequence - Get node
+		::cv::FileNodeIterator it = n.begin(), it_end = n.end(); // Go through the node
+		for (; it != it_end; ++it)
+			m_classes.push_back((::std::string)*it);
 		storage4.release();   
 
-		::std::cout << "test" << ::std::endl;*/
-
+		m_trained = true;
 		return true;
-	/*}
+	}
 	catch ( const std::exception & e ) 
 	{
-		::std::cout << "test2" << ::std::endl;
+		::std::cout << "Error in Loading SVM classifier" << ::std::endl;
 		::std::cout << e.what();
+
+		m_trained = false;
 		return false;
-	}*/
+	}
 }
 
 
@@ -257,7 +255,13 @@ bool BOW_l::trainBOW(::std::string path)
 	//m_svm->setTermCriteria(::cv::TermCriteria(::cv::TermCriteria::MAX_ITER,1000,0.000001));
 	m_svm->setGamma(0.02);
 
-	return m_svm->train(im_histograms, ::cv::ml::ROW_SAMPLE,labels);
+	if (m_svm->train(im_histograms, ::cv::ml::ROW_SAMPLE,labels))
+	{
+		m_trained = true;
+	}
+	else m_trained = false;
+
+	return m_trained;
 
 }
 
@@ -272,6 +276,7 @@ Returns true if there was no runtime error during prediction
 */
 bool BOW_l::predictBOW(std::string path, float& response)
 {
+	if (!m_trained) return false;
 	::cv::Mat img = ::cv::imread(path);
 	return predictBOW(img, response);
 }
@@ -288,6 +293,7 @@ Returns true if there was no runtime error during prediction
 */
 bool BOW_l::predictBOW(::cv::Mat img, float& response)
 {
+	if (!m_trained) return false;
 
 	std::vector<cv::KeyPoint> keyPoints;
 	::cv::Mat descriptors;
