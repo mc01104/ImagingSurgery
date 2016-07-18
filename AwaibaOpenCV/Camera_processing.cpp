@@ -76,7 +76,7 @@ using namespace cv;
 //using namespace std;
 
 
-std::string base_folder = ".\\SVM_params\\";
+std::string base_folder = "./SVM_params/";
 ::std::string base_path = base_folder + "output_";
 
 // VTK global variables (only way to get a thread running ...)
@@ -128,6 +128,8 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 
 	m_OK = false;
 	newImg = false;
+
+	::std::cout << "Initializing Force estimator ..." << ::std::endl;
 
 	InitForceEstimator(base_path);
 
@@ -838,20 +840,17 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 {
 	try
 	{
+
 		m_bow.LoadFromFile(svm_base_path);
 
-		::std::cout << "test" << ::std::endl;
 		m_kalman = ::cv::KalmanFilter(1,1);
-		::std::cout << "test" << ::std::endl;
 		m_force_gain = force_gain;
-		::std::cout << "test" << ::std::endl;
 		cv::setIdentity(m_kalman.measurementMatrix);
-		::std::cout << "test" << ::std::endl;
 		cv::setIdentity(m_kalman.processNoiseCov, cv::Scalar::all(processNoiseCov));
 	}
 	catch (std::exception& e)
 	{
-		::std::cout << e.what() << std::endl;
+		::std::cout << "Error loading Force parameters data" << e.what() << std::endl;
 	}
 
 }

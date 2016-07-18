@@ -16,6 +16,8 @@ BOW_l::BOW_l()
 	
 	m_descriptorMatcher = ::cv::DescriptorMatcher::create("FlannBased");
 	m_bowide = new ::cv::BOWImgDescriptorExtractor(m_descriptorExtractor, m_descriptorMatcher);
+
+	m_knn = ::cv::ml::KNearest::create();
 }
 
 
@@ -38,18 +40,18 @@ bool BOW_l::LoadFromFile(::std::string path)
 		storage["vocabulary"] >> m_vocabulary;
 		storage.release();  
 
-		m_bowide->setVocabulary(m_vocabulary);
 
-		std::vector<int> v_word_labels;
+		m_bowide->setVocabulary(m_vocabulary);
+				std::vector<int> v_word_labels;
 		for (int i=0;i<m_vocabulary.rows;i++) v_word_labels.push_back(i);
-		m_knn = ::cv::ml::KNearest::create();
+		::cv::Mat mat_words_labels(v_word_labels);
+
 		m_knn->setDefaultK(1);
-		m_knn->train(m_vocabulary, ::cv::ml::ROW_SAMPLE, v_word_labels);
+		m_knn->train(m_vocabulary, ::cv::ml::ROW_SAMPLE, mat_words_labels);
 
 		cv::FileStorage storage2(path + "SCALE_means.xml", cv::FileStorage::READ);
 		storage2["scale_m"] >> m_scaling_means;
 		storage2.release();   
-
 
 		cv::FileStorage storage3(path + "SCALE_stds.xml", cv::FileStorage::READ);
 		storage3["scale_stds"] >> m_scaling_stds;
@@ -58,13 +60,13 @@ bool BOW_l::LoadFromFile(::std::string path)
 
 		m_classes.clear();
 
-		cv::FileStorage storage4(path + "CLASSES.xml", cv::FileStorage::READ);
-		::cv::FileNode n = storage4["classes"];                         // Read string sequence - Get node
+		//cv::FileStorage storage4(path + "CLASSES.xml", cv::FileStorage::READ);
+		//::cv::FileNode n = storage4["classes"];                         // Read string sequence - Get node
 		//::cv::FileNodeIterator it = n.begin(), it_end = n.end(); // Go through the node
 
 		m_classes.push_back("Free");
 		m_classes.push_back("Contact");
-		storage4.release();  
+		//storage4.release();  
 		
 		//std::vector<std::string> v;
 		//n >> v;

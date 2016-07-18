@@ -43,7 +43,6 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="Awaiba_lib.props" />
-    <Import Project="..\..\ConsoleApplication1\ConsoleApplication1\OpenCV_release_ok.props" />
     <Import Project="Winsock.props" />
     <Import Project="CTR.props" />
     <Import Project="VTK.props" />
