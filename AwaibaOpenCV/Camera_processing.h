@@ -68,11 +68,13 @@ private:
 	bool renderShape;
 	double robot_rotation;
 	bool newImg;
+	bool newImg_force;
 
 	std::vector<SE3> m_SolutionFrames;
 
 	// mutex for image sharing between threads
 	::std::mutex mutex_img;
+	::std::mutex mutex_img_force;
 	::std::mutex mutex_robotjoints;
 	::std::mutex mutex_teleop;
 	::std::mutex mutex_robotshape;
@@ -90,6 +92,7 @@ private:
 	// Thread functions
     void acquireImages(void);
 	void displayImages(void);
+	void computeForce(void);
 	void recordImages(void);
 	bool networkKinematics(void);
 	void robotDisplay(void);

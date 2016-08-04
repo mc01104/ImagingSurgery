@@ -130,6 +130,7 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 
 	m_OK = false;
 	newImg = false;
+	newImg_force = false;
 
 	::std::cout << "Initializing Force estimator ..." << ::std::endl;
 
@@ -215,6 +216,7 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		{
 			::std::thread t_acquire (&Camera_processing::acquireImages, this);
 			::std::thread t_display (&Camera_processing::displayImages, this);
+			::std::thread t_force (&Camera_processing::computeForce, this);
 			::std::thread t_record (&Camera_processing::recordImages, this);
 			::std::thread t_network (&Camera_processing::networkKinematics, this);
 			::std::thread t_vtk (&Camera_processing::robotDisplay, this);
@@ -222,6 +224,7 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 
 			t_acquire.join();
 			t_display.join();
+			t_force.join();
 			t_record.join();
 			t_network.join();
 			t_vtk_render.join();
@@ -232,11 +235,13 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		{
 			::std::thread t_acquire (&Camera_processing::acquireImages, this);
 			::std::thread t_display (&Camera_processing::displayImages, this);
+			::std::thread t_force (&Camera_processing::computeForce, this);
 			::std::thread t_record (&Camera_processing::recordImages, this);
 			::std::thread t_network (&Camera_processing::networkKinematics, this);
 
 			t_acquire.join();
 			t_display.join();
+			t_force.join();
 			t_record.join();
 			t_network.join();
 		}
@@ -388,6 +393,7 @@ void Camera_processing::acquireImages(void )
 				mutex_img.lock();
 				cv::merge(&array_to_merge[0], array_to_merge.size(), RgbFrame);
 				newImg = true;
+				newImg_force = true;
 				if (m_record)
 				{
 					ImgBuf el;
@@ -439,8 +445,6 @@ void Camera_processing::displayImages(void)
 			mutex_img.lock();
 			RgbFrame.copyTo(frame);
 			mutex_img.unlock();
-
-			if ( (! frame.empty()) && (m_outputForce)) UpdateForceEstimator(frame);
 		}
 		
 
@@ -471,6 +475,33 @@ void Camera_processing::displayImages(void)
 	}
 
 	::std::cout << "Images Display Thread exited successfully" << ::std::endl;
+}
+
+
+
+void Camera_processing::computeForce(void)
+{
+	Mat frame = Mat(250,250,CV_8UC3);
+
+	::std::cout << "Start Force processing thread" << ::std::endl;
+
+	while(m_running)
+	{
+		
+		if (newImg_force)
+		{
+			newImg_force = false;
+			mutex_img.lock();
+			RgbFrame.copyTo(frame);
+			mutex_img.unlock();
+
+			if ( (! frame.empty()) && (m_outputForce)) UpdateForceEstimator(frame);
+		}
+		
+	}
+
+	::std::cout << "Force processing Thread exited successfully" << ::std::endl;
+
 }
 
 void Camera_processing::recordImages(void)
