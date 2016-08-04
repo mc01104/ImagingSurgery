@@ -42,6 +42,7 @@ private:
 	bool m_record; // recording images
 	bool m_teleop; // robot teleoperation is ON/OFF
 	bool m_newdir; // flag for saying that a savedir should be created
+	bool m_rotateImage;
 
 	std::vector<double> m_configuration; // most recent robot configuration
 	Queue<ImgBuf> m_ImgBuffer; // images and timestamp buffer
@@ -82,6 +83,7 @@ private:
 	float m_contact;
 	float m_force_gain;
 	::cv::KalmanFilter m_kalman;
+	bool m_outputForce;
 
 	/********** Functions private *********/
 	

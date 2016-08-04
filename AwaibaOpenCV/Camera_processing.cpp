@@ -122,6 +122,8 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 	m_record = false;
 	m_teleop = false;
 	m_newdir = true; 
+	m_outputForce = false;
+	m_rotateImage = true;
 
 	m_board="NanoUSB2";
 	m_ControlLED=false;
@@ -300,7 +302,12 @@ void Camera_processing::processInput(char key)
 		if (m_record) m_newdir = true;
 		m_record = !m_record;
 		break;
-
+	case 'f':
+		m_outputForce = !m_outputForce;
+		break;
+	case 'o':
+		m_rotateImage =  !m_rotateImage;
+		break;
 	case '1':
 		changeExposure(-0.2f);
 		break;
@@ -433,7 +440,7 @@ void Camera_processing::displayImages(void)
 			RgbFrame.copyTo(frame);
 			mutex_img.unlock();
 
-			if (! frame.empty()) UpdateForceEstimator(frame);
+			if ( (! frame.empty()) && (m_outputForce)) UpdateForceEstimator(frame);
 		}
 		
 
@@ -445,7 +452,10 @@ void Camera_processing::displayImages(void)
 		{
 
 			display = false;
-			rot_mat = getRotationMatrix2D( center, rotation - robot_rotation*180.0/3.141592, 1.0 );
+			double rot = robot_rotation;
+			if (!m_rotateImage) rot = 0.0;
+
+			rot_mat = getRotationMatrix2D( center, rotation - rot*180.0/3.141592, 1.0 );
 			warpAffine( frame, frame_rotated, rot_mat, frame_rotated.size() );
 
 			if (rec) // draw a red circle on frame when recording
@@ -670,9 +680,13 @@ bool Camera_processing::networkKinematics(void)
 		}
 
 		float force = 0.0;
-		m_mutex_force.lock();
-		force = PredictForce();
-		m_mutex_force.unlock();
+
+		if (m_outputForce)
+		{
+			m_mutex_force.lock();
+			force = PredictForce();
+			m_mutex_force.unlock();
+		}
 
 		char s_force[5]; 
 		sprintf(s_force,"%.2f",force);
