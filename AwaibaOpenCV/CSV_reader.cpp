@@ -79,6 +79,10 @@ ParseOptions::ParseOptions(std::string options_file)
 				{
 					m_rendershape = (row[1] == "1");
 				}
+				if (row[0] == "svmdir")
+				{
+					m_SVMDir = row[1];
+				}
 
 			}
 		}
@@ -97,6 +101,10 @@ ParseOptions::~ParseOptions(){}
 std::string ParseOptions::getSaveDir()
 {
 	return m_saveDir;
+}
+std::string ParseOptions::getSVMDir()
+{
+	return m_SVMDir;
 }
 std::vector<float> ParseOptions::getWhiteBalance()
 {

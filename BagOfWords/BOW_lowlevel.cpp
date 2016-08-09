@@ -5,8 +5,8 @@
 BOW_l::BOW_l()
 {
 
-	m_featureDetector = ::cv::xfeatures2d::SURF::create();
-	m_descriptorExtractor =  ::cv::xfeatures2d::SURF::create();
+	m_featureDetector =  cv::FastFeatureDetector::create(); //::cv::BRISK::create(); //::cv::xfeatures2d::SURF::create();
+	m_descriptorExtractor = cv::xfeatures2d::LUCID::create(2,1);//::cv::BRISK::create(); //::cv::xfeatures2d::SURF::create();
 
 	m_dictionarySize = 10000;
 	m_tc_Kmeans = ::cv::TermCriteria(::cv::TermCriteria::MAX_ITER + ::cv::TermCriteria::EPS,100000, 0.000001);
@@ -14,9 +14,6 @@ BOW_l::BOW_l()
 	int flags = ::cv::KMEANS_PP_CENTERS;
 	m_bowtrainer = new ::cv::BOWKMeansTrainer(50, m_tc_Kmeans, retries, flags);
 	
-	m_descriptorMatcher = ::cv::DescriptorMatcher::create("FlannBased");
-	m_bowide = new ::cv::BOWImgDescriptorExtractor(m_descriptorExtractor, m_descriptorMatcher);
-
 	m_knn = ::cv::ml::KNearest::create();
 	m_knn->setAlgorithmType(::cv::ml::KNearest::BRUTE_FORCE);
 
@@ -42,9 +39,6 @@ bool BOW_l::LoadFromFile(::std::string path)
 		cv::FileStorage storage(path + "VOC.xml", cv::FileStorage::READ);
 		storage["vocabulary"] >> m_vocabulary;
 		storage.release();  
-
-
-		m_bowide->setVocabulary(m_vocabulary);
 
 		std::vector<int> v_word_labels;
 		for (int i=0;i<m_vocabulary.rows;i++) v_word_labels.push_back(i);
@@ -182,6 +176,10 @@ bool BOW_l::trainBOW(::std::string path)
 		for (int j = 0; j< descriptors.rows; j++) image_number.push_back(i);
 	}
 
+	// put descriptors in right format for kmeans clustering
+	if(training_descriptors.type()!=CV_32F) {
+		training_descriptors.convertTo(training_descriptors, CV_32F); 
+	}
 
 	// kmeans classify
 	int k = 50;
@@ -229,7 +227,6 @@ bool BOW_l::trainBOW(::std::string path)
 
 
 
-	m_bowide->setVocabulary(m_vocabulary);
 	//// Setup training data for classifiers
 	//for(int i=0; i<m_imList.size();i++)
 	//{
@@ -312,6 +309,12 @@ bool BOW_l::predictBOW(::cv::Mat img, float& response)
 	}
 
 	try{
+
+		// put descriptors in right format for kmeans clustering
+		if(descriptors.type()!=CV_32F) {
+			descriptors.convertTo(descriptors, CV_32F); 
+		}
+
 		// Vector quantization of words in image
 		m_knn->findNearest(descriptors,1,wordsInImg);
 	}

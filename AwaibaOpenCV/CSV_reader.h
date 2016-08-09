@@ -30,6 +30,7 @@ public:
 	~ParseOptions();
 
 	std::string getSaveDir();
+	std::string getSVMDir();
 	std::vector<float> getWhiteBalance();
 	float getRotation();
 	std::string getIPAddress();
@@ -38,6 +39,7 @@ public:
 
 private:
 	std::string m_saveDir;
+	std::string m_SVMDir;
 	std::vector<float> m_whiteBal;
 	float m_rotation;
 	std::string m_ipaddress;

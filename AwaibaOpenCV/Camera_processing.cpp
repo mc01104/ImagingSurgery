@@ -76,9 +76,6 @@ using namespace cv;
 //using namespace std;
 
 
-std::string base_folder = "./SVM_params/";
-::std::string base_path = base_folder + "output_";
-
 // VTK global variables (only way to get a thread running ...)
 
 ::std::mutex mutex_vtkRender;
@@ -132,12 +129,7 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 	newImg = false;
 	newImg_force = false;
 
-	::std::cout << "Initializing Force estimator ..." << ::std::endl;
-
-	InitForceEstimator(base_path);
-
-	::std::cout << "Force estimator initialized" << ::std::endl;
-
+	::std::string svm_base_folder = "./SVM_params/";
 
 	// Parse options in camera.csv file
 	// TODO: handle errors better and do not fallback to default config
@@ -153,6 +145,8 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		rotation = op.getRotation();
 		ipaddress = op.getIPAddress();
 		renderShape = op.getRenderShape();
+		svm_base_folder = op.getSVMDir();
+
 	}
 	else
 	{
@@ -164,6 +158,12 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		rotation = 0.0f;
 		ipaddress = std::string("192.168.0.2");
 	}
+
+
+	
+	::std::cout << "Initializing Force estimator ..." << ::std::endl;
+	InitForceEstimator(svm_base_folder + "output_");
+	::std::cout << "Force estimator initialized" << ::std::endl;
 
 	robot_rotation = 0.0;
 
@@ -390,10 +390,13 @@ void Camera_processing::acquireImages(void )
 				std::vector<double> configuration = m_configuration;
 				mutex_robotjoints.unlock();
 
-				mutex_img.lock();
+				m_mutex_sharedImg.writeLock();
+				//mutex_img.lock();
 				cv::merge(&array_to_merge[0], array_to_merge.size(), RgbFrame);
 				newImg = true;
 				newImg_force = true;
+				m_mutex_sharedImg.writeUnLock();
+
 				if (m_record)
 				{
 					ImgBuf el;
@@ -402,7 +405,7 @@ void Camera_processing::acquireImages(void )
 					el.robot_joints = configuration;
 					m_ImgBuffer.push(el);
 				}
-				mutex_img.unlock();
+				//mutex_img.unlock();
 
 				
 
@@ -437,15 +440,15 @@ void Camera_processing::displayImages(void)
 	while(m_running)
 	{
 		
+		m_mutex_sharedImg.readLock();
 		if (newImg)
 		{
 			newImg = false;
 			display = true;
 			rec = m_record;
-			mutex_img.lock();
 			RgbFrame.copyTo(frame);
-			mutex_img.unlock();
 		}
+		m_mutex_sharedImg.readUnLock();
 		
 
 		mutex_teleop.lock();
@@ -488,15 +491,13 @@ void Camera_processing::computeForce(void)
 	while(m_running)
 	{
 		
+		m_mutex_sharedImg.readLock();
 		if (newImg_force)
 		{
 			newImg_force = false;
-			mutex_img.lock();
-			RgbFrame.copyTo(frame);
-			mutex_img.unlock();
-
-			if ( (! frame.empty()) && (m_outputForce)) UpdateForceEstimator(frame);
+			if ( (! frame.empty()) && (m_outputForce)) UpdateForceEstimator(RgbFrame);
 		}
+		m_mutex_sharedImg.readUnLock();
 		
 	}
 

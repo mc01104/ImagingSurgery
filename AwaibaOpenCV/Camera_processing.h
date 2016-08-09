@@ -12,6 +12,8 @@
 
 #include "Queue.h"
 #include "BOW_lowlevel.h"
+#include "SharedMutex.h"
+
 
 // OpenCV includes
 #include <opencv2/core/core.hpp>
@@ -79,6 +81,8 @@ private:
 	::std::mutex mutex_teleop;
 	::std::mutex mutex_robotshape;
 	::std::mutex m_mutex_force;
+
+	SharedMutex m_mutex_sharedImg;
 
 	// Force estimation variables
 	BOW_l m_bow;
