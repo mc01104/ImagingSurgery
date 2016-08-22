@@ -82,6 +82,7 @@ private:
 	::std::mutex mutex_robotshape;
 	::std::mutex m_mutex_force;
 
+	// shared mutex for multiple readers and one writer, protecting the last read image
 	SharedMutex m_mutex_sharedImg;
 
 	// Force estimation variables
@@ -90,6 +91,7 @@ private:
 	float m_force_gain;
 	::cv::KalmanFilter m_kalman;
 	bool m_outputForce;
+	std::vector<float> m_KFParams; // Kalman filter gains, process and measure covariance
 
 	/********** Functions private *********/
 	
@@ -122,7 +124,7 @@ public:
 	void setControlLED(bool LED);
 	bool getControlLED();
 
-	void InitForceEstimator(::std::string svm_base_path, float force_gain=3.0, float processNoiseCov=0.5);
+	void InitForceEstimator(::std::string svm_base_path, float force_gain=3.0, float processNoiseCov=0.5, float measureCov = 0.5);
 	void UpdateForceEstimator(::cv::Mat img);
 	float PredictForce();
 };

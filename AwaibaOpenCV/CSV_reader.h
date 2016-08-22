@@ -32,6 +32,7 @@ public:
 	std::string getSaveDir();
 	std::string getSVMDir();
 	std::vector<float> getWhiteBalance();
+	std::vector<float> getKFParams();
 	float getRotation();
 	std::string getIPAddress();
 	bool getRenderShape();
@@ -41,6 +42,7 @@ private:
 	std::string m_saveDir;
 	std::string m_SVMDir;
 	std::vector<float> m_whiteBal;
+	std::vector<float> m_KFParams;
 	float m_rotation;
 	std::string m_ipaddress;
 	bool m_rendershape;

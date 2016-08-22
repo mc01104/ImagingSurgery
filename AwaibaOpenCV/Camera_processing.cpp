@@ -147,6 +147,8 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		renderShape = op.getRenderShape();
 		svm_base_folder = op.getSVMDir();
 
+		m_KFParams = op.getKFParams();
+
 	}
 	else
 	{
@@ -157,13 +159,16 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		g_b = 1.29f;
 		rotation = 0.0f;
 		ipaddress = std::string("192.168.0.2");
+
+		m_KFParams.push_back(0.5);
+		m_KFParams.push_back(0.5);
 	}
 
-
-	
 	::std::cout << "Initializing Force estimator ..." << ::std::endl;
-	InitForceEstimator(svm_base_folder + "output_");
+	InitForceEstimator(svm_base_folder + "output_", 3.0, m_KFParams[0], m_KFParams[1]);
 	::std::cout << "Force estimator initialized" << ::std::endl;
+	
+	
 
 	robot_rotation = 0.0;
 
@@ -882,7 +887,7 @@ void Camera_processing::vtkRender(void)
 Force estimation functions
 *//////////////////
 
-void Camera_processing::InitForceEstimator(::std::string svm_base_path, float force_gain, float processNoiseCov)
+void Camera_processing::InitForceEstimator(::std::string svm_base_path, float force_gain, float processNoiseCov, float measureCov)
 {
 	try
 	{
@@ -891,8 +896,10 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 
 		m_kalman = ::cv::KalmanFilter(1,1);
 		m_force_gain = force_gain;
-		cv::setIdentity(m_kalman.measurementMatrix);
+		cv::setIdentity(m_kalman.measurementMatrix, cv::Scalar::all(measureCov));
 		cv::setIdentity(m_kalman.processNoiseCov, cv::Scalar::all(processNoiseCov));
+
+		::std::cout <<"Set Kalman filter gains to " << processNoiseCov << " (process), and " << measureCov << " (measure)" << std::endl;
 	}
 	catch (std::exception& e)
 	{

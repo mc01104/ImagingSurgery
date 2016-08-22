@@ -59,9 +59,18 @@ ParseOptions::ParseOptions(std::string options_file)
 					float g_r = stof(row[1]);
 					float g_g = stof(row[2]);
 					float g_b = stof(row[3]);
+					m_whiteBal.clear();
 					m_whiteBal.push_back(g_r);
 					m_whiteBal.push_back(g_g);
 					m_whiteBal.push_back(g_b);
+				}
+				if (row[0] == "KFParams")
+				{
+					float process_cov = stof(row[1]);
+					float measure_cov = stof(row[2]);
+					m_KFParams.clear();
+					m_KFParams.push_back(process_cov);
+					m_KFParams.push_back(measure_cov);
 				}
 				if (row[0] == "savedir")
 				{
@@ -83,7 +92,6 @@ ParseOptions::ParseOptions(std::string options_file)
 				{
 					m_SVMDir = row[1];
 				}
-
 			}
 		}
 	}
@@ -110,6 +118,12 @@ std::vector<float> ParseOptions::getWhiteBalance()
 {
 	return m_whiteBal;
 }
+
+std::vector<float> ParseOptions::getKFParams()
+{
+	return m_KFParams;
+}
+
 float ParseOptions::getRotation()
 {
 	return m_rotation;
