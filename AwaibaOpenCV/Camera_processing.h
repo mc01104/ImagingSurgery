@@ -5,6 +5,8 @@
 #include <thread>
 #include <mutex>
 #include <queue>
+#include <deque>
+#include <numeric> 
 
  #include <vtkAutoInit.h>
  VTK_MODULE_INIT(vtkInteractionStyle);
@@ -92,6 +94,12 @@ private:
 	::cv::KalmanFilter m_kalman;
 	bool m_outputForce;
 	std::vector<float> m_KFParams; // Kalman filter gains, process and measure covariance
+	float m_heartFreq; // estimated heart frequency
+	float m_imFreq; 
+	float m_contactAvgOverHeartCycle;
+	bool m_contactMeasured;
+	std::deque<float> m_contactBuffer;
+
 
 	/********** Functions private *********/
 	

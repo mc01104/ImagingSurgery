@@ -717,21 +717,29 @@ bool Camera_processing::networkKinematics(void)
 		}
 
 		float force = 0.0;
+		bool newMeasurement = false;
 
 		if (m_outputForce)
 		{
 			m_mutex_force.lock();
-			force = PredictForce();
+			//PredictForce();
+			force = m_contactAvgOverHeartCycle;
+			newMeasurement = m_contactMeasured;
+			m_contactMeasured = false;
 			m_mutex_force.unlock();
 		}
 
+		
+
 		char s_force[5]; 
 		sprintf(s_force,"%.2f",force);
-		
+
+
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
-		iResult = send( ConnectSocket, s_force, 5, 0 );
+		if (newMeasurement) iResult = send( ConnectSocket, s_force, 5, 0 );
+		else iResult = send( ConnectSocket, "NOF", 5, 0 );
 
     } while( (iResult > 0) && m_running);
 
@@ -900,6 +908,11 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 		cv::setIdentity(m_kalman.processNoiseCov, cv::Scalar::all(processNoiseCov));
 
 		::std::cout <<"Set Kalman filter gains to " << processNoiseCov << " (process), and " << measureCov << " (measure)" << std::endl;
+
+		// Initialization of variables for image framerate and heart frequency
+		m_imFreq = 40.0;
+		m_heartFreq = 2.0;
+		m_contactMeasured = false;
 	}
 	catch (std::exception& e)
 	{
@@ -917,9 +930,29 @@ void Camera_processing::UpdateForceEstimator(::cv::Mat img)
 		if (classes[(int) response] == "Free") response = 0.0;
 		else response = 1.0;
 
-		m_mutex_force.lock();
-		m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
-		m_mutex_force.unlock();
+		m_contactBuffer.push_back(response);
+
+		if (m_contactBuffer.size() < m_imFreq/m_heartFreq - 1.0)
+		{
+			m_mutex_force.lock();
+			m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
+			m_contactAvgOverHeartCycle = 0.0;
+			m_contactMeasured = true;
+			m_mutex_force.unlock();
+		}
+		else
+		{
+			if (m_contactBuffer.size() > m_imFreq/m_heartFreq) m_contactBuffer.pop_front();
+			float sum = std::accumulate(m_contactBuffer.begin(),m_contactBuffer.end(),0.0);
+
+			m_mutex_force.lock();
+			m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
+			m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
+			m_contactMeasured = true;
+			m_mutex_force.unlock();
+		}
+
+		
 	}
 }
 
