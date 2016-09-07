@@ -491,6 +491,8 @@ void Camera_processing::computeForce(void)
 {
 	Mat frame = Mat(250,250,CV_8UC3);
 
+	bool computeForce = false;
+
 	::std::cout << "Start Force processing thread" << ::std::endl;
 
 	while(m_running)
@@ -499,10 +501,17 @@ void Camera_processing::computeForce(void)
 		m_mutex_sharedImg.readLock();
 		if (newImg_force)
 		{
+			RgbFrame.copyTo(frame);
+			computeForce = newImg_force;
 			newImg_force = false;
-			if ( (! frame.empty()) && (m_outputForce)) UpdateForceEstimator(RgbFrame);
 		}
 		m_mutex_sharedImg.readUnLock();
+
+		if (computeForce)
+		{
+			computeForce = false;
+			if ((! frame.empty()) && (m_outputForce)) UpdateForceEstimator(RgbFrame);
+		}
 		
 	}
 
