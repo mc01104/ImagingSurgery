@@ -18,8 +18,8 @@ BOW_l::BOW_l()
 	m_knn->setAlgorithmType(::cv::ml::KNearest::BRUTE_FORCE);
 
 	m_trained = false;
+	
 }
-
 
 BOW_l::~BOW_l()
 {
@@ -39,6 +39,7 @@ bool BOW_l::LoadFromFile(::std::string path)
 		cv::FileStorage storage(path + "VOC.xml", cv::FileStorage::READ);
 		storage["vocabulary"] >> m_vocabulary;
 		storage.release();  
+		response_histogram = ::cv::Mat::zeros(1, m_vocabulary.rows, CV_32F);			// Check if correct place to instantiate
 
 		std::vector<int> v_word_labels;
 		for (int i=0;i<m_vocabulary.rows;i++) v_word_labels.push_back(i);
@@ -288,7 +289,7 @@ Arguments:
 
 Returns true if there was no runtime error during prediction
 */
-bool BOW_l::predictBOW(::cv::Mat img, float& response)
+bool BOW_l::predictBOW(const ::cv::Mat& img, float& response)
 {
 	if (!m_trained) return false;
 
@@ -316,35 +317,37 @@ bool BOW_l::predictBOW(::cv::Mat img, float& response)
 		}
 
 		// Vector quantization of words in image
-		m_knn->findNearest(descriptors,1,wordsInImg);
+		m_knn->findNearest(descriptors,1,wordsInImg);		//maybe Kd-trees
 	}
 	catch (std::exception& e)
 	{
 		response = 0.0;
-		//::std::cout << e.what();
+		::std::cout << e.what();
 		return false;
 	}
 
 	
-	// construction of response histogram
-	::std::vector<float> temp(m_vocabulary.rows, 0.0);
+	// construction of response histogram					// look if there is more efficient way
+	//::std::vector<float> temp(m_vocabulary.rows, 0.0);
 
+	response_histogram.setTo(0.0);
 	for(int i=0; i<wordsInImg.rows;i++)
 	{
 		int word = wordsInImg.at<float>(i,0);
-		temp[word] ++;
+		//temp[word] ++;
+		response_histogram.at<float>(0,word) ++;
 	}
-	::cv::Mat response_histogram;
-	::cv::transpose(::cv::Mat(temp),response_histogram); // make a row-matrix from the column one made from the vector
+	//::cv::Mat response_histogram;
+	//::cv::transpose(::cv::Mat(temp),response_histogram); // make a row-matrix from the column one made from the vector
 
 
 	// Normalization of response histogram
 	for (int i=0; i<response_histogram.cols;i++)
 	{
-		::cv::Mat col = response_histogram.col(i);
+		//::cv::Mat col = response_histogram.col(i);
 
-		col = col - m_scaling_means[i];
-		col = col / m_scaling_stds[i];
+		response_histogram.col(i) = response_histogram.col(i) - m_scaling_means[i];
+		response_histogram.col(i) = response_histogram.col(i) / m_scaling_stds[i];
 	}
 
 
@@ -356,7 +359,7 @@ bool BOW_l::predictBOW(::cv::Mat img, float& response)
 	catch ( const std::exception & e ) 
 	{
 		response = 0.0;
-		//::std::cout << e.what();
+		::std::cout << e.what();
 		return false;
 	}
 

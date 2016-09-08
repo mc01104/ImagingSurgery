@@ -169,7 +169,7 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 	::std::cout << "Force estimator initialized" << ::std::endl;
 	
 	
-
+	m_measured_period = 0.0;
 	robot_rotation = 0.0;
 
 	// All errors are reported as std::exception.
@@ -239,15 +239,15 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 		else
 		{
 			::std::thread t_acquire (&Camera_processing::acquireImages, this);
-			::std::thread t_display (&Camera_processing::displayImages, this);
-			::std::thread t_force (&Camera_processing::computeForce, this);
-			::std::thread t_record (&Camera_processing::recordImages, this);
+			//::std::thread t_display (&Camera_processing::displayImages, this);
+			//::std::thread t_force (&Camera_processing::computeForce, this);
+			//::std::thread t_record (&Camera_processing::recordImages, this);
 			::std::thread t_network (&Camera_processing::networkKinematics, this);
 
 			t_acquire.join();
-			t_display.join();
-			t_force.join();
-			t_record.join();
+			//t_display.join();
+			//t_force.join();
+			//t_record.join();
 			t_network.join();
 		}
 
@@ -354,19 +354,39 @@ void Camera_processing::acquireImages(void )
 	ArgbFrame argbFrame1(m_Manager.GetFrameDimensions());
 	RawFrame rawFrame1(m_Manager.GetFrameDimensions());
 
-	Mat bufImg = Mat(250,250,CV_8UC3);
+	//Mat bufImg = Mat(250,250,CV_8UC3);
 
+	unsigned char rData [250*250];
+	unsigned char gData [250*250];
+	unsigned char bData [250*250];
+
+	Mat R = Mat(250, 250, CV_8U);
+	Mat G = Mat(250, 250, CV_8U);
+	Mat B = Mat(250, 250, CV_8U);
+	
+	::std::vector<Mat> array_to_merge;
+	array_to_merge.push_back(B);
+	array_to_merge.push_back(G);
+	array_to_merge.push_back(R);
+
+	array_to_merge[0].data = bData;
+	array_to_merge[1].data = gData;
+	array_to_merge[2].data = rData;
+
+
+	auto start_rec = std::chrono::high_resolution_clock::now();					
 	while(m_running)
 	{
+		auto start_rec = std::chrono::high_resolution_clock::now();					
 		try
 		{
 			/*while (!MyManager.GetNextFrame(&argbFrame1, &rawFrame1)) Sleep(1);*/
-					
+			
 			if(m_Manager.GetNextFrame(&argbFrame1, &rawFrame1))
 			{
-				unsigned char rData [250*250];
-				unsigned char gData [250*250];
-				unsigned char bData [250*250];
+				//unsigned char rData [250*250];
+				//unsigned char gData [250*250];
+				//unsigned char bData [250*250];
 
 				//Get the pixels from the rawFrame to show to the user
 				for (int i=0; i<250*250;i++)
@@ -376,43 +396,51 @@ void Camera_processing::acquireImages(void )
 					bData[i] = ((argbFrame1.Begin()._Ptr[i] & 0x000000FF));
 				}
 
-				Mat R = Mat(250, 250, CV_8U, rData);
-				Mat G = Mat(250, 250, CV_8U, gData);
-				Mat B = Mat(250, 250, CV_8U, bData);
+				//Mat R = Mat(250, 250, CV_8U, rData);
+				//Mat G = Mat(250, 250, CV_8U, gData);
+				//Mat B = Mat(250, 250, CV_8U, bData);
+
+				array_to_merge[0] *= g_b;			
+				array_to_merge[1] *= g_g;			
+				array_to_merge[2] *= g_r;			
 
 				// White balancing
-				R = g_r*R;
-				G = g_g*G;
-				B = g_b*B;
+				//R = g_r*R;
+				//G = g_g*G;
+				//B = g_b*B;
 
-				std::vector<cv::Mat> array_to_merge ;
+				//std::vector<cv::Mat> array_to_merge ;
 
-				array_to_merge.push_back(B);
-				array_to_merge.push_back(G);
-				array_to_merge.push_back(R);
+				//array_to_merge.push_back(B);
+				//array_to_merge.push_back(G);
+				//array_to_merge.push_back(R);
 
-				mutex_robotjoints.lock();
-				std::vector<double> configuration = m_configuration;
-				mutex_robotjoints.unlock();
+				//mutex_robotjoints.lock();
+				//std::vector<double> configuration = m_configuration;
+				//mutex_robotjoints.unlock();
 
-				m_mutex_sharedImg.writeLock();
+				//m_mutex_sharedImg.writeLock();
 				//mutex_img.lock();
 				cv::merge(&array_to_merge[0], array_to_merge.size(), RgbFrame);
-				newImg = true;
-				newImg_force = true;
-				m_mutex_sharedImg.writeUnLock();
+				//newImg = true;
+				//newImg_force = true;
+				//m_mutex_sharedImg.writeUnLock();
 
-				if (m_record)
-				{
-					ImgBuf el;
-					el.img = RgbFrame.clone();
-					el.timestamp = argbFrame1.GetTimeStamp();
-					el.robot_joints = configuration;
-					m_ImgBuffer.push(el);
-				}
+
+					
+				if ((! RgbFrame.empty()) && (m_outputForce)) 
+					UpdateForceEstimator(RgbFrame, measured_duration.count());
+
+				//if (m_record)
+				//{
+				//	ImgBuf el;
+				//	el.img = RgbFrame.clone();
+				//	el.timestamp = argbFrame1.GetTimeStamp();
+				//	el.robot_joints = configuration;
+				//	m_ImgBuffer.push(el);
+				//}
 				//mutex_img.unlock();
 
-				
 
 			}
 			else
@@ -510,7 +538,7 @@ void Camera_processing::computeForce(void)
 		if (computeForce)
 		{
 			computeForce = false;
-			if ((! frame.empty()) && (m_outputForce)) UpdateForceEstimator(RgbFrame);
+			if ((! frame.empty()) && (m_outputForce)) UpdateForceEstimator(RgbFrame); //this is a bag -> you need to use frame not RgbFrame
 		}
 		
 	}
@@ -930,7 +958,7 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 
 }
 
-void Camera_processing::UpdateForceEstimator(::cv::Mat img)
+void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 {
 	::std::vector<::std::string> classes = m_bow.getClasses();
 	float response = 0.0;
@@ -951,12 +979,15 @@ void Camera_processing::UpdateForceEstimator(::cv::Mat img)
 		}
 		else
 		{
-			if (m_contactBuffer.size() > m_imFreq/m_heartFreq) m_contactBuffer.pop_front();
+			if (m_contactBuffer.size() > m_imFreq/m_heartFreq) 
+				m_contactBuffer.pop_front();
+
 			float sum = std::accumulate(m_contactBuffer.begin(),m_contactBuffer.end(),0.0);
 
 			m_mutex_force.lock();
 			m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
 			m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
+
 			m_contactMeasured = true;
 			m_mutex_force.unlock();
 		}

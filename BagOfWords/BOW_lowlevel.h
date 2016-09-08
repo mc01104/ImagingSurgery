@@ -20,7 +20,7 @@ public:
 	bool SaveToFile(::std::string path);
 	bool trainBOW(::std::string path);
 	bool predictBOW(std::string path, float& response);
-	bool predictBOW(::cv::Mat img, float& response);
+	bool predictBOW(const ::cv::Mat& img, float& response);
 
 
 	::std::vector<::std::string> getClasses();
@@ -48,4 +48,6 @@ private:
 	int m_dictionarySize;
 
 	bool m_trained;
+
+	::cv::Mat response_histogram;
 };

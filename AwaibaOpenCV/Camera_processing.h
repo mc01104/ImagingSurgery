@@ -99,7 +99,8 @@ private:
 	float m_contactAvgOverHeartCycle;
 	bool m_contactMeasured;
 	std::deque<float> m_contactBuffer;
-
+	std::deque<float> m_durations;
+	float m_measured_period;
 
 	/********** Functions private *********/
 	
@@ -133,6 +134,6 @@ public:
 	bool getControlLED();
 
 	void InitForceEstimator(::std::string svm_base_path, float force_gain=3.0, float processNoiseCov=0.5, float measureCov = 0.5);
-	void UpdateForceEstimator(::cv::Mat img);
+	void UpdateForceEstimator(const ::cv::Mat& img);
 	float PredictForce();
 };
