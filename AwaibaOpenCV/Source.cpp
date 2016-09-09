@@ -22,6 +22,8 @@
 #include "Camera_processing.h"
 
 #include "CImg.h"
+#include "helper_parseopts.h"
+
 using namespace cimg_library;
 
 #define cimg_use_png
@@ -32,6 +34,23 @@ using namespace cv;
 
 int main( int argc, char** argv )
 {
-	Camera_processing test;
+
+	int period = 20; // period = images per heart cycle period
+	bool sendContact = false; // send contact only and not ratio
+
+	if(cmdOptionExists(argv, argv+argc, "-period"))
+    {
+		char * s_period = getCmdOption(argv, argv + argc, "-period");
+		try { period  = atoi(s_period); }
+		catch ( const std::exception & e ) { period = 20;}
+    }
+
+	if(cmdOptionExists(argv, argv+argc, "-sendContact"))
+    {
+		sendContact = true;
+    }
+
+
+	Camera_processing test(period, sendContact);
 
 }

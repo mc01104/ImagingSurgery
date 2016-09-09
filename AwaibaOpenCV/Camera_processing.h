@@ -96,6 +96,9 @@ private:
 	std::vector<float> m_KFParams; // Kalman filter gains, process and measure covariance
 	float m_heartFreq; // estimated heart frequency
 	float m_imFreq; 
+	int m_FramesPerHeartCycle;
+	bool m_sendContact;
+
 	float m_contactAvgOverHeartCycle;
 	bool m_contactMeasured;
 	std::deque<float> m_contactBuffer;
@@ -124,7 +127,7 @@ private:
 public:
 
 	// Constructor and destructor
-	Camera_processing();
+	Camera_processing(int period, bool sendContact);
 	~Camera_processing();
 
 	// Accessors

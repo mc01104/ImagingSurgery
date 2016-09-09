@@ -110,7 +110,7 @@ public:
 
 
 // Constructor and destructor
-Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
+Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -970,7 +970,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		m_contactBuffer.push_back(response);
 
-		if (m_contactBuffer.size() < m_imFreq/m_heartFreq - 1.0)
+		if (m_contactBuffer.size() < m_FramesPerHeartCycle)
 		{
 			m_mutex_force.lock();
 			m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
@@ -980,15 +980,15 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 		}
 		else
 		{
-			if (m_contactBuffer.size() > m_imFreq/m_heartFreq) 
+			if (m_contactBuffer.size() > m_FramesPerHeartCycle) 
 				m_contactBuffer.pop_front();
 
 			float sum = std::accumulate(m_contactBuffer.begin(),m_contactBuffer.end(),0.0);
 
 			m_mutex_force.lock();
-			m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
-			//m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
-			m_contactAvgOverHeartCycle = response;
+			//m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
+			m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
+			if (m_sendContact) m_contactAvgOverHeartCycle = response;
 			m_contactMeasured = true;
 			m_mutex_force.unlock();
 		}
