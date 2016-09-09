@@ -119,7 +119,8 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 	m_record = false;
 	m_teleop = false;
 	m_newdir = true; 
-	m_outputForce = false;
+	//m_outputForce = false;
+	m_outputForce = true;
 	m_rotateImage = true;
 
 	m_board="NanoUSB2";
@@ -373,8 +374,6 @@ void Camera_processing::acquireImages(void )
 	array_to_merge[1].data = gData;
 	array_to_merge[2].data = rData;
 
-
-	auto start_rec = std::chrono::high_resolution_clock::now();					
 	while(m_running)
 	{
 		auto start_rec = std::chrono::high_resolution_clock::now();					
@@ -427,9 +426,9 @@ void Camera_processing::acquireImages(void )
 				//m_mutex_sharedImg.writeUnLock();
 
 
-					
+				
 				if ((! RgbFrame.empty()) && (m_outputForce)) 
-					UpdateForceEstimator(RgbFrame, measured_duration.count());
+					UpdateForceEstimator(RgbFrame);
 
 				//if (m_record)
 				//{
@@ -441,7 +440,9 @@ void Camera_processing::acquireImages(void )
 				//}
 				//mutex_img.unlock();
 
-
+				auto stop_rec = std::chrono::high_resolution_clock::now();					
+				auto duration = std::chrono::duration_cast<::std::chrono::microseconds> (stop_rec - start_rec);
+				::std::cout << duration.count()/1000.0 << ::std::endl;
 			}
 			else
 			{
@@ -986,8 +987,8 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 			m_mutex_force.lock();
 			m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
-			m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
-
+			//m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
+			m_contactAvgOverHeartCycle = response;
 			m_contactMeasured = true;
 			m_mutex_force.unlock();
 		}
