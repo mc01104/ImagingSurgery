@@ -442,7 +442,7 @@ void Camera_processing::acquireImages(void )
 
 				auto stop_rec = std::chrono::high_resolution_clock::now();					
 				auto duration = std::chrono::duration_cast<::std::chrono::microseconds> (stop_rec - start_rec);
-				::std::cout << duration.count()/1000.0 << ::std::endl;
+				//::std::cout << duration.count()/1000.0 << ::std::endl;
 			}
 			else
 			{
@@ -975,6 +975,9 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 			m_mutex_force.lock();
 			m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
 			m_contactAvgOverHeartCycle = 0.0;
+
+			::std::cout << response << "," << m_contactAvgOverHeartCycle << ::std::endl;
+
 			m_contactMeasured = true;
 			m_mutex_force.unlock();
 		}
@@ -988,9 +991,12 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 			m_mutex_force.lock();
 			//m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
 			m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
+			::std::cout << response << "," << m_contactAvgOverHeartCycle << ::std::endl;
+
 			if (m_sendContact) m_contactAvgOverHeartCycle = response;
 			m_contactMeasured = true;
 			m_mutex_force.unlock();
+
 		}
 
 		
