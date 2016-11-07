@@ -70,6 +70,7 @@ using namespace cimg_library;
 #include "HTransform.h"
 #include "MechanicsBasedKinematics.h"
 #include "CTRFactory.h"
+#include "FilterLibrary.h"
 
 using namespace Core;
 using namespace cv;
@@ -114,6 +115,10 @@ Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
+	// George
+	m_maxBufferSize = 100;
+	filter = new MedianFilter(5);
 
 	m_running = true;
 	m_record = false;
@@ -539,7 +544,7 @@ void Camera_processing::computeForce(void)
 		if (computeForce)
 		{
 			computeForce = false;
-			if ((! frame.empty()) && (m_outputForce)) UpdateForceEstimator(RgbFrame); //this is a bag -> you need to use frame not RgbFrame
+			if ((! frame.empty()) && (m_outputForce)) UpdateForceEstimator(RgbFrame); //this is a bug -> you need to use frame not RgbFrame
 		}
 		
 	}
@@ -951,6 +956,7 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 		m_imFreq = 40.0;
 		m_heartFreq = 2.0;
 		m_contactMeasured = false;
+		m_heartFreqInSamples = m_imFreq/m_heartFreq;
 	}
 	catch (std::exception& e)
 	{
@@ -963,35 +969,45 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 {
 	::std::vector<::std::string> classes = m_bow.getClasses();
 	float response = 0.0;
+	
 	if (m_bow.predictBOW(img,response)) 
 	{
 		if (classes[(int) response] == "Free") response = 0.0;
 		else response = 1.0;
 
 		m_contactBuffer.push_back(response);
+		
+		m_contactBufferFiltered.push_back(this->filter->step(response));
 
-		if (m_contactBuffer.size() < m_imFreq/m_heartFreq - 1.0)
-		{
-			m_mutex_force.lock();
-			m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
-			m_contactAvgOverHeartCycle = 0.0;
-			m_contactMeasured = true;
-			m_mutex_force.unlock();
-		}
-		else
-		{
-			if (m_contactBuffer.size() > m_imFreq/m_heartFreq) 
-				m_contactBuffer.pop_front();
+		if (m_contactBufferFiltered.size() > m_maxBufferSize)
+			m_contactBufferFiltered.pop_front();
 
-			float sum = std::accumulate(m_contactBuffer.begin(),m_contactBuffer.end(),0.0);
 
-			m_mutex_force.lock();
-			m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
-			//m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
-			m_contactAvgOverHeartCycle = response;
-			m_contactMeasured = true;
-			m_mutex_force.unlock();
-		}
+
+
+
+		//if (m_contactBuffer.size() < m_imFreq/m_heartFreq - 1.0)
+		//{
+		//	m_mutex_force.lock();
+		//	m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
+		//	m_contactAvgOverHeartCycle = 0.0;
+		//	m_contactMeasured = true;
+		//	m_mutex_force.unlock();
+		//}
+		//else
+		//{
+		//	if (m_contactBuffer.size() > m_imFreq/m_heartFreq) 
+		//		m_contactBuffer.pop_front();
+
+		//	float sum = std::accumulate(m_contactBuffer.begin(),m_contactBuffer.end(),0.0);
+
+		//	m_mutex_force.lock();
+		//	m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
+		//	//m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
+		//	m_contactAvgOverHeartCycle = response;
+		//	m_contactMeasured = true;
+		//	m_mutex_force.unlock();
+		//}
 
 		
 	}

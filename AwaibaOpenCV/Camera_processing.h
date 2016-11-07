@@ -36,6 +36,9 @@ struct ImgBuf {
   std::vector<double> robot_joints;
 } ;
 
+
+class Filter;
+
 class Camera_processing {
 
 private:
@@ -99,6 +102,14 @@ private:
 	float m_contactAvgOverHeartCycle;
 	bool m_contactMeasured;
 	std::deque<float> m_contactBuffer;
+	
+	// George -> attempting implementation for frequency estimation
+	::std::deque<float> m_contactBufferFiltered;
+	int					m_maxBufferSize;
+	Filter*				m_filter;
+	int					m_heartFreqInSamples;
+
+
 	std::deque<float> m_durations;
 	float m_measured_period;
 
