@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2012 for Windows Desktop
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AwaibaOpenCV", "AwaibaOpenCV\AwaibaOpenCV.vcxproj", "{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}"
 	ProjectSection(ProjectDependencies) = postProject
 		{10C29E02-D69A-4095-BD25-C6908AB4EDE9} = {10C29E02-D69A-4095-BD25-C6908AB4EDE9}
@@ -29,6 +29,7 @@ Global
 		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Debug|x64.ActiveCfg = Debug|x64
 		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Debug|x64.Build.0 = Debug|x64
 		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Release|Win32.ActiveCfg = Release|x64
+		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Release|Win32.Build.0 = Release|x64
 		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Release|x64.ActiveCfg = Release|x64
 		{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}.Release|x64.Build.0 = Release|x64
 		{1155C395-16CB-47BF-9BE4-4BF5F70F7ABD}.Debug|Win32.ActiveCfg = Debug|Win32

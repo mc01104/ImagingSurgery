@@ -97,3 +97,4 @@ void PrintCArray(const double* toPrint, size_t size, ::std::ostream& os)
 	os << ::std::endl;
 
 }
+

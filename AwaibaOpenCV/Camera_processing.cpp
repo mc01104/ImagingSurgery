@@ -111,14 +111,14 @@ public:
 
 
 // Constructor and destructor
-Camera_processing::Camera_processing() : m_Manager(Manager::GetInstance(0))
+Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	// George
 	m_maxBufferSize = 100;
-	filter = new MedianFilter(5);
+	m_filter = new MedianFilter(5);
 
 	m_running = true;
 	m_record = false;
@@ -965,11 +965,27 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 
 }
 
+void Camera_processing::updateHeartFrequency()
+{
+	
+	::std::vector<float> tmp(m_contactBufferFiltered.size() - 1);
+	diff(m_contactBufferFiltered, tmp);
+
+	::std::vector<int> ind;
+	find_all(m_contactBufferFiltered.begin(), m_contactBufferFiltered.end(), 1.0, ind);
+
+	::std::vector<int> tmp2;
+	tmp2.resize(ind.size() - 1);
+	diff<int>(ind, tmp2);
+
+	m_heartFreqInSamples = static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size();
+}
+
 void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 {
 	::std::vector<::std::string> classes = m_bow.getClasses();
 	float response = 0.0;
-	
+
 	if (m_bow.predictBOW(img,response)) 
 	{
 		if (classes[(int) response] == "Free") response = 0.0;
@@ -977,7 +993,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		m_contactBuffer.push_back(response);
 		
-		m_contactBufferFiltered.push_back(this->filter->step(response));
+		m_contactBufferFiltered.push_back(m_filter->step(response));
 
 		if (m_contactBufferFiltered.size() > m_maxBufferSize)
 			m_contactBufferFiltered.pop_front();
@@ -986,23 +1002,17 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 		{
 			m_mutex_force.lock();
 			m_contactAvgOverHeartCycle = 0.0;
-
-			::std::cout << response << "," << m_contactAvgOverHeartCycle << ::std::endl;
-
 			m_contactMeasured = true;
 			m_mutex_force.unlock();
 		}
-		else
+		else if (m_contactBufferFiltered.size() > m_heartFreqInSamples) 
 		{
-			if (m_contactBuffer.size() > m_imFreq/m_heartFreq) 
-				m_contactBuffer.pop_front();
-
-			float sum = std::accumulate(m_contactBuffer.begin(),m_contactBuffer.end(),0.0);
+			
+			float sum = std::accumulate(m_contactBufferFiltered.rbegin(),m_contactBufferFiltered.rbegin() + this->m_heartFreqInSamples,0.0);
 
 			m_mutex_force.lock();
-			//m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
-			m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
-			::std::cout << response << "," << m_contactAvgOverHeartCycle << ::std::endl;
+			m_contactAvgOverHeartCycle = sum/m_heartFreqInSamples;
+			//::std::cout << response << "," << m_contactAvgOverHeartCycle << ::std::endl;
 
 			if (m_sendContact) m_contactAvgOverHeartCycle = response;
 			m_contactMeasured = true;
@@ -1010,9 +1020,8 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		}
 
-
-
-
+		//this->updateHeartFrequency();
+		::std::cout << "estimated heart frequency in samples: " << m_heartFreqInSamples << ::std::endl;
 		//if (m_contactBuffer.size() < m_imFreq/m_heartFreq - 1.0)
 		//{
 		//	m_mutex_force.lock();

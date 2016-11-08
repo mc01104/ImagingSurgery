@@ -142,10 +142,12 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FilterLibrary.h" />
     <ClInclude Include="HTransform.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FilterLibrary.cpp" />
     <ClCompile Include="HTransform.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>

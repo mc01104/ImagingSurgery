@@ -2,6 +2,7 @@
 #include "time.h"
 #include <string>
 #include <vector>
+#include <deque>
 #include <iostream>
 #include <Eigen/Dense>
 
@@ -139,3 +140,42 @@
 
 	void PrintCArray(const double* toPrint, size_t size, ::std::ostream& os = ::std::cout);
 //}
+
+template <typename T> 
+void diff(::std::deque<T> data_in, ::std::vector<T>& data_out)
+{
+	if(data_out.size() != data_in.size() - 1)
+		data_out.resize(data_in.size() - 1);
+
+	for(int i = 0; i < data_in.size() - 1; ++i)
+		data_out[i] = data_in[i+1] - data_in[i];
+};
+
+template <typename T> 
+void diff(::std::vector<T> data_in, ::std::vector<T>& data_out)
+{
+	if(data_out.size() != data_in.size() - 1)
+		data_out.resize(data_in.size() - 1);
+
+	for(int i = 0; i < data_in.size() - 1; ++i)
+		data_out[i] = data_in[i+1] - data_in[i];
+};
+
+
+template <typename Iterator, typename T>
+void find_all(Iterator it_start, Iterator it_end, T value, ::std::vector<int>& indices)
+{
+	indices.resize(0);
+
+	int counter = 0;
+	for (Iterator it = it_start; it != it_end; ++it)
+	{
+		if (*it == value)
+			indices.push_back(counter);
+
+		counter++;
+	}
+
+}
+
+

@@ -135,6 +135,7 @@ private:
 
 	bool createSaveDir();
 
+	void updateHeartFrequency();
 public:
 
 	// Constructor and destructor
