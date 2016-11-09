@@ -174,7 +174,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	InitForceEstimator(svm_base_folder + "output_", 3.0, m_KFParams[0], m_KFParams[1]);
 	::std::cout << "Force estimator initialized" << ::std::endl;
 	
-	
+	m_estimateFreq = true;
 	m_measured_period = 0.0;
 	robot_rotation = 0.0;
 
@@ -319,7 +319,8 @@ void Camera_processing::processInput(char key)
 		m_record = !m_record;
 		break;
 	case 'f':
-		m_outputForce = !m_outputForce;
+		//m_outputForce = !m_outputForce;
+		m_estimateFreq = !m_estimateFreq;
 		break;
 	case 'o':
 		m_rotateImage =  !m_rotateImage;
@@ -454,7 +455,7 @@ void Camera_processing::acquireImages(void )
 				Sleep(1);
 			}
 		}
-		catch(const std::exception &ex){}
+		catch(const std::exception &ex){::std::cout << "exception" << ::std::endl;}
 	}
 
 	::std::cout << "Images Acquisition Thread exited successfully" << ::std::endl;
@@ -972,22 +973,24 @@ void Camera_processing::updateHeartFrequency()
 	diff(m_contactBufferFiltered, tmp);
 
 	::std::vector<int> ind;
-	find_all(m_contactBufferFiltered.begin(), m_contactBufferFiltered.end(), 1.0, ind);
+	find_all(ind.begin(), ind.end(), 1.0, ind);
 
 	::std::vector<int> tmp2;
 	tmp2.resize(ind.size() - 1);
 	diff<int>(ind, tmp2);
 
-	m_heartFreqInSamples = static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size();
+	//m_FramesPerHeartCycle = 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size();
+	::std::cout << "estimation: " << 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size() << ::std::endl;
 }
 
 void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 {
 	::std::vector<::std::string> classes = m_bow.getClasses();
 	float response = 0.0;
-
+	
 	if (m_bow.predictBOW(img,response)) 
 	{
+		::std::cout << "in force estimator" << ::std::endl;
 		if (classes[(int) response] == "Free") response = 0.0;
 		else response = 1.0;
 
@@ -1011,7 +1014,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 			float sum = std::accumulate(m_contactBufferFiltered.rbegin(),m_contactBufferFiltered.rbegin() + this->m_heartFreqInSamples,0.0);
 
 			m_mutex_force.lock();
-			m_contactAvgOverHeartCycle = sum/m_heartFreqInSamples;
+			m_contactAvgOverHeartCycle = sum/m_FramesPerHeartCycle;
 			//::std::cout << response << "," << m_contactAvgOverHeartCycle << ::std::endl;
 
 			if (m_sendContact) m_contactAvgOverHeartCycle = response;
@@ -1020,8 +1023,11 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		}
 
-		//this->updateHeartFrequency();
-		::std::cout << "estimated heart frequency in samples: " << m_heartFreqInSamples << ::std::endl;
+		if (m_estimateFreq)
+			this->updateHeartFrequency();
+
+		//::std::cout << "estimated heart frequency in samples: " << m_FramesPerHeartCycle << ::std::endl;
+
 		//if (m_contactBuffer.size() < m_imFreq/m_heartFreq - 1.0)
 		//{
 		//	m_mutex_force.lock();
@@ -1047,6 +1053,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		
 	}
+	else ::std::cout << "Problem with BOW" << ::std::endl;
 }
 
 float Camera_processing::PredictForce()

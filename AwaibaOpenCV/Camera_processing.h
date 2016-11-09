@@ -111,7 +111,7 @@ private:
 	int					m_maxBufferSize;
 	Filter*				m_filter;
 	int					m_heartFreqInSamples;
-
+	bool				m_estimateFreq;
 
 	std::deque<float> m_durations;
 	float m_measured_period;
