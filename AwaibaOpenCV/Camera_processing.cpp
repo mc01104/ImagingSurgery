@@ -227,7 +227,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		{
 			::std::thread t_acquire (&Camera_processing::acquireImages, this);
 			::std::thread t_display (&Camera_processing::displayImages, this);
-			::std::thread t_force (&Camera_processing::computeForce, this);
+			//::std::thread t_force (&Camera_processing::computeForce, this);
 			::std::thread t_record (&Camera_processing::recordImages, this);
 			::std::thread t_network (&Camera_processing::networkKinematics, this);
 			::std::thread t_vtk (&Camera_processing::robotDisplay, this);
@@ -235,7 +235,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 			t_acquire.join();
 			t_display.join();
-			t_force.join();
+			//t_force.join();
 			t_record.join();
 			t_network.join();
 			t_vtk_render.join();
@@ -321,6 +321,8 @@ void Camera_processing::processInput(char key)
 	case 'f':
 		//m_outputForce = !m_outputForce;
 		m_estimateFreq = !m_estimateFreq;
+		if (m_estimateFreq)
+			::std::cout << "frequency estimation is switched on" << ::std::endl;
 		break;
 	case 'o':
 		m_rotateImage =  !m_rotateImage;
