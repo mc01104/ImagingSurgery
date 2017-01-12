@@ -983,7 +983,8 @@ void Camera_processing::updateHeartFrequency()
 	tmp2.resize(ind.size() - 1);
 
 	diff<int>(ind, tmp2);
-
+	if (tmp2.size() < 1)
+		return;
 	m_FramesPerHeartCycle = (int) 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size();
 	//::std::cout << "estimation: " << 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size() << ::std::endl;
 }
