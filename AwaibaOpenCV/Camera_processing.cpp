@@ -174,7 +174,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	InitForceEstimator(svm_base_folder + "output_", 3.0, m_KFParams[0], m_KFParams[1]);
 	::std::cout << "Force estimator initialized" << ::std::endl;
 	
-	m_estimateFreq = true;
+	m_estimateFreq = false;
 	m_measured_period = 0.0;
 	robot_rotation = 0.0;
 
@@ -422,14 +422,14 @@ void Camera_processing::acquireImages(void )
 				//array_to_merge.push_back(G);
 				//array_to_merge.push_back(R);
 
-				//mutex_robotjoints.lock();
-				//std::vector<double> configuration = m_configuration;
-				//mutex_robotjoints.unlock();
+				mutex_robotjoints.lock();
+				std::vector<double> configuration = m_configuration;
+				mutex_robotjoints.unlock();
 
 				//m_mutex_sharedImg.writeLock();
 				//mutex_img.lock();
 				cv::merge(&array_to_merge[0], array_to_merge.size(), RgbFrame);
-				//newImg = true;
+				newImg = true;
 				//newImg_force = true;
 				//m_mutex_sharedImg.writeUnLock();
 
@@ -438,15 +438,15 @@ void Camera_processing::acquireImages(void )
 				if ((! RgbFrame.empty()) && (m_outputForce)) 
 					UpdateForceEstimator(RgbFrame);
 
-				//if (m_record)
-				//{
-				//	ImgBuf el;
-				//	el.img = RgbFrame.clone();
-				//	el.timestamp = argbFrame1.GetTimeStamp();
-				//	el.robot_joints = configuration;
-				//	m_ImgBuffer.push(el);
-				//}
-				//mutex_img.unlock();
+				if (m_record)
+				{
+					ImgBuf el;
+					el.img = RgbFrame.clone();
+					el.timestamp = argbFrame1.GetTimeStamp();
+					el.robot_joints = configuration;
+					m_ImgBuffer.push(el);
+				}
+				mutex_img.unlock();
 
 				auto stop_rec = std::chrono::high_resolution_clock::now();					
 				auto duration = std::chrono::duration_cast<::std::chrono::microseconds> (stop_rec - start_rec);
