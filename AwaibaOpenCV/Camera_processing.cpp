@@ -985,7 +985,7 @@ void Camera_processing::updateHeartFrequency()
 	diff<int>(ind, tmp2);
 
 	m_FramesPerHeartCycle = (int) 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size();
-	::std::cout << "estimation: " << 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size() << ::std::endl;
+	//::std::cout << "estimation: " << 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size() << ::std::endl;
 }
 
 void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
@@ -1031,7 +1031,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 		if (m_estimateFreq && m_contactBufferFiltered.size() > 50)
 			this->updateHeartFrequency();
 
-		//::std::cout << "estimated heart frequency in samples: " << m_FramesPerHeartCycle << ::std::endl;
+		::std::cout << "estimated heart frequency in samples: " << m_FramesPerHeartCycle << ::std::endl;
 
 		//if (m_contactBuffer.size() < m_imFreq/m_heartFreq - 1.0)
 		//{
