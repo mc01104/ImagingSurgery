@@ -177,6 +177,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_estimateFreq = false;
 	m_measured_period = 0.0;
 	robot_rotation = 0.0;
+	m_cameraFrameRate = 40.0;
 
 	// All errors are reported as std::exception.
 	try
@@ -320,6 +321,8 @@ void Camera_processing::processInput(char key)
 		break;
 	case 'c':
 		m_sendContact = !m_sendContact;
+		if (m_sendContact)
+			::std::cout << "contact mode is on"  << ::std::endl;
 		break;
 	case 'f':
 		//m_outputForce = !m_outputForce;
@@ -385,22 +388,16 @@ void Camera_processing::acquireImages(void )
 	array_to_merge[1].data = gData;
 	array_to_merge[2].data = rData;
 	
-	bool tmpFrameEmpty = false;
 	auto start_rec = std::chrono::high_resolution_clock::now();
+
 	while(m_running)
 	{
-		if (!tmpFrameEmpty)
-			start_rec = std::chrono::high_resolution_clock::now();		
-		tmpFrameEmpty = true;
+
 		try
 		{
-			/*while (!MyManager.GetNextFrame(&argbFrame1, &rawFrame1)) Sleep(1);*/
 			
 			if(m_Manager.GetNextFrame(&argbFrame1, &rawFrame1))
 			{
-				//unsigned char rData [250*250];
-				//unsigned char gData [250*250];
-				//unsigned char bData [250*250];
 
 				//Get the pixels from the rawFrame to show to the user
 				for (int i=0; i<250*250;i++)
@@ -409,39 +406,28 @@ void Camera_processing::acquireImages(void )
 					gData[i] = ((argbFrame1.Begin()._Ptr[i] & 0x0000FF00)>>8);
 					bData[i] = ((argbFrame1.Begin()._Ptr[i] & 0x000000FF));
 				}
-
-				//Mat R = Mat(250, 250, CV_8U, rData);
-				//Mat G = Mat(250, 250, CV_8U, gData);
-				//Mat B = Mat(250, 250, CV_8U, bData);
-
 				array_to_merge[0] *= g_b;			
 				array_to_merge[1] *= g_g;			
 				array_to_merge[2] *= g_r;			
-
-				// White balancing
-				//R = g_r*R;
-				//G = g_g*G;
-				//B = g_b*B;
-
-				//std::vector<cv::Mat> array_to_merge ;
-
-				//array_to_merge.push_back(B);
-				//array_to_merge.push_back(G);
-				//array_to_merge.push_back(R);
 
 				mutex_robotjoints.lock();
 				std::vector<double> configuration = m_configuration;
 				mutex_robotjoints.unlock();
 
-				//m_mutex_sharedImg.writeLock();
-				//mutex_img.lock();
 				cv::merge(&array_to_merge[0], array_to_merge.size(), RgbFrame);
 				newImg = true;
-				//newImg_force = true;
-				//m_mutex_sharedImg.writeUnLock();
 
+				if(!RgbFrame.empty())
+				{
+					auto stop_rec = std::chrono::high_resolution_clock::now();					
+					auto duration = std::chrono::duration_cast<::std::chrono::microseconds> (stop_rec - start_rec);
+					double durInSec = ((double)  duration.count()) / 1.0e06;
+			
+					m_cameraFrameRate = 1.0/durInSec;
 
-				tmpFrameEmpty = RgbFrame.empty();
+					start_rec = stop_rec;
+				}
+				
 				if ((! RgbFrame.empty()) && (m_outputForce)) 
 					UpdateForceEstimator(RgbFrame);
 
@@ -454,12 +440,6 @@ void Camera_processing::acquireImages(void )
 					m_ImgBuffer.push(el);
 				}
 				mutex_img.unlock();
-				//Sleep(1000);
-				//auto stop_rec = std::chrono::high_resolution_clock::now();					
-				//auto duration = std::chrono::duration_cast<::std::chrono::milliseconds> (stop_rec - start_rec);
-				//double durInSec = (double) duration.count();
-				//::std::cout << duration.count() << ::std::endl;
-				//::std::cout << 1.0/durInSec << ::std::endl;
 			}
 			else
 			{
@@ -468,14 +448,7 @@ void Camera_processing::acquireImages(void )
 
 		}
 		catch(const std::exception &ex){::std::cout << "exception" << ::std::endl;}
-		if (! tmpFrameEmpty)
-		{
-			auto stop_rec = std::chrono::high_resolution_clock::now();					
-			auto duration = std::chrono::duration_cast<::std::chrono::microseconds> (stop_rec - start_rec);
-			double durInSec = ((double)  duration.count()) / 1.0e06;
-			//::std::cout << duration.count() << ::std::endl;
-			::std::cout << 1.0/durInSec << ::std::endl;
-		}
+
 	}
 
 
@@ -1005,7 +978,11 @@ void Camera_processing::updateHeartFrequency()
 	if (tmp2.size() < 1)
 		return;
 	m_FramesPerHeartCycle = (int) 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size();
-	//::std::cout << "estimation: " << 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size() << ::std::endl;
+
+	::std::cout << "heart period estimation: " << m_FramesPerHeartCycle * 0.5 << "[frames]" << ::std::endl;
+	::std::cout << "camera frame rate:" << m_cameraFrameRate << "[frames/sec]" << ::std::endl;
+	::std::cout << "heart frequency:" << m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5) << "Hz" << ::std::endl;
+	::std::cout << "heart frequency:" << 60 * m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5) << "BPM" << ::std::endl;
 }
 
 void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
@@ -1015,7 +992,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 	
 	if (m_bow.predictBOW(img,response)) 
 	{
-		//::std::cout << "in force estimator" << ::std::endl;
+
 		if (classes[(int) response] == "Free") response = 0.0;
 		else response = 1.0;
 
@@ -1040,7 +1017,6 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 			m_mutex_force.lock();
 			m_contactAvgOverHeartCycle = sum/m_FramesPerHeartCycle;
-			//::std::cout << response << "," << m_contactAvgOverHeartCycle << ::std::endl;
 
 			if (m_sendContact) m_contactAvgOverHeartCycle = response;
 			m_contactMeasured = true;
@@ -1050,32 +1026,6 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		if (m_estimateFreq && m_contactBufferFiltered.size() > 50)
 			this->updateHeartFrequency();
-
-		//::std::cout << "estimated heart frequency in samples: " << m_FramesPerHeartCycle << ::std::endl;
-
-		//if (m_contactBuffer.size() < m_imFreq/m_heartFreq - 1.0)
-		//{
-		//	m_mutex_force.lock();
-		//	m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
-		//	m_contactAvgOverHeartCycle = 0.0;
-		//	m_contactMeasured = true;
-		//	m_mutex_force.unlock();
-		//}
-		//else
-		//{
-		//	if (m_contactBuffer.size() > m_imFreq/m_heartFreq) 
-		//		m_contactBuffer.pop_front();
-
-		//	float sum = std::accumulate(m_contactBuffer.begin(),m_contactBuffer.end(),0.0);
-
-		//	m_mutex_force.lock();
-		//	m_kalman.correct(cv::Mat(1,1,CV_32FC1,cv::Scalar(response)));
-		//	//m_contactAvgOverHeartCycle = sum/m_contactBuffer.size();
-		//	m_contactAvgOverHeartCycle = response;
-		//	m_contactMeasured = true;
-		//	m_mutex_force.unlock();
-		//}
-
 		
 	}
 	else ::std::cout << "Problem with BOW" << ::std::endl;

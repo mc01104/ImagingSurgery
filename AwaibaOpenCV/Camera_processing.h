@@ -112,6 +112,7 @@ private:
 	Filter*				m_filter;
 	int					m_heartFreqInSamples;
 	bool				m_estimateFreq;
+	double				m_cameraFrameRate;
 
 	std::deque<float> m_durations;
 	float m_measured_period;
