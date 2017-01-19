@@ -979,9 +979,9 @@ void Camera_processing::updateHeartFrequency()
 		return;
 	m_FramesPerHeartCycle = (int) 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size();
 
-	::std::cout << "heart period estimation: " << m_FramesPerHeartCycle * 0.5 << "[frames]" << ::std::endl;
-	::std::cout << "camera frame rate:" << m_cameraFrameRate << "[frames/sec]" << ::std::endl;
-	::std::cout << "heart frequency:" << m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5) << "Hz" << ::std::endl;
+	//::std::cout << "heart period estimation: " << m_FramesPerHeartCycle * 0.5 << "[frames]" << ::std::endl;
+	//::std::cout << "camera frame rate:" << m_cameraFrameRate << "[frames/sec]" << ::std::endl;
+	//::std::cout << "heart frequency:" << m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5) << "Hz" << ::std::endl;
 	::std::cout << "heart frequency:" << 60 * m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5) << "BPM" << ::std::endl;
 }
 
