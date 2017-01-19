@@ -74,6 +74,7 @@ using namespace cimg_library;
 
 using namespace Core;
 using namespace cv;
+using namespace RecursiveFilter;
 //using namespace std;
 
 
@@ -119,6 +120,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	// George
 	m_maxBufferSize = 100;
 	m_filter = new MedianFilter(5);
+	m_freqFilter = new MovingAverageFilter(5);
 
 	m_running = true;
 	m_record = false;
@@ -328,7 +330,10 @@ void Camera_processing::processInput(char key)
 		//m_outputForce = !m_outputForce;
 		m_estimateFreq = !m_estimateFreq;
 		if (m_estimateFreq)
+		{
 			::std::cout << "frequency estimation is switched on" << ::std::endl;
+			m_freqFilter->resetFilter();
+		}
 		break;
 	case 'o':
 		m_rotateImage =  !m_rotateImage;
@@ -982,7 +987,7 @@ void Camera_processing::updateHeartFrequency()
 	//::std::cout << "heart period estimation: " << m_FramesPerHeartCycle * 0.5 << "[frames]" << ::std::endl;
 	//::std::cout << "camera frame rate:" << m_cameraFrameRate << "[frames/sec]" << ::std::endl;
 	//::std::cout << "heart frequency:" << m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5) << "Hz" << ::std::endl;
-	::std::cout << "heart frequency:" << 60 * m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5) << "BPM" << ::std::endl;
+	::std::cout << "heart frequency:" << m_freqFilter->step(60 * m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5)) << "BPM" << ::std::endl;
 }
 
 void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)

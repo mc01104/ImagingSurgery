@@ -25,6 +25,7 @@
 #include "awcorecpp.h"
 
 #include "LieGroup.h"
+#include "FilterLibrary.h"
 
 using namespace Core;
 using namespace cv;
@@ -37,7 +38,7 @@ struct ImgBuf {
 } ;
 
 
-class Filter;
+//class Filter;
 
 class Camera_processing {
 
@@ -109,10 +110,11 @@ private:
 	// George -> attempting implementation for frequency estimation
 	::std::deque<float> m_contactBufferFiltered;
 	int					m_maxBufferSize;
-	Filter*				m_filter;
+	RecursiveFilter::Filter*				m_filter;
 	int					m_heartFreqInSamples;
 	bool				m_estimateFreq;
 	double				m_cameraFrameRate;
+	RecursiveFilter::Filter*				m_freqFilter;
 
 	std::deque<float> m_durations;
 	float m_measured_period;

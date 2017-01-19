@@ -2,7 +2,7 @@
 #include "Utilities.h"
 
 #include <algorithm>
-
+using namespace RecursiveFilter;
 
 Filter::Filter(int windowSize) : 
 	windowSize(windowSize),
@@ -39,7 +39,7 @@ MedianFilter::step(double incomingValue)
 }
 
 void
-MedianFilter::updateDataBuffer(double incomingValue)
+Filter::updateDataBuffer(double incomingValue)
 {
 
 	if (this->data.size() < this->windowSize)
@@ -51,6 +51,12 @@ MedianFilter::updateDataBuffer(double incomingValue)
 	}
 }
 
+void
+Filter::resetFilter()
+{
+	this->data.clear();
+}
+
 double 
 MedianFilter::computeMedian()
 {
@@ -60,5 +66,32 @@ MedianFilter::computeMedian()
 	return this->sortedData[static_cast<int> ((this->windowSize - 1)/2)];
 }
 
+MovingAverageFilter::MovingAverageFilter(int windowSize)
+	:Filter(windowSize)
+{
+}
 
+MovingAverageFilter::~MovingAverageFilter()
+{
+}
 
+double 
+MovingAverageFilter::step(double incomingValue)
+{
+	this->updateDataBuffer(incomingValue);
+	
+	if (this->data.size() >= this->windowSize)
+		return computeAverage();
+
+	return incomingValue;
+
+}
+
+double
+MovingAverageFilter::computeAverage()
+{
+	double sum =  0;
+	for(::std::deque<double>::iterator it = data.begin(); it != data.end(); ++it)
+		sum += *it;
+	return sum/data.size();
+}
