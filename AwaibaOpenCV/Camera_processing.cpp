@@ -318,6 +318,9 @@ void Camera_processing::processInput(char key)
 		if (m_record) m_newdir = true;
 		m_record = !m_record;
 		break;
+	case 'c':
+		m_sendContact = !m_sendContact;
+		break;
 	case 'f':
 		//m_outputForce = !m_outputForce;
 		m_estimateFreq = !m_estimateFreq;
@@ -382,6 +385,7 @@ void Camera_processing::acquireImages(void )
 	array_to_merge[1].data = gData;
 	array_to_merge[2].data = rData;
 
+	int frame_count = 0;
 	while(m_running)
 	{
 		auto start_rec = std::chrono::high_resolution_clock::now();					
