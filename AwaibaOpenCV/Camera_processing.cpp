@@ -384,11 +384,14 @@ void Camera_processing::acquireImages(void )
 	array_to_merge[0].data = bData;
 	array_to_merge[1].data = gData;
 	array_to_merge[2].data = rData;
-
-	int frame_count = 0;
+	
+	bool tmpFrameEmpty = false;
+	auto start_rec = std::chrono::high_resolution_clock::now();
 	while(m_running)
 	{
-		auto start_rec = std::chrono::high_resolution_clock::now();					
+		if (!tmpFrameEmpty)
+			start_rec = std::chrono::high_resolution_clock::now();		
+		tmpFrameEmpty = true;
 		try
 		{
 			/*while (!MyManager.GetNextFrame(&argbFrame1, &rawFrame1)) Sleep(1);*/
@@ -438,7 +441,7 @@ void Camera_processing::acquireImages(void )
 				//m_mutex_sharedImg.writeUnLock();
 
 
-				
+				tmpFrameEmpty = RgbFrame.empty();
 				if ((! RgbFrame.empty()) && (m_outputForce)) 
 					UpdateForceEstimator(RgbFrame);
 
@@ -451,18 +454,30 @@ void Camera_processing::acquireImages(void )
 					m_ImgBuffer.push(el);
 				}
 				mutex_img.unlock();
-
-				auto stop_rec = std::chrono::high_resolution_clock::now();					
-				auto duration = std::chrono::duration_cast<::std::chrono::microseconds> (stop_rec - start_rec);
-				//::std::cout << duration.count()/1000.0 << ::std::endl;
+				//Sleep(1000);
+				//auto stop_rec = std::chrono::high_resolution_clock::now();					
+				//auto duration = std::chrono::duration_cast<::std::chrono::milliseconds> (stop_rec - start_rec);
+				//double durInSec = (double) duration.count();
+				//::std::cout << duration.count() << ::std::endl;
+				//::std::cout << 1.0/durInSec << ::std::endl;
 			}
 			else
 			{
 				Sleep(1);
 			}
+
 		}
 		catch(const std::exception &ex){::std::cout << "exception" << ::std::endl;}
+		if (! tmpFrameEmpty)
+		{
+			auto stop_rec = std::chrono::high_resolution_clock::now();					
+			auto duration = std::chrono::duration_cast<::std::chrono::microseconds> (stop_rec - start_rec);
+			double durInSec = ((double)  duration.count()) / 1.0e06;
+			//::std::cout << duration.count() << ::std::endl;
+			::std::cout << 1.0/durInSec << ::std::endl;
+		}
 	}
+
 
 	::std::cout << "Images Acquisition Thread exited successfully" << ::std::endl;
 }
@@ -987,7 +1002,8 @@ void Camera_processing::updateHeartFrequency()
 	tmp2.resize(ind.size() - 1);
 
 	diff<int>(ind, tmp2);
-
+	if (tmp2.size() < 1)
+		return;
 	m_FramesPerHeartCycle = (int) 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size();
 	//::std::cout << "estimation: " << 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size() << ::std::endl;
 }
@@ -1035,7 +1051,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 		if (m_estimateFreq && m_contactBufferFiltered.size() > 50)
 			this->updateHeartFrequency();
 
-		::std::cout << "estimated heart frequency in samples: " << m_FramesPerHeartCycle << ::std::endl;
+		//::std::cout << "estimated heart frequency in samples: " << m_FramesPerHeartCycle << ::std::endl;
 
 		//if (m_contactBuffer.size() < m_imFreq/m_heartFreq - 1.0)
 		//{
