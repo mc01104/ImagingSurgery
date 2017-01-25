@@ -102,6 +102,9 @@ private:
 	float m_imFreq; 
 	int m_FramesPerHeartCycle;
 	bool m_sendContact;
+	double m_input_frequency;
+	bool m_input_freq_received;
+	bool m_input_plane_received;
 
 	float m_contactAvgOverHeartCycle;
 	bool m_contactMeasured;

@@ -61,6 +61,7 @@ using namespace cimg_library;
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkProperty.h>
 #include <vtkCommand.h>
+#include <vtkPlaneSource.h>
 
 
 
@@ -121,6 +122,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_maxBufferSize = 100;
 	m_filter = new MedianFilter(5);
 	m_freqFilter = new MovingAverageFilter(5);
+	m_input_freq_received = false;
 
 	m_running = true;
 	m_record = false;
@@ -129,6 +131,8 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_outputForce = false;
 	m_outputForce = true;
 	m_rotateImage = true;
+	m_input_frequency = 80;
+	m_input_plane_received = false;
 
 	m_board="NanoUSB2";
 	m_ControlLED=false;
@@ -728,6 +732,33 @@ bool Camera_processing::networkKinematics(void)
 		::std::string conf_str(recvbuf);
 		::std::vector<double> configuration = DoubleVectorFromString(conf_str);
 
+		if (configuration.size() > 6)
+		{
+			int i = static_cast<int> (configuration.back());
+			configuration.pop_back();
+			switch (i)
+			{
+			case 0:
+				m_input_frequency = configuration.back();
+				configuration.pop_back();
+				m_input_freq_received = true;
+				::std::cout << "frequency" << ::std::endl;
+				break;
+			case 1:
+				double plane[3] = {0};
+				for (int j = 2; j < 0; j--)
+				{
+					plane[j] = configuration.back();
+					configuration.pop_back();
+				}
+				m_input_plane_received = true;
+				::std::cout << "plane" << ::std::endl;			
+				PrintCArray(plane, 3);
+				break;
+			}
+
+		}
+
 		mutex_teleop.lock();
 		m_teleop = ( configuration.size()>0 ? (bool) configuration.back() : false); //TODO: implementation bugin here maybe. Check with Georgios how is the data sent from the CTR program in non-teleop mode
 		mutex_teleop.unlock();
@@ -819,7 +850,29 @@ void Camera_processing::robotDisplay(void)
 	tubeActor->GetProperty()->SetColor(0.0,0.0,1.0);
 	tubeActor->SetMapper(tubeMapper);
 
+  // Create a plane
+	vtkSmartPointer<vtkPlaneSource> planeSource = vtkSmartPointer<vtkPlaneSource>::New();
+	planeSource->SetCenter(1.0, 0.0, 0.0);
+	planeSource->SetNormal(1.0, 0.0, 1.0);
+	planeSource->Update();
+ 
+	vtkPolyData* plane = planeSource->GetOutput();
+ 
+	  // Create a mapper and actor
+	  vtkSmartPointer<vtkPolyDataMapper> planeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	#if VTK_MAJOR_VERSION <= 5
+	  mapper->SetInput(plane);
+	#else
+	  planeMapper->SetInputData(plane);
+	#endif
+
+	vtkSmartPointer<vtkActor> planeActor = vtkSmartPointer<vtkActor>::New();
+	planeActor->SetMapper(planeMapper);
+
+
 	renDisplay3D->AddActor(tubeActor);
+	if (this->m_input_plane_received)
+		renDisplay3D->AddActor(planeActor);
 
 	auto start = std::chrono::high_resolution_clock::now();
 	while(m_running)
