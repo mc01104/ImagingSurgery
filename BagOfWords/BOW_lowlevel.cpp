@@ -5,10 +5,11 @@
 BOW_l::BOW_l()
 {
 
-	m_featureDetector =  cv::FastFeatureDetector::create(); //::cv::BRISK::create(); //::cv::xfeatures2d::SURF::create();
-	m_descriptorExtractor = cv::xfeatures2d::LUCID::create(2,1);//::cv::BRISK::create(); //::cv::xfeatures2d::SURF::create();
+	m_featureDetector =  cv::FastFeatureDetector::create(5, true, 2); //::cv::BRISK::create(); //::cv::xfeatures2d::SURF::create();
+	m_descriptorExtractor = cv::xfeatures2d::LUCID::create(3,1);//::cv::BRISK::create(); //::cv::xfeatures2d::SURF::create();
 
-	m_dictionarySize = 10000;
+	//m_dictionarySize = 10000;
+	m_dictionarySize = 60;
 	m_tc_Kmeans = ::cv::TermCriteria(::cv::TermCriteria::MAX_ITER + ::cv::TermCriteria::EPS,100000, 0.000001);
 	int retries = 1;
 	int flags = ::cv::KMEANS_PP_CENTERS;
@@ -183,7 +184,8 @@ bool BOW_l::trainBOW(::std::string path)
 	}
 
 	// kmeans classify
-	int k = 50;
+	//int k = 50;
+	int k = m_dictionarySize;
 	::cv::kmeans(training_descriptors, k, cluster_labels, m_tc_Kmeans, 3, cv::KMEANS_PP_CENTERS, m_vocabulary );
 	// cluster and set vocabulary into bow ide
 	//m_bowtrainer->add(training_descriptors);
