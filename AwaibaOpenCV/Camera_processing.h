@@ -11,11 +11,15 @@
  #include <vtkAutoInit.h>
  VTK_MODULE_INIT(vtkInteractionStyle);
  VTK_MODULE_INIT(vtkRenderingOpenGL);
+#include <vtkObject.h>
 
 #include "Queue.h"
 #include "BOW_lowlevel.h"
 #include "SharedMutex.h"
 
+// VTK
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
 
 // OpenCV includes
 #include <opencv2/core/core.hpp>
@@ -39,7 +43,7 @@ struct ImgBuf {
 
 
 //class Filter;
-
+//void vtkKeyboardCallback(vtkObject* caller, long unsigned int eventId, void* clientData, void* callDat);
 class Camera_processing {
 
 private:
@@ -77,7 +81,7 @@ private:
 	double robot_rotation;
 	bool newImg;
 	bool newImg_force;
-
+	bool m_network;
 	std::vector<SE3> m_SolutionFrames;
 
 	// mutex for image sharing between threads
@@ -102,9 +106,6 @@ private:
 	float m_imFreq; 
 	int m_FramesPerHeartCycle;
 	bool m_sendContact;
-	double m_input_frequency;
-	bool m_input_freq_received;
-	bool m_input_plane_received;
 
 	float m_contactAvgOverHeartCycle;
 	bool m_contactMeasured;
@@ -122,6 +123,15 @@ private:
 	std::deque<float> m_durations;
 	float m_measured_period;
 
+	// these are recieved through network
+	double				m_normal[3];
+	double				m_center[3];
+	double				m_radius;
+	double				m_target[6];
+	bool				m_input_freq_received;
+	bool				m_input_plane_received;
+	double				m_input_frequency;
+
 	/********** Functions private *********/
 	
 	// Thread functions
@@ -135,13 +145,19 @@ private:
 
 	// keyboard input processing
 	void processInput(char key);
-
+	void displayValve(double normal[3], double center[3], double radius);
+	void updateRobotTargetVisualization(double targetPosition[3]);
+	void initializeTarget();
 	// camera management functions
 	void changeExposure(float delta);
 
 	bool createSaveDir();
 
-	void updateHeartFrequency();
+	void		updateHeartFrequency();
+	void		parseNetworkMessage(::std::vector<double>& msg);
+	vtkSmartPointer<vtkSphereSource> sphereSource;
+
+	
 public:
 
 	// Constructor and destructor
@@ -158,3 +174,4 @@ public:
 	void UpdateForceEstimator(const ::cv::Mat& img);
 	float PredictForce();
 };
+

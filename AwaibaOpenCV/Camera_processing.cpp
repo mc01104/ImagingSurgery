@@ -62,7 +62,17 @@ using namespace cimg_library;
 #include <vtkProperty.h>
 #include <vtkCommand.h>
 #include <vtkPlaneSource.h>
-
+#include <vtkCamera.h>
+#include <vtkOrientationMarkerWidget.h>
+#include <vtkAxesActor.h>
+#include <vtkRegularPolygonSource.h>
+#include <vtkSphereSource.h>
+#include <vtkArrowSource.h>
+#include <vtkTransformPolyDataFilter.h>
+#include <vtkTransform.h>
+#include <vtkMath.h>
+#include <vtkCallbackCommand.h>
+#include "vtkKeyboardInteractionStyle.h"
 
 
 // Project includes
@@ -76,22 +86,20 @@ using namespace cimg_library;
 using namespace Core;
 using namespace cv;
 using namespace RecursiveFilter;
-//using namespace std;
 
+#define __DESKTOP_DEVELOPMENT__
 
 // VTK global variables (only way to get a thread running ...)
-
 ::std::mutex mutex_vtkRender;
-
-
 #define VTK_CREATE(type, name) \
     vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
 
 VTK_CREATE(vtkRenderer, renDisplay3D);
 VTK_CREATE(vtkRenderWindow, renderwindowDisplay3D);
 VTK_CREATE(vtkRenderWindowInteractor, irenDisplay3D);
-vtkInteractorStyleTrackballCamera *styleDisplay3D = vtkInteractorStyleTrackballCamera::New();
+VTK_CREATE(KeyPressInteractorStyle, irenDisplay3DStyle);
 
+VTK_MODULE_INIT(vtkRenderingFreeType)
 
 class CommandSubclass2 : public vtkCommand
 {
@@ -105,14 +113,21 @@ public:
 
     void Execute(vtkObject *caller, unsigned long vtkNotUsed(eventId), void *vtkNotUsed(callData))
     {
-        vtkRenderWindowInteractor *iren = static_cast<vtkRenderWindowInteractor*>(caller);
-        iren->Render();
+		try
+		{
+			vtkRenderWindowInteractor *iren = static_cast<vtkRenderWindowInteractor*>(caller);
+			iren->Render();
+		}
+		catch (Exception& e)
+		{
+			::std::cout << e.what() << ::std::endl;
+		}
     }
 };
 
 
 
-// Constructor and destructor
+// Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 {
 	// Animate CRT to dump leaks to console after termination.
@@ -123,6 +138,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_filter = new MedianFilter(5);
 	m_freqFilter = new MovingAverageFilter(5);
 	m_input_freq_received = false;
+	m_network = false;
 
 	m_running = true;
 	m_record = false;
@@ -133,7 +149,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_rotateImage = true;
 	m_input_frequency = 80;
 	m_input_plane_received = false;
-
+	this->m_configuration.resize(5);
 	m_board="NanoUSB2";
 	m_ControlLED=false;
 
@@ -142,7 +158,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	newImg_force = false;
 
 	::std::string svm_base_folder = "./SVM_params/";
-
+	
 	// Parse options in camera.csv file
 	// TODO: handle errors better and do not fallback to default config
 	ParseOptions op = ParseOptions("./camera_info.csv");
@@ -151,9 +167,11 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	{
 		::std::cout << "Successfully parsed camera info file" << endl;
 		m_saveDir = op.getSaveDir();
+#ifndef __DESKTOP_DEVELOPMENT__
 		g_r = op.getWhiteBalance()[0];
 		g_g = op.getWhiteBalance()[1];
 		g_b = op.getWhiteBalance()[2];
+#endif
 		rotation = op.getRotation();
 		ipaddress = op.getIPAddress();
 		renderShape = op.getRenderShape();
@@ -176,10 +194,12 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		m_KFParams.push_back(0.5);
 	}
 
+#ifndef __DESKTOP_DEVELOPMENT__
 	::std::cout << "Initializing Force estimator ..." << ::std::endl;
 	InitForceEstimator(svm_base_folder + "output_", 3.0, m_KFParams[0], m_KFParams[1]);
 	::std::cout << "Force estimator initialized" << ::std::endl;
-	
+#endif
+
 	m_estimateFreq = false;
 	m_measured_period = 0.0;
 	robot_rotation = 0.0;
@@ -188,6 +208,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	// All errors are reported as std::exception.
 	try
 	{
+#ifndef __DESKTOP_DEVELOPMENT__
 		// Cleanup is automatically done when destructed (auto generated)
 		int device = 0;
 		const int NumSensors = 1;
@@ -223,27 +244,31 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		m_AwaibaSensorSrc.Start(device);
 
 		
-		/*** Automatic Exposure Control Registers ***/
+		*** Automatic Exposure Control Registers ***/
 		m_Manager.SetFPGAData(0x00500000,0x02010200);
-
+#endif
 		Mat RgbFrame = Mat(250,250,CV_8UC3);
 
 		m_OK = true;
 
 		if (renderShape)
 		{
+#ifndef __DESKTOP_DEVELOPMENT__
 			::std::thread t_acquire (&Camera_processing::acquireImages, this);
 			::std::thread t_display (&Camera_processing::displayImages, this);
-			//::std::thread t_force (&Camera_processing::computeForce, this);
+			::std::thread t_force (&Camera_processing::computeForce, this);
 			::std::thread t_record (&Camera_processing::recordImages, this);
+#endif
 			::std::thread t_network (&Camera_processing::networkKinematics, this);
 			::std::thread t_vtk (&Camera_processing::robotDisplay, this);
 			::std::thread t_vtk_render (&Camera_processing::vtkRender, this);
 
+#ifndef __DESKTOP_DEVELOPMENT__
 			t_acquire.join();
 			t_display.join();
-			//t_force.join();
+			t_force.join();
 			t_record.join();
+#endif
 			t_network.join();
 			t_vtk_render.join();
 			t_vtk.join();
@@ -460,7 +485,6 @@ void Camera_processing::acquireImages(void )
 
 	}
 
-
 	::std::cout << "Images Acquisition Thread exited successfully" << ::std::endl;
 }
 
@@ -669,6 +693,7 @@ bool Camera_processing::networkKinematics(void)
 
     // Resolve the server address and port
     iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
+	//iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
@@ -705,7 +730,7 @@ bool Camera_processing::networkKinematics(void)
         return 1;
     }
 	std::cout << "Successfully connected to server" << std::endl;
-
+	m_network = true;
 
 
 	do {
@@ -732,32 +757,8 @@ bool Camera_processing::networkKinematics(void)
 		::std::string conf_str(recvbuf);
 		::std::vector<double> configuration = DoubleVectorFromString(conf_str);
 
-		if (configuration.size() > 6)
-		{
-			int i = static_cast<int> (configuration.back());
-			configuration.pop_back();
-			switch (i)
-			{
-			case 0:
-				m_input_frequency = configuration.back();
-				configuration.pop_back();
-				m_input_freq_received = true;
-				::std::cout << "frequency" << ::std::endl;
-				break;
-			case 1:
-				double plane[3] = {0};
-				for (int j = 2; j < 0; j--)
-				{
-					plane[j] = configuration.back();
-					configuration.pop_back();
-				}
-				m_input_plane_received = true;
-				::std::cout << "plane" << ::std::endl;			
-				PrintCArray(plane, 3);
-				break;
-			}
+		this->parseNetworkMessage(configuration);
 
-		}
 
 		mutex_teleop.lock();
 		m_teleop = ( configuration.size()>0 ? (bool) configuration.back() : false); //TODO: implementation bugin here maybe. Check with Georgios how is the data sent from the CTR program in non-teleop mode
@@ -766,7 +767,7 @@ bool Camera_processing::networkKinematics(void)
 		// Convert the received the configuration to comply with the definition of the mechanics based kinematics implementation
 		double rotation[3] = {0};
 		double translation[3] = {0};
-		MechanicsBasedKinematics::RelativeToAbsolute(robot, &configuration[0], rotation, translation);
+		MechanicsBasedKinematics::RelativeToAbsolute(robot, &m_configuration[0], rotation, translation);
 
 		// compute kinematics and get tip rotation of innermost tube
 		if (kinematics->ComputeKinematics(rotation, translation))
@@ -784,10 +785,10 @@ bool Camera_processing::networkKinematics(void)
 			m_SolutionFrames = SolutionFrames;
 			mutex_robotshape.unlock();
 
-
-			mutex_robotjoints.lock();
-			m_configuration = configuration;
-			mutex_robotjoints.unlock();
+			// obsolete -> it is performed in parseNetworkMessage
+			//mutex_robotjoints.lock();
+			//m_configuration = configuration;
+			//mutex_robotjoints.unlock();
 		}
 
 		float force = 0.0;
@@ -803,11 +804,8 @@ bool Camera_processing::networkKinematics(void)
 			m_mutex_force.unlock();
 		}
 
-		
-
 		char s_force[5]; 
 		sprintf(s_force,"%.2f",force);
-
 
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
@@ -822,13 +820,116 @@ bool Camera_processing::networkKinematics(void)
     WSACleanup();
 
 	::std::cout << "Kinematics Thread exited successfully" << ::std::endl;
+	m_network = false;
     return 0;
 }
 
+void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
+{
+	// first get the configuration
+	this->mutex_robotjoints.lock();
+	::std::copy(msg.begin(), msg.begin() + 5, this->m_configuration.begin());
+	this->mutex_robotjoints.unlock();
 
+	this->mutex_teleop.lock();
+	this->m_teleop = msg[5];
+	this->mutex_teleop.unlock();
+
+	if (static_cast<bool> (msg[6]))
+	{
+		m_input_freq_received = true;
+		m_input_frequency = msg[7];
+	}
+
+	this->mutex_robotshape.lock();
+	if (static_cast<bool> (msg[8]))
+	{
+		m_input_plane_received = true;
+		memcpy(m_normal, &msg.data()[9], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[12], 3 * sizeof(double));
+		m_radius = msg[15];
+		memcpy(m_target, &msg.data()[16], 3 * sizeof(double));
+	}
+	this->mutex_robotshape.unlock();
+}
+
+
+void Camera_processing::displayValve(double normal[3], double center[3], double radius)
+{
+	// valve visualization
+	vtkSmartPointer<vtkRegularPolygonSource> circleSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
+	circleSource->SetNumberOfSides(50);
+	circleSource->SetRadius(radius);						
+	circleSource->SetCenter(center);				
+	circleSource->SetNormal(normal);
+	
+	vtkSmartPointer<vtkPolyDataMapper> mapperCircle = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapperCircle->SetInputConnection(circleSource->GetOutputPort());;
+	vtkSmartPointer<vtkActor> actorCircle =	vtkSmartPointer<vtkActor>::New();
+	actorCircle->SetMapper(mapperCircle);
+	actorCircle->GetProperty()->SetColor(0, 0, 1);
+	actorCircle->GetProperty()->SetEdgeColor(1,0,0);
+	actorCircle->GetProperty()->SetEdgeVisibility(1);
+	renDisplay3D->AddActor(actorCircle);
+
+	// visualize normal
+	vtkSmartPointer<vtkArrowSource> arrowSource = vtkSmartPointer<vtkArrowSource>::New();
+	double endPoint[3] = {0};
+	for(int i = 0; i < 3; ++i)
+		endPoint[i] = center[i] - normal[i] * 10;
+ 
+	double length = 10;
+	// transformation of the arrow to align it with the normal at the center circle
+	::Eigen::MatrixXd homTransformation(4,4);
+	homTransformation.setIdentity();
+	::Eigen::Vector3d xEig = ::Eigen::Map<::Eigen::Vector3d> (normal,3);
+	xEig[0] -= 1;
+	xEig.normalize();
+	homTransformation(3,3) = 1.0;
+	homTransformation.block(0,0,3,3) = 2 * xEig * xEig.transpose() - ::Eigen::Matrix3d::Identity();
+	homTransformation.block(3,0,1,3) = ::Eigen::Map<::Eigen::Matrix<double,1,3>> (center,3);
+
+	// Apply the transforms
+	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+	transform->SetMatrix(homTransformation.data());
+
+	vtkSmartPointer<vtkPolyDataMapper> mapperArrow = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapperArrow->SetInputConnection(arrowSource->GetOutputPort());
+
+	vtkSmartPointer<vtkActor> actorArrow = vtkSmartPointer<vtkActor>::New();
+	actorArrow->SetMapper(mapperArrow);
+	actorArrow->SetUserTransform(transform);
+
+	renDisplay3D->AddActor(actorArrow);
+}
+
+void Camera_processing::initializeTarget()
+{
+	// target visualization
+	double targetPosition[3] = {12,12, 40};
+	sphereSource  = vtkSmartPointer<vtkSphereSource>::New();
+	sphereSource->SetCenter(targetPosition);
+	sphereSource->SetRadius(1);
+	vtkSmartPointer<vtkPolyDataMapper> sphereMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	sphereMapper->SetInputConnection(sphereSource->GetOutputPort());
+	vtkSmartPointer<vtkActor> sphereActor = vtkSmartPointer<vtkActor>::New();
+	sphereActor->SetMapper(sphereMapper);
+	sphereActor->GetProperty()->SetOpacity(0.2);
+	sphereActor->GetProperty()->SetColor(1,0,0);
+	renDisplay3D->AddActor(sphereActor);
+
+}
 
 void Camera_processing::robotDisplay(void)
 {
+
+	this->initializeTarget();
+	double target[6] = {0};
+
+	bool planeReceived = false;
+	double center[3] = {0};
+	double radius;
+	double normal[3] = {0};
 
 	// populate Points with dummy data for initialization
 	unsigned int npts = 1;
@@ -850,29 +951,7 @@ void Camera_processing::robotDisplay(void)
 	tubeActor->GetProperty()->SetColor(0.0,0.0,1.0);
 	tubeActor->SetMapper(tubeMapper);
 
-  // Create a plane
-	vtkSmartPointer<vtkPlaneSource> planeSource = vtkSmartPointer<vtkPlaneSource>::New();
-	planeSource->SetCenter(1.0, 0.0, 0.0);
-	planeSource->SetNormal(1.0, 0.0, 1.0);
-	planeSource->Update();
- 
-	vtkPolyData* plane = planeSource->GetOutput();
- 
-	  // Create a mapper and actor
-	  vtkSmartPointer<vtkPolyDataMapper> planeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	#if VTK_MAJOR_VERSION <= 5
-	  mapper->SetInput(plane);
-	#else
-	  planeMapper->SetInputData(plane);
-	#endif
-
-	vtkSmartPointer<vtkActor> planeActor = vtkSmartPointer<vtkActor>::New();
-	planeActor->SetMapper(planeMapper);
-
-
 	renDisplay3D->AddActor(tubeActor);
-	if (this->m_input_plane_received)
-		renDisplay3D->AddActor(planeActor);
 
 	auto start = std::chrono::high_resolution_clock::now();
 	while(m_running)
@@ -886,6 +965,11 @@ void Camera_processing::robotDisplay(void)
 
 				mutex_robotshape.lock();
 				std::vector<SE3> SolutionFrames = m_SolutionFrames;
+				memcpy(target, m_target, 6 * sizeof(double));
+				memcpy(center, m_center, 3 * sizeof(double));
+				memcpy(normal, m_normal, 3 * sizeof(double));
+				radius = m_radius;
+				planeReceived = m_input_plane_received;
 				mutex_robotshape.unlock();
 
 
@@ -901,8 +985,21 @@ void Camera_processing::robotDisplay(void)
 				{
 					lineSource->SetNumberOfPoints(2); // set new data
 					lineSource->SetPoint(0, 0.0,0.0,0.0);
-					lineSource->SetPoint(1, 0.0,0.0,1.0);
+					lineSource->SetPoint(1, 0.0,0.0,10.0);
 				}
+				
+				if (planeReceived)
+				{
+					this->displayValve(normal, center, radius);
+					planeReceived = false;
+				}
+				
+				if (m_network)
+					this->updateRobotTargetVisualization(target);
+
+				this->mutex_robotshape.lock();
+				this->m_input_plane_received = planeReceived;
+				this->mutex_robotshape.unlock();
 			}
 			catch (runtime_error& ex) 
 			{
@@ -915,14 +1012,25 @@ void Camera_processing::robotDisplay(void)
 
 }
 
+void Camera_processing::updateRobotTargetVisualization(double targetPosition[3])
+{
+	this->sphereSource->SetCenter(targetPosition);
+}
+
 void Camera_processing::vtkRender(void)
 {
+	
 	renderwindowDisplay3D->AddRenderer(renDisplay3D);
-	renderwindowDisplay3D->Render();
+	
+	irenDisplay3D->SetInteractorStyle(irenDisplay3DStyle);
 	irenDisplay3D->SetRenderWindow(renderwindowDisplay3D);
 	irenDisplay3D->Initialize();
 
+	renDisplay3D->ResetCamera();
+	renDisplay3D->Render();
 
+	////////////////////////////////////////////////////////////////////////////////////
+	//This is an approximation of the reachable workspace
 	vtkSmartPointer<vtkCubeSource> cubeSource = vtkSmartPointer<vtkCubeSource>::New();
 	cubeSource->SetCenter(0.0,0.0,125.0);
 	cubeSource->SetXLength(150.0);
@@ -938,9 +1046,10 @@ void Camera_processing::vtkRender(void)
 	actor->SetMapper(mapper);
 
 	renDisplay3D->AddActor(actor);
+	///////////////////////////////////////////////////////////////////////////////////
 
-
-
+	////////////////////////////////////////////////////////////////////////////////////
+	//Axes at beginning of robot
 	vtkSmartPointer<vtkCubeSource> cubeSource2 = vtkSmartPointer<vtkCubeSource>::New();
 	cubeSource2->SetCenter(12.5,0.0,0.0);
 	cubeSource2->SetXLength(25.0);
@@ -958,7 +1067,8 @@ void Camera_processing::vtkRender(void)
 	renDisplay3D->AddActor(actor2);
 
 
-
+	////////////////////////////////////////////////////////////////////////////////////
+	//Axes at beginning of robot
 	vtkSmartPointer<vtkCubeSource> cubeSource3 = vtkSmartPointer<vtkCubeSource>::New();
 	cubeSource3->SetCenter(0.0,12.5,0.0);
 	cubeSource3->SetXLength(1.0);
@@ -974,12 +1084,13 @@ void Camera_processing::vtkRender(void)
 	actor3->SetMapper(mapper3);
 
 	renDisplay3D->AddActor(actor3);
+	/////////////////////////////////////////////////////////////////////////////////////
 
 
 	vtkSmartPointer<CommandSubclass2> timerCallback = vtkSmartPointer<CommandSubclass2>::New();
 	irenDisplay3D->AddObserver ( vtkCommand::TimerEvent, timerCallback );
 	irenDisplay3D->CreateRepeatingTimer(100);
-
+	
 	irenDisplay3D->Start();
 
 
@@ -1037,9 +1148,6 @@ void Camera_processing::updateHeartFrequency()
 		return;
 	m_FramesPerHeartCycle = (int) 2.0 * static_cast<int>(::std::accumulate(tmp2.begin(), tmp2.end(), 0.0))/tmp2.size();
 
-	//::std::cout << "heart period estimation: " << m_FramesPerHeartCycle * 0.5 << "[frames]" << ::std::endl;
-	//::std::cout << "camera frame rate:" << m_cameraFrameRate << "[frames/sec]" << ::std::endl;
-	//::std::cout << "heart frequency:" << m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5) << "Hz" << ::std::endl;
 	::std::cout << "heart frequency:" << m_freqFilter->step(60 * m_cameraFrameRate/(m_FramesPerHeartCycle * 0.5)) << "BPM" << ::std::endl;
 }
 
@@ -1080,6 +1188,12 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 			m_contactMeasured = true;
 			m_mutex_force.unlock();
 
+		}
+
+		if (!m_estimateFreq && m_input_freq_received)
+		{
+			this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
+			m_input_freq_received = false;
 		}
 
 		if (m_estimateFreq && m_contactBufferFiltered.size() > 50)

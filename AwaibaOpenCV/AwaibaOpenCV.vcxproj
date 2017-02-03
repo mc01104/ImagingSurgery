@@ -101,6 +101,7 @@
     <ClInclude Include="awcorecpp.h" />
     <ClInclude Include="Camera_processing.h" />
     <ClInclude Include="CSV_reader.h" />
+    <ClInclude Include="vtkKeyboardInteractionStyle.h" />
     <ClInclude Include="Helpers.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="SharedMutex.h" />
