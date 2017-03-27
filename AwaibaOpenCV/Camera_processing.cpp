@@ -87,7 +87,7 @@ using namespace Core;
 using namespace cv;
 using namespace RecursiveFilter;
 
-#define __DESKTOP_DEVELOPMENT__
+//#define __DESKTOP_DEVELOPMENT__
 
 // VTK global variables (only way to get a thread running ...)
 ::std::mutex mutex_vtkRender;
@@ -245,7 +245,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		m_AwaibaSensorSrc.Start(device);
 
 		
-		*** Automatic Exposure Control Registers ***/
+		//*** Automatic Exposure Control Registers ***/
 		m_Manager.SetFPGAData(0x00500000,0x02010200);
 #endif
 		Mat RgbFrame = Mat(250,250,CV_8UC3);
@@ -257,7 +257,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 #ifndef __DESKTOP_DEVELOPMENT__
 			::std::thread t_acquire (&Camera_processing::acquireImages, this);
 			::std::thread t_display (&Camera_processing::displayImages, this);
-			::std::thread t_force (&Camera_processing::computeForce, this);
+//			::std::thread t_force (&Camera_processing::computeForce, this);//
 			::std::thread t_record (&Camera_processing::recordImages, this);
 #endif
 			::std::thread t_network (&Camera_processing::networkKinematics, this);
@@ -267,7 +267,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 #ifndef __DESKTOP_DEVELOPMENT__
 			t_acquire.join();
 			t_display.join();
-			t_force.join();
+//			t_force.join();
 			t_record.join();
 #endif
 			t_network.join();
@@ -466,6 +466,7 @@ void Camera_processing::acquireImages(void )
 				if ((! RgbFrame.empty()) && (m_outputForce)) 
 					UpdateForceEstimator(RgbFrame);
 
+				mutex_img.lock();
 				if (m_record)
 				{
 					ImgBuf el;
@@ -693,8 +694,8 @@ bool Camera_processing::networkKinematics(void)
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    //iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
-	iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
+	//iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
@@ -760,15 +761,15 @@ bool Camera_processing::networkKinematics(void)
 
 		this->parseNetworkMessage(configuration);
 
-		::std::cout << "Robot configuration: ";
-		for (int i = 0; i < m_configuration.size(); ++i)		
-			::std::cout << m_configuration[i] << " ";
-		::std::cout << ::std::endl;
+		//::std::cout << "Robot configuration: ";
+		//for (int i = 0; i < m_configuration.size(); ++i)		
+		//	::std::cout << m_configuration[i] << " ";
+		//::std::cout << ::std::endl;
 		::std::cout << "heart rate:" << m_input_frequency << ::std::endl;
 
-		::std::cout << "Robot target pose: ";
-		for (int i = 0; i < 6; ++i)		
-			::std::cout << m_target[i] << " ";
+		//::std::cout << "Robot target pose: ";
+		//for (int i = 0; i < 3; ++i)		
+		//	::std::cout << m_target[i] << " ";
 		
 		::std::cout << ::std::endl;
 		mutex_teleop.lock();
@@ -846,12 +847,12 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->m_teleop = msg[5];
 	this->mutex_teleop.unlock();
 
-	m_input_frequency = msg[7];
+	this->m_input_frequency = msg[6];
 	this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
 
 	// need to add plane stuff
 	this->mutex_robotshape.lock();
-	memcpy(m_target, &msg.data()[8], 6 * sizeof(double));
+	memcpy(m_target, &msg.data()[7], 3 * sizeof(double));
 	this->mutex_robotshape.unlock();
 }
 
