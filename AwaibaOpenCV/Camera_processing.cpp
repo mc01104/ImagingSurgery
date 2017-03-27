@@ -989,7 +989,7 @@ void Camera_processing::robotDisplay(void)
 						lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
 					for (int i = 0; i < 3; ++i)
 						tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i];  // remove hardcoded 20;
-					lineSource->SetPoint(npts + 1, tmp[0], tmp[1], tmp[2]);
+					lineSource->SetPoint(npts, tmp[0], tmp[1], tmp[2]);
 				}
 				else
 				{
@@ -1305,7 +1305,7 @@ void Camera_processing::OnLinePlot()
 		//ss << sin(2 * M_PI * (double) counter/100);
 		//ss << "sin,cos," << sin(2 * M_PI * (double) counter/100) << "," << cos(2 * M_PI * (double) counter/100);
 		//data[18] = 20 + 1 * sin(2*M_PI * (double) counter/400);
-		ss <<"frequency,CR" << m_input_frequency << "," << m_contactAvgOverHeartCycle;
+		ss <<"frequency,CR," << m_input_frequency << "," << m_contactAvgOverHeartCycle;
 		//for(int i = 0; i < 22; ++i)
 		//	ss << data[i] << " ";
 		//counter++;
