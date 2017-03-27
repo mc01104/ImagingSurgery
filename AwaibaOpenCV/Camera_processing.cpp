@@ -28,7 +28,7 @@
 #include "targetver.h"
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
-
+#define DEFAULT_PORT_PLOT "27016"
 // OpenCV includes
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -263,6 +263,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 			::std::thread t_network (&Camera_processing::networkKinematics, this);
 			::std::thread t_vtk (&Camera_processing::robotDisplay, this);
 			::std::thread t_vtk_render (&Camera_processing::vtkRender, this);
+			::std::thread t_plot(&Camera_processing::OnLinePlot, this);
 
 #ifndef __DESKTOP_DEVELOPMENT__
 			t_acquire.join();
@@ -273,6 +274,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 			t_network.join();
 			t_vtk_render.join();
 			t_vtk.join();
+			t_plot.join();
 		}
 
 		else
@@ -958,6 +960,7 @@ void Camera_processing::robotDisplay(void)
 	renDisplay3D->AddActor(tubeActor);
 
 	auto start = std::chrono::high_resolution_clock::now();
+	::Eigen::Vector3d tmp;
 	while(m_running)
 	{
 		auto duration_s = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
@@ -981,9 +984,12 @@ void Camera_processing::robotDisplay(void)
 
 				if (npts>2)
 				{
-					lineSource->SetNumberOfPoints(npts); // set new data
-					for (unsigned int i=0;i<npts;i++)
+					lineSource->SetNumberOfPoints(npts + 1); //  to add the straight segment
+					for (unsigned int i = 0; i < npts; i++)
 						lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
+					for (int i = 0; i < 3; ++i)
+						tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i];  // remove hardcoded 20;
+					lineSource->SetPoint(npts + 1, tmp[0], tmp[1], tmp[2]);
 				}
 				else
 				{
@@ -1211,4 +1217,117 @@ float Camera_processing::PredictForce()
 {
 	cv::Mat prediction = m_kalman.predict();
 	return prediction.at<float>(0,0);
+}
+
+
+void Camera_processing::OnLinePlot()
+{
+
+	WSADATA wsaData;
+    int iResult;
+
+    SOCKET ListenSocket = INVALID_SOCKET;
+    SOCKET ClientSocket = INVALID_SOCKET;
+
+    struct addrinfo *result = NULL;
+    struct addrinfo hints;
+
+    int iSendResult;
+    char recvbuf[DEFAULT_BUFLEN];
+    int recvbuflen = DEFAULT_BUFLEN;
+
+
+    // Initialize Winsock
+    iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (iResult != 0) {
+        printf("WSAStartup failed with error: %d\n", iResult);
+        return;
+    }
+
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    // Resolve the server address and port
+    iResult = getaddrinfo(NULL, DEFAULT_PORT_PLOT, &hints, &result);
+    if ( iResult != 0 ) {
+        printf("getaddrinfo failed with error: %d\n", iResult);
+        WSACleanup();
+        return;
+    }
+
+    // Create a SOCKET for connecting to server
+    ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (ListenSocket == INVALID_SOCKET) {
+        printf("socket failed with error: %ld\n", WSAGetLastError());
+        freeaddrinfo(result);
+        WSACleanup();
+        return;
+    }
+
+    // Setup the TCP listening socket // this conflicts with using namespace std in LieGroup -> FIX IT!
+    iResult = ::bind( ListenSocket, result->ai_addr, (int)result->ai_addrlen);
+    if (iResult == SOCKET_ERROR) {
+        printf("bind failed with error: %d\n", WSAGetLastError());
+        freeaddrinfo(result);
+        closesocket(ListenSocket);
+        WSACleanup();
+        return;
+    }
+
+    freeaddrinfo(result);
+
+    iResult = listen(ListenSocket, SOMAXCONN);
+    if (iResult == SOCKET_ERROR) {
+        printf("listen failed with error: %d\n", WSAGetLastError());
+        closesocket(ListenSocket);
+        WSACleanup();
+        return;
+    }
+
+    // Accept a client socket
+    ClientSocket = accept(ListenSocket, NULL, NULL);
+    if (ClientSocket == INVALID_SOCKET) {
+        printf("accept failed with error: %d\n", WSAGetLastError());
+        closesocket(ListenSocket);
+        WSACleanup();
+        return;
+    }
+
+    // No longer need server socket
+    closesocket(ListenSocket);
+	int counter = 0;
+	
+    do {
+		::std::ostringstream ss;
+		//ss << sin(2 * M_PI * (double) counter/100);
+		//ss << "sin,cos," << sin(2 * M_PI * (double) counter/100) << "," << cos(2 * M_PI * (double) counter/100);
+		//data[18] = 20 + 1 * sin(2*M_PI * (double) counter/400);
+		ss <<"frequency,CR" << m_input_frequency << "," << m_contactAvgOverHeartCycle;
+		//for(int i = 0; i < 22; ++i)
+		//	ss << data[i] << " ";
+		//counter++;
+		// send data
+        iSendResult = send( ClientSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
+        if (iSendResult == SOCKET_ERROR) {
+            printf("send failed with error: %d\n", WSAGetLastError());
+            closesocket(ClientSocket);
+            WSACleanup();
+            return;
+        }
+        else if (iSendResult == 0)
+            printf("Connection closing...\n");
+ 
+		iResult = recv(ClientSocket, recvbuf, DEFAULT_BUFLEN, 0);
+
+    } while (iResult > 0);
+
+    closesocket(ClientSocket);
+    WSACleanup();
+
+	OnLinePlot();
+    return;
+
 }

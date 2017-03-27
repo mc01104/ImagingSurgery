@@ -143,6 +143,7 @@ private:
 	bool networkKinematics(void);
 	void robotDisplay(void);
 	void vtkRender(void);
+	void OnLinePlot(void);
 
 	// keyboard input processing
 	void processInput(char key);
