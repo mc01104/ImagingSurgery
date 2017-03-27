@@ -12,7 +12,7 @@
  VTK_MODULE_INIT(vtkInteractionStyle);
  VTK_MODULE_INIT(vtkRenderingOpenGL);
 #include <vtkObject.h>
-
+#include <vtkRegularPolygonSource.h>
 #include "Queue.h"
 #include "BOW_lowlevel.h"
 #include "SharedMutex.h"
@@ -156,6 +156,7 @@ private:
 	void		updateHeartFrequency();
 	void		parseNetworkMessage(::std::vector<double>& msg);
 	vtkSmartPointer<vtkSphereSource> sphereSource;
+	vtkSmartPointer<vtkRegularPolygonSource> circleSource;
 
 	
 public:

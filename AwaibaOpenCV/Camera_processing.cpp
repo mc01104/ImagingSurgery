@@ -203,7 +203,8 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_estimateFreq = false;
 	m_measured_period = 0.0;
 	robot_rotation = 0.0;
-	m_cameraFrameRate = 40.0;
+	// recompute from recorded data
+	m_cameraFrameRate = 48.0;
 
 	// All errors are reported as std::exception.
 	try
@@ -457,7 +458,7 @@ void Camera_processing::acquireImages(void )
 					auto duration = std::chrono::duration_cast<::std::chrono::microseconds> (stop_rec - start_rec);
 					double durInSec = ((double)  duration.count()) / 1.0e06;
 			
-					m_cameraFrameRate = 1.0/durInSec;
+					//m_cameraFrameRate = 1.0/durInSec;
 
 					start_rec = stop_rec;
 				}
@@ -759,7 +760,17 @@ bool Camera_processing::networkKinematics(void)
 
 		this->parseNetworkMessage(configuration);
 
+		::std::cout << "Robot configuration: ";
+		for (int i = 0; i < m_configuration.size(); ++i)		
+			::std::cout << m_configuration[i] << " ";
+		::std::cout << ::std::endl;
+		::std::cout << "heart rate:" << m_input_frequency << ::std::endl;
 
+		::std::cout << "Robot target pose: ";
+		for (int i = 0; i < 6; ++i)		
+			::std::cout << m_target[i] << " ";
+		
+		::std::cout << ::std::endl;
 		mutex_teleop.lock();
 		m_teleop = ( configuration.size()>0 ? (bool) configuration.back() : false); //TODO: implementation bugin here maybe. Check with Georgios how is the data sent from the CTR program in non-teleop mode
 		mutex_teleop.unlock();
@@ -835,21 +846,12 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->m_teleop = msg[5];
 	this->mutex_teleop.unlock();
 
-	if (static_cast<bool> (msg[6]))
-	{
-		m_input_freq_received = true;
-		m_input_frequency = msg[7];
-	}
+	m_input_frequency = msg[7];
+	this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
 
+	// need to add plane stuff
 	this->mutex_robotshape.lock();
-	if (static_cast<bool> (msg[8]))
-	{
-		m_input_plane_received = true;
-		memcpy(m_normal, &msg.data()[9], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[12], 3 * sizeof(double));
-		m_radius = msg[15];
-		memcpy(m_target, &msg.data()[16], 3 * sizeof(double));
-	}
+	memcpy(m_target, &msg.data()[8], 6 * sizeof(double));
 	this->mutex_robotshape.unlock();
 }
 
@@ -857,7 +859,7 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 void Camera_processing::displayValve(double normal[3], double center[3], double radius)
 {
 	// valve visualization
-	vtkSmartPointer<vtkRegularPolygonSource> circleSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
+	circleSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
 	circleSource->SetNumberOfSides(50);
 	circleSource->SetRadius(radius);						
 	circleSource->SetCenter(center);				
@@ -1190,14 +1192,14 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		}
 
-		if (!m_estimateFreq && m_input_freq_received)
-		{
-			this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
-			m_input_freq_received = false;
-		}
+		//if (!m_estimateFreq && m_input_freq_received)
+		//{
+		//	this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
+		//	m_input_freq_received = false;
+		//}
 
-		if (m_estimateFreq && m_contactBufferFiltered.size() > 50)
-			this->updateHeartFrequency();
+		//if (m_estimateFreq && m_contactBufferFiltered.size() > 50)
+		//	this->updateHeartFrequency();
 		
 	}
 	else ::std::cout << "Problem with BOW" << ::std::endl;
