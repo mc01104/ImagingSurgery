@@ -152,7 +152,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	this->m_configuration.resize(5);
 	m_board="NanoUSB2";
 	m_ControlLED=false;
-
+	m_contact_response = 0;
 	m_OK = false;
 	newImg = false;
 	newImg_force = false;
@@ -641,6 +641,7 @@ void Camera_processing::recordImages(void)
 					for(std::vector<double>::const_iterator i = robot_joint.begin(); i != robot_joint.end(); ++i) {
 							joints_file << *i << ',';
 					}
+					joints_file << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_contact_response;
 					joints_file << '\n';
 					joints_file.close();
 				}
@@ -1186,7 +1187,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 			m_mutex_force.lock();
 			m_contactAvgOverHeartCycle = sum/m_FramesPerHeartCycle;
-
+			m_contact_response = response;
 			if (m_sendContact) m_contactAvgOverHeartCycle = response;
 			m_contactMeasured = true;
 			m_mutex_force.unlock();
