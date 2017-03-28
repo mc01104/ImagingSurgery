@@ -97,8 +97,8 @@ private:
 	SharedMutex m_mutex_sharedImg;
 
 	// Force estimation variables
-	//BOW_l m_bow;
-	BagOfFeatures m_bof;
+	BOW_l m_bow;
+	//BagOfFeatures m_bof;
 
 	float m_contact;
 	float m_force_gain;

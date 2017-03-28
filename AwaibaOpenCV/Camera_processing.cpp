@@ -87,7 +87,7 @@ using namespace Core;
 using namespace cv;
 using namespace RecursiveFilter;
 
-#define __DESKTOP_DEVELOPMENT__
+//#define __DESKTOP_DEVELOPMENT__
 
 // VTK global variables (only way to get a thread running ...)
 ::std::mutex mutex_vtkRender;
@@ -646,7 +646,7 @@ void Camera_processing::recordImages(void)
 					joints_file << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_contact_response << ",";
 					
 					for (int i = 0; i < 3; ++i)
-						joints_file << m_SolutionFrames.back()[i] << ",";
+						joints_file << m_SolutionFrames.back().GetPosition()[i] << ",";
 					joints_file << '\n';
 					joints_file.close();
 				}
@@ -771,7 +771,7 @@ bool Camera_processing::networkKinematics(void)
 		//for (int i = 0; i < m_configuration.size(); ++i)		
 		//	::std::cout << m_configuration[i] << " ";
 		//::std::cout << ::std::endl;
-		::std::cout << "heart rate:" << m_input_frequency << ::std::endl;
+		//::std::cout << "heart rate:" << m_input_frequency << ::std::endl;
 
 		//::std::cout << "Robot target pose: ";
 		//for (int i = 0; i < 3; ++i)		
@@ -853,7 +853,8 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->m_teleop = msg[5];
 	this->mutex_teleop.unlock();
 
-	this->m_input_frequency = msg[6];
+	//this->m_input_frequency = msg[6];
+	this->m_input_frequency = 80;
 	this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
 
 	// need to add plane stuff
@@ -1120,8 +1121,8 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 	try
 	{
 
-		//m_bow.LoadFromFile(svm_base_path);
-		m_bof.load(svm_base_path);
+		m_bow.LoadFromFile(svm_base_path);
+		//m_bof.load(svm_base_path);
 		m_kalman = ::cv::KalmanFilter(1,1);
 		m_force_gain = force_gain;
 		cv::setIdentity(m_kalman.measurementMatrix, cv::Scalar::all(measureCov));
@@ -1166,12 +1167,12 @@ void Camera_processing::updateHeartFrequency()
 
 void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 {
-	//::std::vector<::std::string> classes = m_bow.getClasses();
-	::std::vector<::std::string> classes = m_bof.getClasses();
+	::std::vector<::std::string> classes = m_bow.getClasses();
+	//::std::vector<::std::string> classes = m_bof.getClasses();
 	float response = 0.0;
 	
-	//if (m_bow.predictBOW(img,response)) 
-	if (m_bof.predict(img,response)) 
+	if (m_bow.predictBOW(img,response)) 
+	//if (m_bof.predict(img,response)) 
 	{
 
 		if (classes[(int) response] == "Free") response = 0.0;
