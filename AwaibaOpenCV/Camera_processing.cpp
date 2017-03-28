@@ -643,7 +643,10 @@ void Camera_processing::recordImages(void)
 					for(std::vector<double>::const_iterator i = robot_joint.begin(); i != robot_joint.end(); ++i) {
 							joints_file << *i << ',';
 					}
-					joints_file << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_contact_response;
+					joints_file << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_contact_response << ",";
+					
+					for (int i = 0; i < 3; ++i)
+						joints_file << m_SolutionFrames.back()[i] << ",";
 					joints_file << '\n';
 					joints_file.close();
 				}
@@ -774,10 +777,10 @@ bool Camera_processing::networkKinematics(void)
 		//for (int i = 0; i < 3; ++i)		
 		//	::std::cout << m_target[i] << " ";
 		
-		::std::cout << ::std::endl;
-		mutex_teleop.lock();
-		m_teleop = ( configuration.size()>0 ? (bool) configuration.back() : false); //TODO: implementation bugin here maybe. Check with Georgios how is the data sent from the CTR program in non-teleop mode
-		mutex_teleop.unlock();
+		//::std::cout << ::std::endl;
+		//mutex_teleop.lock();
+		//m_teleop = ( configuration.size()>0 ? (bool) configuration.back() : false); //TODO: implementation bugin here maybe. Check with Georgios how is the data sent from the CTR program in non-teleop mode
+		//mutex_teleop.unlock();
 
 		// Convert the received the configuration to comply with the definition of the mechanics based kinematics implementation
 		double rotation[3] = {0};
@@ -1117,8 +1120,8 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 	try
 	{
 
-		m_bow.LoadFromFile(svm_base_path);
-
+		//m_bow.LoadFromFile(svm_base_path);
+		m_bof.load(svm_base_path);
 		m_kalman = ::cv::KalmanFilter(1,1);
 		m_force_gain = force_gain;
 		cv::setIdentity(m_kalman.measurementMatrix, cv::Scalar::all(measureCov));
@@ -1163,10 +1166,12 @@ void Camera_processing::updateHeartFrequency()
 
 void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 {
-	::std::vector<::std::string> classes = m_bow.getClasses();
+	//::std::vector<::std::string> classes = m_bow.getClasses();
+	::std::vector<::std::string> classes = m_bof.getClasses();
 	float response = 0.0;
 	
-	if (m_bow.predictBOW(img,response)) 
+	//if (m_bow.predictBOW(img,response)) 
+	if (m_bof.predict(img,response)) 
 	{
 
 		if (classes[(int) response] == "Free") response = 0.0;

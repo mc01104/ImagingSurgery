@@ -15,6 +15,7 @@
 #include <vtkRegularPolygonSource.h>
 #include "Queue.h"
 #include "BOW_lowlevel.h"
+#include "classifier.h"
 #include "SharedMutex.h"
 
 // VTK
@@ -96,7 +97,9 @@ private:
 	SharedMutex m_mutex_sharedImg;
 
 	// Force estimation variables
-	BOW_l m_bow;
+	//BOW_l m_bow;
+	BagOfFeatures m_bof;
+
 	float m_contact;
 	float m_force_gain;
 	::cv::KalmanFilter m_kalman;

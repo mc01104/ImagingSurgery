@@ -61,12 +61,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Classifier;..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opencv_world310d.lib;opencv_xfeatures2d310d.lib;BagOfWords.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Classifier.lib;opencv_world310d.lib;opencv_xfeatures2d310d.lib;BagOfWords.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../$(Platform)/$(Configuration);$(OPENCV_DIR)\lib;$(SolutionDir)\\Lib\Naneye_lib\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -79,7 +79,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories);C:\dev\VTK-6.3.0\Common\Core;C:\dev\opencv\build\install\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Classifier;..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories);C:\dev\VTK-6.3.0\Common\Core;C:\dev\opencv\build\install\include</AdditionalIncludeDirectories>
       <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
@@ -87,7 +87,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>Utilities.lib;opencv_world310.lib;opencv_xfeatures2d310.lib;BagOfWords.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Classifier.lib;Utilities.lib;opencv_world310.lib;opencv_xfeatures2d310.lib;BagOfWords.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../$(Platform)/$(Configuration);$(OPENCV_DIR)\lib;$(SolutionDir)\\Lib\Naneye_lib\lib\x64;%(AdditionalLibraryDirectories);../$(Platform)/$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
