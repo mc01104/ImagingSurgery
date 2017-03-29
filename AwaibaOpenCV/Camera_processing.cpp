@@ -853,8 +853,9 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->m_teleop = msg[5];
 	this->mutex_teleop.unlock();
 
-	//this->m_input_frequency = msg[6];
-	this->m_input_frequency = 80;
+	this->m_input_frequency = msg[6];
+	if (this->m_input_frequency < 20)
+		this->m_input_frequency= 80;
 	this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
 
 	// need to add plane stuff
