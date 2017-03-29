@@ -847,15 +847,17 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	// first get the configuration
 	this->mutex_robotjoints.lock();
 	::std::copy(msg.begin(), msg.begin() + 5, this->m_configuration.begin());
-	this->mutex_robotjoints.unlock();
+	this->mutex_robotjoints.unlock(); 
 
 	this->mutex_teleop.lock();
 	this->m_teleop = msg[5];
 	this->mutex_teleop.unlock();
 
 	this->m_input_frequency = msg[6];
-	if (this->m_input_frequency < 20)
+	//::std::cout << m_input_frequency << ::std::endl;
+	if (this->m_input_frequency < 0)
 		this->m_input_frequency= 80;
+	//::std::cout << m_input_frequency << ::std::endl;
 	this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
 
 	// need to add plane stuff
@@ -1312,7 +1314,7 @@ void Camera_processing::OnLinePlot()
 		//ss << sin(2 * M_PI * (double) counter/100);
 		//ss << "sin,cos," << sin(2 * M_PI * (double) counter/100) << "," << cos(2 * M_PI * (double) counter/100);
 		//data[18] = 20 + 1 * sin(2*M_PI * (double) counter/400);
-		ss <<"frequency,CR,tipZ" << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_SolutionFrames.back().GetPosition()[2];
+		ss <<"frequency,CR,tipZ," << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_SolutionFrames.back().GetPosition()[2];
 		//for(int i = 0; i < 22; ++i)
 		//	ss << data[i] << " ";
 		//counter++;
