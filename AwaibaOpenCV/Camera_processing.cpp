@@ -1312,7 +1312,7 @@ void Camera_processing::OnLinePlot()
 		//ss << sin(2 * M_PI * (double) counter/100);
 		//ss << "sin,cos," << sin(2 * M_PI * (double) counter/100) << "," << cos(2 * M_PI * (double) counter/100);
 		//data[18] = 20 + 1 * sin(2*M_PI * (double) counter/400);
-		ss <<"frequency,CR," << m_input_frequency << "," << m_contactAvgOverHeartCycle;
+		ss <<"frequency,CR,tipZ" << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_SolutionFrames.back().GetPosition()[2];
 		//for(int i = 0; i < 22; ++i)
 		//	ss << data[i] << " ";
 		//counter++;
