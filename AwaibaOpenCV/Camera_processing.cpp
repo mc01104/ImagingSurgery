@@ -194,11 +194,11 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		m_KFParams.push_back(0.5);
 	}
 
-#ifndef __DESKTOP_DEVELOPMENT__
+//#ifndef __DESKTOP_DEVELOPMENT__
 	::std::cout << "Initializing Force estimator ..." << ::std::endl;
 	InitForceEstimator(svm_base_folder + "output_", 3.0, m_KFParams[0], m_KFParams[1]);
 	::std::cout << "Force estimator initialized" << ::std::endl;
-#endif
+//#endif
 
 	m_estimateFreq = false;
 	m_measured_period = 0.0;
@@ -1124,8 +1124,8 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 	try
 	{
 
-		m_bow.LoadFromFile(svm_base_path);
-		//m_bof.load(svm_base_path);
+		//m_bow.LoadFromFile(svm_base_path);
+		m_bof.load(svm_base_path);
 		m_kalman = ::cv::KalmanFilter(1,1);
 		m_force_gain = force_gain;
 		cv::setIdentity(m_kalman.measurementMatrix, cv::Scalar::all(measureCov));
@@ -1170,12 +1170,12 @@ void Camera_processing::updateHeartFrequency()
 
 void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 {
-	::std::vector<::std::string> classes = m_bow.getClasses();
-	//::std::vector<::std::string> classes = m_bof.getClasses();
+	//::std::vector<::std::string> classes = m_bow.getClasses();
+	::std::vector<::std::string> classes = m_bof.getClasses();
 	float response = 0.0;
 	
-	if (m_bow.predictBOW(img,response)) 
-	//if (m_bof.predict(img,response)) 
+	//if (m_bow.predictBOW(img,response)) 
+	if (m_bof.predict(img,response)) 
 	{
 
 		if (classes[(int) response] == "Free") response = 0.0;
