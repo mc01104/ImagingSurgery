@@ -87,7 +87,7 @@ using namespace Core;
 using namespace cv;
 using namespace RecursiveFilter;
 
-#define __DESKTOP_DEVELOPMENT__
+//#define __DESKTOP_DEVELOPMENT__
 
 // VTK global variables (only way to get a thread running ...)
 ::std::mutex mutex_vtkRender;
@@ -700,8 +700,8 @@ bool Camera_processing::networkKinematics(void)
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    //iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
-	iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
+	//iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
