@@ -20,7 +20,34 @@
 
 // VTK
 #include <vtkSmartPointer.h>
+#include <vtkLine.h>
+#include <vtkCellArray.h>
+#include <vtkParametricSpline.h>
+#include <vtkParametricFunctionSource.h>
+#include <vtkTubeFilter.h>
+#include <vtkLineSource.h>
+#include <vtkPolyLineSource.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkPolyLine.h>
+#include <vtkActor.h>
+#include <vtkCubeSource.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkProperty.h>
+#include <vtkCommand.h>
+#include <vtkPlaneSource.h>
+#include <vtkCamera.h>
+#include <vtkOrientationMarkerWidget.h>
+#include <vtkAxesActor.h>
+#include <vtkRegularPolygonSource.h>
 #include <vtkSphereSource.h>
+#include <vtkArrowSource.h>
+#include <vtkTransformPolyDataFilter.h>
+#include <vtkTransform.h>
+
 
 // OpenCV includes
 #include <opencv2/core/core.hpp>
@@ -147,7 +174,7 @@ private:
 	void robotDisplay(void);
 	void vtkRender(void);
 	void OnLinePlot(void);
-
+	void initializeValveDisplay();
 	// keyboard input processing
 	void processInput(char key);
 	void displayValve(double normal[3], double center[3], double radius);
@@ -162,7 +189,12 @@ private:
 	void		parseNetworkMessage(::std::vector<double>& msg);
 	vtkSmartPointer<vtkSphereSource> sphereSource;
 	vtkSmartPointer<vtkRegularPolygonSource> circleSource;
-
+	vtkSmartPointer<vtkPolyDataMapper> mapperCircle;
+	vtkSmartPointer<vtkActor> actorCircle;
+	vtkSmartPointer<vtkArrowSource> arrowSource;
+	vtkSmartPointer<vtkTransform> transform;
+	vtkSmartPointer<vtkPolyDataMapper> mapperArrow; 
+	vtkSmartPointer<vtkActor> actorArrow;
 	
 public:
 

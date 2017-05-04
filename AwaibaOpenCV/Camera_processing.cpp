@@ -876,27 +876,47 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->mutex_robotshape.unlock();
 }
 
-
-void Camera_processing::displayValve(double normal[3], double center[3], double radius)
+void Camera_processing::initializeValveDisplay()
 {
-	// valve visualization
 	circleSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
 	circleSource->SetNumberOfSides(50);
-	circleSource->SetRadius(radius);						
-	circleSource->SetCenter(center);				
-	circleSource->SetNormal(normal);
-	
-	vtkSmartPointer<vtkPolyDataMapper> mapperCircle = vtkSmartPointer<vtkPolyDataMapper>::New();
+	circleSource->SetRadius(0);						
+	double tmp[3] = {0, 0, 0};
+	circleSource->SetCenter(tmp);				
+	circleSource->SetNormal(tmp);
+
+	mapperCircle = vtkSmartPointer<vtkPolyDataMapper>::New();
+
 	mapperCircle->SetInputConnection(circleSource->GetOutputPort());;
-	vtkSmartPointer<vtkActor> actorCircle =	vtkSmartPointer<vtkActor>::New();
+	actorCircle =	vtkSmartPointer<vtkActor>::New();
 	actorCircle->SetMapper(mapperCircle);
 	actorCircle->GetProperty()->SetColor(0, 1, 0);
 	actorCircle->GetProperty()->SetEdgeColor(0,1,0);
 	actorCircle->GetProperty()->SetEdgeVisibility(1);
 	renDisplay3D->AddActor(actorCircle);
 
+	arrowSource = vtkSmartPointer<vtkArrowSource>::New();
+
+	transform = vtkSmartPointer<vtkTransform>::New();
+
+	mapperArrow = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapperArrow->SetInputConnection(arrowSource->GetOutputPort());
+
+	actorArrow = vtkSmartPointer<vtkActor>::New();
+	actorArrow->SetMapper(mapperArrow);
+	actorArrow->SetUserTransform(transform);
+
+	renDisplay3D->AddActor(actorArrow);
+}
+
+void Camera_processing::displayValve(double normal[3], double center[3], double radius)
+{
+	// valve visualization
+	circleSource->SetRadius(radius);						
+	circleSource->SetCenter(center);				
+	circleSource->SetNormal(normal);
+	
 	// visualize normal
-	vtkSmartPointer<vtkArrowSource> arrowSource = vtkSmartPointer<vtkArrowSource>::New();
 	double endPoint[3] = {0};
 	for(int i = 0; i < 3; ++i)
 		endPoint[i] = center[i] - normal[i] * 10;
@@ -913,17 +933,7 @@ void Camera_processing::displayValve(double normal[3], double center[3], double 
 	homTransformation.block(3,0,1,3) = ::Eigen::Map<::Eigen::Matrix<double,1,3>> (center,3);
 
 	// Apply the transforms
-	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 	transform->SetMatrix(homTransformation.data());
-
-	vtkSmartPointer<vtkPolyDataMapper> mapperArrow = vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapperArrow->SetInputConnection(arrowSource->GetOutputPort());
-
-	vtkSmartPointer<vtkActor> actorArrow = vtkSmartPointer<vtkActor>::New();
-	actorArrow->SetMapper(mapperArrow);
-	actorArrow->SetUserTransform(transform);
-
-	renDisplay3D->AddActor(actorArrow);
 }
 
 void Camera_processing::initializeTarget()
@@ -947,6 +957,7 @@ void Camera_processing::robotDisplay(void)
 {
 
 	this->initializeTarget();
+	this->initializeValveDisplay();
 	double target[6] = {0};
 
 	bool planeReceived = false;
