@@ -87,7 +87,7 @@ using namespace Core;
 using namespace cv;
 using namespace RecursiveFilter;
 
-//#define __DESKTOP_DEVELOPMENT__
+#define __DESKTOP_DEVELOPMENT__
 
 // VTK global variables (only way to get a thread running ...)
 ::std::mutex mutex_vtkRender;
@@ -700,8 +700,8 @@ bool Camera_processing::networkKinematics(void)
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
-	//iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
+    //iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
+	iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
@@ -765,6 +765,8 @@ bool Camera_processing::networkKinematics(void)
 		::std::string conf_str(recvbuf);
 		::std::vector<double> configuration = DoubleVectorFromString(conf_str);
 
+		//double tmp_configuration[18] = {0,0,0,0,0,0,90, 108, 0, 100, 1, 0, 0, 1, 108, 0, 120, 20};
+		//::std::vector<double> configuration2(tmp_configuration, tmp_configuration + 17);
 		this->parseNetworkMessage(configuration);
 
 		//::std::cout << "Robot configuration: ";
@@ -863,6 +865,14 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	// need to add plane stuff
 	this->mutex_robotshape.lock();
 	memcpy(m_target, &msg.data()[7], 3 * sizeof(double));
+
+	m_input_plane_received = msg.data()[10];
+	if (m_input_plane_received)
+	{
+		memcpy(m_normal, &msg.data()[11], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[14], 3 * sizeof(double));
+		m_radius = msg.data()[17];
+	}
 	this->mutex_robotshape.unlock();
 }
 
@@ -880,8 +890,8 @@ void Camera_processing::displayValve(double normal[3], double center[3], double 
 	mapperCircle->SetInputConnection(circleSource->GetOutputPort());;
 	vtkSmartPointer<vtkActor> actorCircle =	vtkSmartPointer<vtkActor>::New();
 	actorCircle->SetMapper(mapperCircle);
-	actorCircle->GetProperty()->SetColor(0, 0, 1);
-	actorCircle->GetProperty()->SetEdgeColor(1,0,0);
+	actorCircle->GetProperty()->SetColor(0, 1, 0);
+	actorCircle->GetProperty()->SetEdgeColor(0,1,0);
 	actorCircle->GetProperty()->SetEdgeVisibility(1);
 	renDisplay3D->AddActor(actorCircle);
 
