@@ -916,24 +916,24 @@ void Camera_processing::displayValve(double normal[3], double center[3], double 
 	circleSource->SetCenter(center);				
 	circleSource->SetNormal(normal);
 	
-	// visualize normal
-	double endPoint[3] = {0};
-	for(int i = 0; i < 3; ++i)
-		endPoint[i] = center[i] - normal[i] * 10;
- 
-	double length = 10;
-	// transformation of the arrow to align it with the normal at the center circle
-	::Eigen::MatrixXd homTransformation(4,4);
-	homTransformation.setIdentity();
-	::Eigen::Vector3d xEig = ::Eigen::Map<::Eigen::Vector3d> (normal,3);
-	xEig[0] -= 1;
-	xEig.normalize();
-	homTransformation(3,3) = 1.0;
-	homTransformation.block(0,0,3,3) = 2 * xEig * xEig.transpose() - ::Eigen::Matrix3d::Identity();
-	homTransformation.block(3,0,1,3) = ::Eigen::Map<::Eigen::Matrix<double,1,3>> (center,3);
+	//// visualize normal
+	//double endPoint[3] = {0};
+	//for(int i = 0; i < 3; ++i)
+	//	endPoint[i] = center[i] - normal[i] * 10;
+ //
+	//double length = 10;
+	//// transformation of the arrow to align it with the normal at the center circle
+	//::Eigen::MatrixXd homTransformation(4,4);
+	//homTransformation.setIdentity();
+	//::Eigen::Vector3d xEig = ::Eigen::Map<::Eigen::Vector3d> (normal,3);
+	//xEig[0] -= 1;
+	//xEig.normalize();
+	//homTransformation(3,3) = 1.0;
+	//homTransformation.block(0,0,3,3) = 2 * xEig * xEig.transpose() - ::Eigen::Matrix3d::Identity();
+	//homTransformation.block(3,0,1,3) = ::Eigen::Map<::Eigen::Matrix<double,1,3>> (center,3);
 
-	// Apply the transforms
-	transform->SetMatrix(homTransformation.data());
+	//// Apply the transforms
+	//transform->SetMatrix(homTransformation.data());
 }
 
 void Camera_processing::initializeTarget()
