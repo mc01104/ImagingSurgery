@@ -1372,17 +1372,18 @@ void Camera_processing::OnLinePlot()
 
 void Camera_processing::updatePoints()
 {
-	vtkSmartPointer<vtkPoints> tmpPoints = vtkSmartPointer<vtkPoints>::New();
-
+	//vtkSmartPointer<vtkPoints> tmpPoints = vtkSmartPointer<vtkPoints>::New();
+	points->Reset();
+	points->Squeeze();
 	double tmpPoint[3] = {0};
 	for (int i = 0; i < pointsOnValve.size(); i += 3)
 	{
 		tmpPoint[0] = pointsOnValve[i];
 		tmpPoint[1] = pointsOnValve[i + 1];
 		tmpPoint[2] = pointsOnValve[i + 2];
-		tmpPoints->InsertNextPoint(tmpPoint);
+		points->InsertNextPoint(tmpPoint);
 	}
-	points->DeepCopy(tmpPoints);
+	//points->DeepCopy(tmpPoints);
 }
 
 void Camera_processing::updateArrowOrientation(double normal[3], vtkSmartPointer<vtkMatrix4x4> matrix)
