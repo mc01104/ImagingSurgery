@@ -1383,8 +1383,6 @@ void Camera_processing::updatePoints()
 		tmpPoints->InsertNextPoint(tmpPoint);
 	}
 	points->DeepCopy(tmpPoints);
-	tmpPoints->Delete();
-
 }
 
 void Camera_processing::updateArrowOrientation(double normal[3], vtkSmartPointer<vtkMatrix4x4> matrix)
