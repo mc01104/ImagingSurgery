@@ -921,6 +921,8 @@ void Camera_processing::initializeValveDisplay()
 	actorPoints->SetMapper(mapperPoints);
 	actorPoints->GetProperty()->SetPointSize(5);
 	renDisplay3D->AddActor(actorPoints);
+
+
 }
 
 void Camera_processing::displayValve(double normal[3], double center[3], double radius)
@@ -933,10 +935,10 @@ void Camera_processing::displayValve(double normal[3], double center[3], double 
 	// line instead of arrow - TBD
 	addArrow(normal, center);
 
-	//// visualizing points used for fitting the valve
-	//updatePoints();
- //   vertexFilter->Update();
-	//polydata->ShallowCopy(vertexFilter->GetOutput());
+	// visualizing points used for fitting the valve
+	updatePoints();
+    vertexFilter->Update();
+	polydata->ShallowCopy(vertexFilter->GetOutput());
 
 }
 
@@ -1371,6 +1373,7 @@ void Camera_processing::OnLinePlot()
 void Camera_processing::updatePoints()
 {
 	vtkSmartPointer<vtkPoints> tmpPoints = vtkSmartPointer<vtkPoints>::New();
+
 	double tmpPoint[3] = {0};
 	for (int i = 0; i < pointsOnValve.size(); i += 3)
 	{
@@ -1379,7 +1382,8 @@ void Camera_processing::updatePoints()
 		tmpPoint[2] = pointsOnValve[i + 2];
 		tmpPoints->InsertNextPoint(tmpPoint);
 	}
-	points->ShallowCopy(tmpPoints);
+	points->DeepCopy(tmpPoints);
+	tmpPoints->Delete();
 
 }
 
