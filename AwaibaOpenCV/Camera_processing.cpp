@@ -937,6 +937,7 @@ void Camera_processing::displayValve(double normal[3], double center[3], double 
 
 	// visualizing points used for fitting the valve
 	updatePoints();
+	pointsPolydata->SetPoints(points);
     vertexFilter->Update();
 	polydata->ShallowCopy(vertexFilter->GetOutput());
 
