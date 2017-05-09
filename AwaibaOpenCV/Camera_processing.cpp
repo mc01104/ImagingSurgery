@@ -907,15 +907,15 @@ void Camera_processing::initializeValveDisplay()
 	pointsPolydata = vtkSmartPointer<vtkPolyData>::New();
 	pointsPolydata->SetPoints(points);
  
-	vertexFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
-	vertexFilter->SetInputData(pointsPolydata);
-    vertexFilter->Update();
- 
-	polydata = vtkSmartPointer<vtkPolyData>::New();
-	polydata->ShallowCopy(vertexFilter->GetOutput());
+	//vertexFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
+	//vertexFilter->SetInputData(pointsPolydata);
+ //   vertexFilter->Update();
+ //
+	//polydata = vtkSmartPointer<vtkPolyData>::New();
+	//polydata->ShallowCopy(vertexFilter->GetOutput());
   
 	mapperPoints = vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapperPoints->SetInputData(polydata);
+	mapperPoints->SetInputData(pointsPolydata);
  
 	vtkSmartPointer<vtkActor> actorPoints =  vtkSmartPointer<vtkActor>::New();
 	actorPoints->SetMapper(mapperPoints);
@@ -938,8 +938,8 @@ void Camera_processing::displayValve(double normal[3], double center[3], double 
 	// visualizing points used for fitting the valve
 	updatePoints();
 	pointsPolydata->SetPoints(points);
-    vertexFilter->Update();
-	polydata->ShallowCopy(vertexFilter->GetOutput());
+ //   vertexFilter->Update();
+	//polydata->ShallowCopy(vertexFilter->GetOutput());
 
 }
 
