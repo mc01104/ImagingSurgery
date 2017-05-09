@@ -47,7 +47,7 @@
 #include <vtkArrowSource.h>
 #include <vtkTransformPolyDataFilter.h>
 #include <vtkTransform.h>
-
+#include <vtkVertexGlyphFilter.h>
 
 // OpenCV includes
 #include <opencv2/core/core.hpp>
@@ -191,13 +191,32 @@ private:
 	vtkSmartPointer<vtkRegularPolygonSource> circleSource;
 	vtkSmartPointer<vtkPolyDataMapper> mapperCircle;
 	vtkSmartPointer<vtkActor> actorCircle;
+
 	vtkSmartPointer<vtkArrowSource> arrowSource;
+	vtkSmartPointer<vtkMatrix4x4> matrix;
 	vtkSmartPointer<vtkTransform> transform;
+	vtkSmartPointer<vtkTransformPolyDataFilter> transformPD;
 	vtkSmartPointer<vtkPolyDataMapper> mapperArrow; 
 	vtkSmartPointer<vtkActor> actorArrow;
-	
-public:
 
+	vtkSmartPointer<vtkPoints> points;
+	vtkSmartPointer<vtkPolyData> pointsPolydata;
+	vtkSmartPointer<vtkVertexGlyphFilter> vertexFilter;
+	vtkSmartPointer<vtkPolyData> polydata;
+	vtkSmartPointer<vtkPolyDataMapper> mapperPoints;
+	vtkSmartPointer<vtkActor> actorPoints; 
+
+	::std::vector<double> pointsOnValve;
+
+	vtkSmartPointer<vtkPolyData> linesPolyData;
+	vtkSmartPointer<vtkPoints> pts;
+	vtkSmartPointer<vtkLine> line0;
+	vtkSmartPointer<vtkCellArray> lines;
+
+public:
+	void updatePoints();
+	void addArrow(double normal[3], double center[3]);
+	void updateArrowOrientation(double normal[3], vtkSmartPointer<vtkMatrix4x4> matrix);
 	// Constructor and destructor
 	Camera_processing(int period, bool sendContact);
 	~Camera_processing();

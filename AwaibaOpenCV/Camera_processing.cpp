@@ -87,7 +87,7 @@ using namespace Core;
 using namespace cv;
 using namespace RecursiveFilter;
 
-//#define __DESKTOP_DEVELOPMENT__
+#define __DESKTOP_DEVELOPMENT__
 
 // VTK global variables (only way to get a thread running ...)
 ::std::mutex mutex_vtkRender;
@@ -700,8 +700,8 @@ bool Camera_processing::networkKinematics(void)
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
-	//iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
+    //iResult = getaddrinfo(ipaddress.c_str(), DEFAULT_PORT, &hints, &result);
+	iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
@@ -872,6 +872,11 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 		memcpy(m_normal, &msg.data()[11], 3 * sizeof(double));
 		memcpy(m_center, &msg.data()[14], 3 * sizeof(double));
 		m_radius = msg.data()[17];
+
+		pointsOnValve.clear();
+		int num_of_points = msg.data()[18];
+		for (int i = 0; i < 3 * num_of_points; ++i)
+			pointsOnValve.push_back(msg[19+i]);
 	}
 	this->mutex_robotshape.unlock();
 }
@@ -896,18 +901,26 @@ void Camera_processing::initializeValveDisplay()
 	actorCircle->GetProperty()->SetOpacity(0.3);
 	renDisplay3D->AddActor(actorCircle);
 
-	//arrowSource = vtkSmartPointer<vtkArrowSource>::New();
-
-	//transform = vtkSmartPointer<vtkTransform>::New();
-
-	//mapperArrow = vtkSmartPointer<vtkPolyDataMapper>::New();
-	//mapperArrow->SetInputConnection(arrowSource->GetOutputPort());
-
-	//actorArrow = vtkSmartPointer<vtkActor>::New();
-	//actorArrow->SetMapper(mapperArrow);
-	//actorArrow->SetUserTransform(transform);
-
-	//renDisplay3D->AddActor(actorArrow);
+	// initializing vtk structure for points-on-valve visualization
+	points = vtkSmartPointer<vtkPoints>::New();
+	points->InsertNextPoint (0.0, 0.0, 0.0);
+	pointsPolydata = vtkSmartPointer<vtkPolyData>::New();
+	pointsPolydata->SetPoints(points);
+ 
+	vertexFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
+	vertexFilter->SetInputData(pointsPolydata);
+    vertexFilter->Update();
+ 
+	polydata = vtkSmartPointer<vtkPolyData>::New();
+	polydata->ShallowCopy(vertexFilter->GetOutput());
+  
+	mapperPoints = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapperPoints->SetInputData(polydata);
+ 
+	vtkSmartPointer<vtkActor> actorPoints =  vtkSmartPointer<vtkActor>::New();
+	actorPoints->SetMapper(mapperPoints);
+	actorPoints->GetProperty()->SetPointSize(5);
+	renDisplay3D->AddActor(actorPoints);
 }
 
 void Camera_processing::displayValve(double normal[3], double center[3], double radius)
@@ -916,6 +929,15 @@ void Camera_processing::displayValve(double normal[3], double center[3], double 
 	circleSource->SetRadius(radius);						
 	circleSource->SetCenter(center);				
 	circleSource->SetNormal(normal);
+
+	// line instead of arrow - TBD
+	addArrow(normal, center);
+
+	// visualizing points used for fitting the valve
+	updatePoints();
+    vertexFilter->Update();
+	polydata->ShallowCopy(vertexFilter->GetOutput());
+
 }
 
 void Camera_processing::initializeTarget()
@@ -1342,4 +1364,74 @@ void Camera_processing::OnLinePlot()
 	OnLinePlot();
     return;
 
+}
+
+void Camera_processing::updatePoints()
+{
+	vtkSmartPointer<vtkPoints> tmpPoints = vtkSmartPointer<vtkPoints>::New();
+	double tmpPoint[3] = {0};
+	for (int i = 0; i < pointsOnValve.size(); i += 3)
+	{
+		tmpPoint[0] = pointsOnValve[i];
+		tmpPoint[1] = pointsOnValve[i + 1];
+		tmpPoint[2] = pointsOnValve[i + 2];
+		tmpPoints->InsertNextPoint(tmpPoint);
+	}
+	points->ShallowCopy(tmpPoints);
+}
+
+void Camera_processing::updateArrowOrientation(double normal[3], vtkSmartPointer<vtkMatrix4x4> matrix)
+{
+	::Eigen::Vector3d normalEig = ::Eigen::Map<::Eigen::Vector3d> (normal, 3);
+	::Eigen::Vector3d z_vectorEig(0, 0, 1);
+
+
+	::Eigen::Vector3d axis = normalEig.cross(z_vectorEig);
+	double theta = ::std::acos(normalEig.dot(z_vectorEig)/normalEig.norm());
+	::Eigen::AngleAxis<double> aa(theta, axis);
+	::Eigen::MatrixXd rot = aa.toRotationMatrix();
+
+	for(int i = 0; i < 3; ++i)
+		for(int j = 0; j < 3; ++j)
+			 matrix->SetElement(i, j, rot(i,j));
+
+	
+}
+
+void Camera_processing::addArrow(double normal[3], double center[3])
+{
+	// arrow initialization
+	linesPolyData = vtkSmartPointer<vtkPolyData>::New();
+	// Create three points
+	double p0[3], p1[3];
+	memcpy(p0, center, 3 * sizeof(double));
+
+	for(int i = 0; i < 3; ++i)
+		p1[i] = p0[i] - normal[i] * 10;
+ 
+	// Create a vtkPoints container and store the points in it
+	pts = vtkSmartPointer<vtkPoints>::New();
+
+	pts->InsertNextPoint(p0);
+	pts->InsertNextPoint(p1);
+ 
+	// Add the points to the polydata container
+	linesPolyData->SetPoints(pts); 
+	// Create the first line (between Origin and P0)
+	line0 = vtkSmartPointer<vtkLine>::New();
+	line0->GetPointIds()->SetId(0, 0); // the second 0 is the index of the Origin in linesPolyData's points
+	line0->GetPointIds()->SetId(1, 1); // the second 1 is the index of P0 in linesPolyData's points
+
+	// Create a vtkCellArray container and store the lines in it
+	lines = vtkSmartPointer<vtkCellArray>::New();
+	lines->InsertNextCell(line0);
+ 
+	// Add the lines to the polydata container
+	linesPolyData->SetLines(lines);
+	mapperArrow = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapperArrow->SetInputData(linesPolyData);
+	actorArrow = vtkSmartPointer<vtkActor>::New();
+	actorArrow->SetMapper(mapperArrow);
+ 
+	renDisplay3D->AddActor(actorArrow);	
 }
