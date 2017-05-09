@@ -230,5 +230,7 @@ public:
 	void InitForceEstimator(::std::string svm_base_path, float force_gain=3.0, float processNoiseCov=0.5, float measureCov = 0.5);
 	void UpdateForceEstimator(const ::cv::Mat& img);
 	float PredictForce();
+
+	void initializeArrow();
 };
 

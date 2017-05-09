@@ -962,6 +962,8 @@ void Camera_processing::robotDisplay(void)
 
 	this->initializeTarget();
 	this->initializeValveDisplay();
+	this->initializeArrow();
+
 	double target[6] = {0};
 
 	bool planeReceived = false;
@@ -1401,8 +1403,6 @@ void Camera_processing::updateArrowOrientation(double normal[3], vtkSmartPointer
 
 void Camera_processing::addArrow(double normal[3], double center[3])
 {
-	// arrow initialization
-	linesPolyData = vtkSmartPointer<vtkPolyData>::New();
 	// Create three points
 	double p0[3], p1[3];
 	memcpy(p0, center, 3 * sizeof(double));
@@ -1411,7 +1411,7 @@ void Camera_processing::addArrow(double normal[3], double center[3])
 		p1[i] = p0[i] - normal[i] * 10;
  
 	// Create a vtkPoints container and store the points in it
-	pts = vtkSmartPointer<vtkPoints>::New();
+
 
 	pts->InsertNextPoint(p0);
 	pts->InsertNextPoint(p1);
@@ -1419,20 +1419,29 @@ void Camera_processing::addArrow(double normal[3], double center[3])
 	// Add the points to the polydata container
 	linesPolyData->SetPoints(pts); 
 	// Create the first line (between Origin and P0)
-	line0 = vtkSmartPointer<vtkLine>::New();
+
 	line0->GetPointIds()->SetId(0, 0); // the second 0 is the index of the Origin in linesPolyData's points
 	line0->GetPointIds()->SetId(1, 1); // the second 1 is the index of P0 in linesPolyData's points
 
 	// Create a vtkCellArray container and store the lines in it
-	lines = vtkSmartPointer<vtkCellArray>::New();
+
 	lines->InsertNextCell(line0);
  
 	// Add the lines to the polydata container
 	linesPolyData->SetLines(lines);
-	mapperArrow = vtkSmartPointer<vtkPolyDataMapper>::New();
 	mapperArrow->SetInputData(linesPolyData);
+
+}
+
+void Camera_processing::initializeArrow()
+{
+	// arrow initialization
+	linesPolyData = vtkSmartPointer<vtkPolyData>::New();
+	pts = vtkSmartPointer<vtkPoints>::New();
+	line0 = vtkSmartPointer<vtkLine>::New();
+	lines = vtkSmartPointer<vtkCellArray>::New();
+	mapperArrow = vtkSmartPointer<vtkPolyDataMapper>::New();
 	actorArrow = vtkSmartPointer<vtkActor>::New();
 	actorArrow->SetMapper(mapperArrow);
- 
 	renDisplay3D->AddActor(actorArrow);	
 }
