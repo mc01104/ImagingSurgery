@@ -83,7 +83,7 @@ private:
 	bool m_teleop; // robot teleoperation is ON/OFF
 	bool m_newdir; // flag for saying that a savedir should be created
 	bool m_rotateImage;
-
+	bool m_points;
 	std::vector<double> m_configuration; // most recent robot configuration
 	Queue<ImgBuf> m_ImgBuffer; // images and timestamp buffer
 

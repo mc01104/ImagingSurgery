@@ -132,7 +132,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-
+	m_points = false;
 	// George
 	m_maxBufferSize = 100;
 	m_filter = new MedianFilter(5);
@@ -907,12 +907,12 @@ void Camera_processing::initializeValveDisplay()
 	pointsPolydata = vtkSmartPointer<vtkPolyData>::New();
 	pointsPolydata->SetPoints(points);
  
-	//vertexFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
-	//vertexFilter->SetInputData(pointsPolydata);
- //   vertexFilter->Update();
- //
-	//polydata = vtkSmartPointer<vtkPolyData>::New();
-	//polydata->ShallowCopy(vertexFilter->GetOutput());
+	vertexFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
+	vertexFilter->SetInputData(pointsPolydata);
+    vertexFilter->Update();
+ 
+	polydata = vtkSmartPointer<vtkPolyData>::New();
+	polydata->ShallowCopy(vertexFilter->GetOutput());
   
 	mapperPoints = vtkSmartPointer<vtkPolyDataMapper>::New();
 	mapperPoints->SetInputData(pointsPolydata);
@@ -935,12 +935,14 @@ void Camera_processing::displayValve(double normal[3], double center[3], double 
 	// line instead of arrow - TBD
 	addArrow(normal, center);
 
-	// visualizing points used for fitting the valve
-	updatePoints();
-	pointsPolydata->SetPoints(points);
- //   vertexFilter->Update();
-	//polydata->ShallowCopy(vertexFilter->GetOutput());
 
+		updatePoints();
+		//pointsPolydata->Reset();
+		//pointsPolydata->Squeeze();
+		//pointsPolydata->SetPoints(points);
+		vertexFilter->Update();
+		polydata->ShallowCopy(vertexFilter->GetOutput());
+	
 }
 
 void Camera_processing::initializeTarget()
