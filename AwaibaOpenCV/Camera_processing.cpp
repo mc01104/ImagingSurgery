@@ -915,7 +915,7 @@ void Camera_processing::initializeValveDisplay()
 	polydata->ShallowCopy(vertexFilter->GetOutput());
   
 	mapperPoints = vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapperPoints->SetInputData(pointsPolydata);
+	mapperPoints->SetInputData(polydata);
  
 	vtkSmartPointer<vtkActor> actorPoints =  vtkSmartPointer<vtkActor>::New();
 	actorPoints->SetMapper(mapperPoints);
