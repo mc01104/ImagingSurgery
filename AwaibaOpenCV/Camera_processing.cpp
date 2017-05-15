@@ -162,7 +162,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_linedetected = false;
 
 	// circumnavigation
-	m_circumnavigation = false;
+	m_circumnavigation = true;
 	// Parse options in camera.csv file
 	// TODO: handle errors better and do not fallback to default config
 	ParseOptions op = ParseOptions("./camera_info.csv");
@@ -545,6 +545,9 @@ void Camera_processing::displayImages(void)
 			
 			if (teleop) // draw a green circle on frame when teleoperating
 				cv::circle( frame_rotated, Point( 220, 10 ), 5, Scalar( 0, 255, 0 ),  -1);
+
+			if (m_circumnavigation)
+				::cv::line( frame_rotated, ::cv::Point(m_centroid[0],m_centroid[1]), ::cv::Point(m_centroid[1]+m_tangent[0]*100,m_centroid[3]+m_tangent[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 
 			cv::imshow( "Display", frame_rotated );
 			key = waitKey(1);
@@ -1460,9 +1463,13 @@ void Camera_processing::initializeArrow()
 
 void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
+	::cv::namedWindow("test", 0);
+	//::cv::line( img, ::cv::Point(m_centroid[0],m_centroid[1]), ::cv::Point(m_centroid[1]+m_tangent[0]*100,m_centroid[3]+m_tangent[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+	::cv::imshow("test", img);
+	::cv::waitKey(1);
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
-	if (!m_linedetector.processImage(img, line, centroid))
+	if (!m_linedetector.processImage(img, line, centroid, false))
 	{
 		m_linedetected = false;
 		return;
@@ -1476,4 +1483,5 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	//update centroid
 	m_centroid[0] = centroid[0];
 	m_centroid[1] = centroid[1];
+
 }
