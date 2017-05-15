@@ -134,7 +134,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	m_points = false;
 	// George
-	m_maxBufferSize = 100;
+	m_maxBufferSize = 1000;
 	m_filter = new MedianFilter(5);
 	m_freqFilter = new MovingAverageFilter(5);
 	m_input_freq_received = false;
@@ -860,7 +860,7 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	if (this->m_input_frequency < 0)
 		this->m_input_frequency= 80;
 	//::std::cout << m_input_frequency << ::std::endl;
-	this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
+	this->m_FramesPerHeartCycle = 12* 60 * m_cameraFrameRate/m_input_frequency;
 
 	// need to add plane stuff
 	this->mutex_robotshape.lock();
