@@ -157,8 +157,12 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	newImg = false;
 	newImg_force = false;
 
+
 	::std::string svm_base_folder = "./SVM_params/";
-	
+	m_linedetected = false;
+
+	// circumnavigation
+	m_circumnavigation = false;
 	// Parse options in camera.csv file
 	// TODO: handle errors better and do not fallback to default config
 	ParseOptions op = ParseOptions("./camera_info.csv");
@@ -827,10 +831,14 @@ bool Camera_processing::networkKinematics(void)
 		char s_force[5]; 
 		sprintf(s_force,"%.2f",force);
 
+		/// create network message for circumnavigation
+		::ostringstream ss;
+		ss << force << " " << m_linedetected << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " " << ::std::endl;
+
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
-		if (newMeasurement) iResult = send( ConnectSocket, s_force, 5, 0 );
+		if (newMeasurement) iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
 		else iResult = send( ConnectSocket, "NOF", 5, 0 );
 
     } while( (iResult > 0) && m_running);
@@ -866,17 +874,20 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->mutex_robotshape.lock();
 	memcpy(m_target, &msg.data()[7], 3 * sizeof(double));
 
-	m_input_plane_received = msg.data()[10];
+	// new flag for circumnavigation
+	m_circumnavigation = msg.data()[10];
+
+	m_input_plane_received = msg.data()[11];
 	if (m_input_plane_received)
 	{
-		memcpy(m_normal, &msg.data()[11], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[14], 3 * sizeof(double));
-		m_radius = msg.data()[17];
+		memcpy(m_normal, &msg.data()[12], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[15], 3 * sizeof(double));
+		m_radius = msg.data()[18];
 
 		pointsOnValve.clear();
-		int num_of_points = msg.data()[18];
+		int num_of_points = msg.data()[19];
 		for (int i = 0; i < 3 * num_of_points; ++i)
-			pointsOnValve.push_back(msg[19+i]);
+			pointsOnValve.push_back(msg[20+i]);
 	}
 	this->mutex_robotshape.unlock();
 }
@@ -1241,14 +1252,8 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		}
 
-		//if (!m_estimateFreq && m_input_freq_received)
-		//{
-		//	this->m_FramesPerHeartCycle = 2 * 60 * m_cameraFrameRate/m_input_frequency;
-		//	m_input_freq_received = false;
-		//}
-
-		//if (m_estimateFreq && m_contactBufferFiltered.size() > 50)
-		//	this->updateHeartFrequency();
+		if (m_circumnavigation)
+			this->computeCircumnavigationParameters(img);
 		
 	}
 	else ::std::cout << "Problem with BOW" << ::std::endl;
@@ -1450,4 +1455,25 @@ void Camera_processing::initializeArrow()
 	actorArrow = vtkSmartPointer<vtkActor>::New();
 	actorArrow->SetMapper(mapperArrow);
 	renDisplay3D->AddActor(actorArrow);	
+}
+
+
+void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
+{
+	::cv::Vec4f line;
+	::cv::Vec2f centroid;
+	if (!m_linedetector.processImage(img, line, centroid))
+	{
+		m_linedetected = false;
+		return;
+	}
+
+	// update valve tangent parameters
+	m_linedetected = true;
+	m_tangent[0] = line[0];
+	m_tangent[1] = line[1];
+
+	//update centroid
+	m_centroid[0] = centroid[0];
+	m_centroid[1] = centroid[1];
 }

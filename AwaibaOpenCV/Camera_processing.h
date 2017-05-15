@@ -58,6 +58,7 @@
 
 #include "LieGroup.h"
 #include "FilterLibrary.h"
+#include "LineDetection.h"
 
 using namespace Core;
 using namespace cv;
@@ -162,9 +163,14 @@ private:
 	bool				m_input_freq_received;
 	bool				m_input_plane_received;
 	double				m_input_frequency;
-
+	bool				m_circumnavigation;
 	/********** Functions private *********/
 	
+	// circumnavigation parameters
+	double				m_centroid[2];
+	double				m_tangent[2];
+	bool				m_linedetected;
+
 	// Thread functions
     void acquireImages(void);
 	void displayImages(void);
@@ -180,6 +186,8 @@ private:
 	void displayValve(double normal[3], double center[3], double radius);
 	void updateRobotTargetVisualization(double targetPosition[3]);
 	void initializeTarget();
+
+	void computeCircumnavigationParameters(const ::cv::Mat& img);
 	// camera management functions
 	void changeExposure(float delta);
 
@@ -212,6 +220,8 @@ private:
 	vtkSmartPointer<vtkPoints> pts;
 	vtkSmartPointer<vtkLine> line0;
 	vtkSmartPointer<vtkCellArray> lines;
+
+	LineDetector		m_linedetector;
 
 public:
 	void updatePoints();
