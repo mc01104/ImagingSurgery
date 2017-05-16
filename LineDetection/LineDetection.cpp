@@ -72,8 +72,7 @@ void LineDetector::thresholdImage(const cv::Mat &img, ::cv::Mat &out)
 {
     ::cv::Mat O2,O3;
     this->RGBtoOpponent(img,out,O2,O3); //out is the O1 layer directly
-	//cv::namedWindow("Filtered Opponenet");
-	//cv::namedWindow("Input");
+
 	// Threshold luminance to keep the 95th percentile
 	// This avoids high-luminance parasite reflections
     double min, max;
@@ -89,14 +88,9 @@ void LineDetector::thresholdImage(const cv::Mat &img, ::cv::Mat &out)
     // Apply O3 mask after, not before !
     out = out.mul(O3_mask);
 
-    // FIXME: Missing for now: O2 thresholding
     ::cv::Mat O2_mask;
     ::cv::threshold(O2,O2_mask,-50, 1, ::cv::ThresholdTypes::THRESH_BINARY_INV);
-	//out = out.mul(O2_mask);
-    // Test for debug: display image
-    //::cv::imshow("Filtered Opponent", out);
-    //::cv::imshow("Input", img);
-    //::cv::waitKey(1);
+	out = out.mul(O2_mask);
 
 }
 
@@ -119,7 +113,7 @@ bool LineDetector::RGBtoOpponent(const ::cv::Mat &img, ::cv::Mat &O1, ::cv::Mat 
         {
             const cv::Vec3b &bgr = img.at<cv::Vec3b>(r,c);
             O1.at<float>(r,c) = (1.0f/sqrt(2)) * ((float)bgr[2] - (float)bgr[1]);
-            O2.at<float>(r,c) = (1.0f/sqrt(6)) * ((float)bgr[2] + (float)bgr[1] - (float)bgr[0]);
+            O2.at<float>(r,c) = (1.0f/sqrt(6)) * ((float)bgr[2] + (float)bgr[1] - 2.0f * (float)bgr[0]);
             O3.at<float>(r,c) = (1.0f/sqrt(3)) * ((float)bgr[2] + (float)bgr[1] + (float)bgr[0]);
         }
     }
