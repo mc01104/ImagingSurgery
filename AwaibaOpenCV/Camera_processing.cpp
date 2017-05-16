@@ -1469,7 +1469,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::waitKey(1);
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
-	if (!m_linedetector.processImage(img, line, centroid, false))
+	if (!m_linedetector.processImageSynthetic(img, line, centroid, false))
 	{
 		m_linedetected = false;
 		return;
