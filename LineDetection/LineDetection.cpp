@@ -84,12 +84,12 @@ void LineDetector::thresholdImage(const cv::Mat &img, ::cv::Mat &out)
 	// Threshold to zero O1 pixels >0 and to 255 01 pixels <0
 	// 3 is threshold binary inverse
 	::cv::threshold( out, out, 0, 255,::cv::ThresholdTypes::THRESH_BINARY_INV);
-
+	           
     // Apply O3 mask after, not before !
     out = out.mul(O3_mask);
 
     ::cv::Mat O2_mask;
-    ::cv::threshold(O2,O2_mask,-50, 1, ::cv::ThresholdTypes::THRESH_BINARY_INV);
+    ::cv::threshold(O2,O2_mask,0, 1, ::cv::ThresholdTypes::THRESH_BINARY_INV);
 	out = out.mul(O2_mask);
 
 }

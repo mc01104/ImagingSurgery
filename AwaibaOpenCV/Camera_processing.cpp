@@ -546,7 +546,7 @@ void Camera_processing::displayImages(void)
 			if (teleop) // draw a green circle on frame when teleoperating
 				cv::circle( frame_rotated, Point( 220, 10 ), 5, Scalar( 0, 255, 0 ),  -1);
 
-			if (m_circumnavigation)
+			if (true)
 				::cv::line( frame_rotated, ::cv::Point(m_centroid[0],m_centroid[1]), ::cv::Point(m_centroid[1]+m_tangent[0]*100,m_centroid[3]+m_tangent[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 
 			cv::imshow( "Display", frame_rotated );
