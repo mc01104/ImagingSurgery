@@ -201,8 +201,9 @@ bool LineDetector::processImageSynthetic(::cv::Mat img, ::cv::Vec4f& line,cv::Ve
             ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
             ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
             //::cv::line( img, ::cv::Point(line[3],line[2]), ::cv::Point(line[3]+line[1]*(-50),line[2]+line[0]*(-50)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-      ::cv::imshow("line", img);
-    ::cv::waitKey(1);
+			::cv::circle(img, ::cv::Point(centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
+			::cv::imshow("line", img);
+			::cv::waitKey(1);
 		}
 
  
@@ -215,7 +216,9 @@ bool LineDetector::processImageSynthetic(::cv::Mat img, ::cv::Vec4f& line,cv::Ve
 
 void LineDetector::thresholdImageSynthetic(const cv::Mat &img, ::cv::Mat &out)
 {
-	::cv::threshold(img, out, 100, 255, ::cv::ThresholdTypes::THRESH_BINARY_INV);
+	::cv::Mat img_grey;
+	::cv::cvtColor(img, img_grey, ::cv::ColorConversionCodes::COLOR_RGB2GRAY); 
+	::cv::threshold(img_grey, out, 50, 255, ::cv::ThresholdTypes::THRESH_BINARY_INV);
 }
 
 bool LineDetector::detectLineSynthetic(const ::cv::Mat img, ::cv::Vec4f &line, ::cv::Vec2f& centroid)
