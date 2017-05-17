@@ -179,3 +179,6 @@ void find_all(Iterator it_start, Iterator it_end, T value, ::std::vector<int>& i
 }
 
 
+void nearestPointToLine(const ::Eigen::VectorXd& point, const ::Eigen::VectorXd& point_on_line, const ::Eigen::VectorXd& line_tangent, ::Eigen::VectorXd& closest_point);
+
+void cartesian2DPointToPolar(const ::Eigen::Vector2d& point_cart, double& radius, double& angle);

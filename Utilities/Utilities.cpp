@@ -98,3 +98,15 @@ void PrintCArray(const double* toPrint, size_t size, ::std::ostream& os)
 
 }
 
+void nearestPointToLine(const ::Eigen::VectorXd& point, const ::Eigen::VectorXd& point_on_line, const ::Eigen::VectorXd& line_tangent, ::Eigen::VectorXd& closest_point)
+{
+	double lambda = (point - point_on_line).transpose() * line_tangent;
+	closest_point = point_on_line + lambda * line_tangent;
+}
+
+void cartesian2DPointToPolar(const ::Eigen::Vector2d& point_cart, double& radius, double& angle)
+{
+	angle = ::std::atan2(point_cart(1), point_cart(0));
+	radius = point_cart.norm();
+}
+

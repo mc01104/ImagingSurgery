@@ -129,6 +129,7 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
+	, m_radius_filter(5), m_theta_filter(5)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -1483,46 +1484,56 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// update valve tangent parameters
 	m_linedetected = true;
-	//m_tangent[0] = line[0];
-	//m_tangent[1] = line[1];
-
-	////update centroid
-	//m_centroid[0] = centroid[0];
-	//m_centroid[1] = centroid[1];
 
 	::Eigen::Vector2d centroidEig;
 	centroidEig(0) = centroid[0];
 	centroidEig(1) = centroid[1];
 
-	::Eigen::Vector2d displacement(0, img.rows);
-	::Eigen::Matrix3d rot = RotateZ(-90 * M_PI/180.0);
-	::Eigen::Vector2d centroidOldFrame (centroidEig);
-
-	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
-	
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
 	tangentEig[1] = line[1];
-	::Eigen::Vector2d tangentOldFrame (tangentEig);
-	tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
 	tangentEig.normalize();
 
 	::Eigen::Vector2d image_center((int) img.rows/2, (int) img.rows/2);
-	double lambda = (image_center - centroidEig).transpose() * tangentEig;
 
+	// ------------------------------//
+	// bring to r-theta
+	double r, theta;
+	::Eigen::VectorXd closest_point;
+	nearestPointToLine(image_center, centroidEig, tangentEig, closest_point);
+	cartesian2DPointToPolar(closest_point.segment(0, 2) - image_center, r, theta);
+
+	// filter
+	r = m_radius_filter.step(r);
+	theta = m_theta_filter.step(theta);
+
+	//bring back to centroid-tangent
+	centroidEig(0) = r * cos(theta);
+	centroidEig(1) = r * sin(theta);
+	centroidEig += image_center;
+	// -----------------------------//
+
+	double lambda = (image_center - centroidEig).transpose() * tangentEig;
 	centroidEig += lambda * tangentEig;
+
+	// only for visualization -> needs to be in old frame
+	::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+    ::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+	::cv::circle(frame_rotated, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+	::cv::imshow("test", frame_rotated);
+	::cv::waitKey(1);
+	// only for visualization -> needs to be in old frame
+
+	::Eigen::Vector2d displacement(0, img.rows);
+	::Eigen::Matrix3d rot = RotateZ(-90 * M_PI/180.0);
+
+	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
+	tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
 
 	memcpy(m_centroid, centroidEig.data(), 2 * sizeof(double));
 	memcpy(m_tangent, tangentEig.data(), 2 * sizeof(double));
 
-	PrintCArray(m_centroid, 2);
-	centroidOldFrame += lambda * tangentOldFrame;
+	centroidEig += lambda * tangentEig;
 
-    ::cv::line( frame_rotated, ::cv::Point(centroidOldFrame(0), centroidOldFrame(1)), ::cv::Point(centroidOldFrame(0)+tangentOldFrame(0)*100, centroidOldFrame(1)+tangentOldFrame(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-    ::cv::line( frame_rotated, ::cv::Point(centroidOldFrame(0), centroidOldFrame(1)), ::cv::Point(centroidOldFrame(0)+tangentOldFrame(0)*(-100), centroidOldFrame(1)+tangentOldFrame(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-
-	::cv::circle(frame_rotated, ::cv::Point(centroidOldFrame[0], centroidOldFrame[1]), 5, ::cv::Scalar(255,0,0));
-	::cv::imshow("test", frame_rotated);
-	::cv::waitKey(1);
 
 }
