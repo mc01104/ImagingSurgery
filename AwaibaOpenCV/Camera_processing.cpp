@@ -1472,8 +1472,6 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
     Mat rot_mat = getRotationMatrix2D(center, rotation - robot_rotation * 180.0/3.141592, 1.0 );
 	warpAffine(img, frame_rotated, rot_mat, frame_rotated.size() );
 
-	::cv::imshow("test", frame_rotated);
-	::cv::waitKey(1);
 
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
@@ -1485,20 +1483,46 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// update valve tangent parameters
 	m_linedetected = true;
-	m_tangent[0] = line[0];
-	m_tangent[1] = line[1];
+	//m_tangent[0] = line[0];
+	//m_tangent[1] = line[1];
 
-	//update centroid
-	m_centroid[0] = centroid[0];
-	m_centroid[1] = centroid[1];
+	////update centroid
+	//m_centroid[0] = centroid[0];
+	//m_centroid[1] = centroid[1];
+
+	::Eigen::Vector2d centroidEig;
+	centroidEig(0) = centroid[0];
+	centroidEig(1) = centroid[1];
 
 	::Eigen::Vector2d displacement(0, img.rows);
 	::Eigen::Matrix3d rot = RotateZ(-90 * M_PI/180.0);
-	::Eigen::Vector2d tmp = rot.block(0, 0, 2, 2).transpose() * ::Eigen::Map<::Eigen::Vector2d>(m_centroid, 2) - rot.block(0, 0, 2, 2).transpose() * displacement;
+	::Eigen::Vector2d centroidOldFrame (centroidEig);
 
-	memcpy(m_centroid, tmp.data(), 2 * sizeof(double));
+	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
+	
+	::Eigen::Vector2d tangentEig;
+	tangentEig[0] = line[0];
+	tangentEig[1] = line[1];
+	::Eigen::Vector2d tangentOldFrame (tangentEig);
+	tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
+	tangentEig.normalize();
+
+	::Eigen::Vector2d image_center((int) img.rows/2, (int) img.rows/2);
+	double lambda = (image_center - centroidEig).transpose() * tangentEig;
+
+	centroidEig += lambda * tangentEig;
+
+	memcpy(m_centroid, centroidEig.data(), 2 * sizeof(double));
+	memcpy(m_tangent, tangentEig.data(), 2 * sizeof(double));
+
 	PrintCArray(m_centroid, 2);
-	tmp = rot.block(0, 0, 2, 2).transpose() * ::Eigen::Map<::Eigen::Vector2d>(m_tangent, 2);
-	memcpy(m_tangent, tmp.data(), 2 * sizeof(double));
+	centroidOldFrame += lambda * tangentOldFrame;
+
+    ::cv::line( frame_rotated, ::cv::Point(centroidOldFrame(0), centroidOldFrame(1)), ::cv::Point(centroidOldFrame(0)+tangentOldFrame(0)*100, centroidOldFrame(1)+tangentOldFrame(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+    ::cv::line( frame_rotated, ::cv::Point(centroidOldFrame(0), centroidOldFrame(1)), ::cv::Point(centroidOldFrame(0)+tangentOldFrame(0)*(-100), centroidOldFrame(1)+tangentOldFrame(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+
+	::cv::circle(frame_rotated, ::cv::Point(centroidOldFrame[0], centroidOldFrame[1]), 5, ::cv::Scalar(255,0,0));
+	::cv::imshow("test", frame_rotated);
+	::cv::waitKey(1);
 
 }
