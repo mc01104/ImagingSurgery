@@ -841,7 +841,8 @@ bool Camera_processing::networkKinematics(void)
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
-		if (newMeasurement) iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
+		//if (newMeasurement) iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
+		if (m_linedetected) iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
 		else iResult = send( ConnectSocket, "NOF", 5, 0 );
 
     } while( (iResult > 0) && m_running);
