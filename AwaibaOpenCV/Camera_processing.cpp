@@ -1465,9 +1465,16 @@ void Camera_processing::initializeArrow()
 void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
 	::cv::namedWindow("test", 0);
-	//::cv::line( img, ::cv::Point(m_centroid[0],m_centroid[1]), ::cv::Point(m_centroid[1]+m_tangent[0]*100,m_centroid[3]+m_tangent[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+
+	// apply rotation
+	Mat frame_rotated = Mat(250,250,CV_8UC3);
+	Point center = Point(img.cols/2, img.rows/2 );
+    Mat rot_mat = getRotationMatrix2D(center, rotation - robot_rotation * 180.0/3.141592, 1.0 );
+	warpAffine(img, frame_rotated, rot_mat, frame_rotated.size() );
+
 	::cv::imshow("test", img);
 	::cv::waitKey(1);
+
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
 	if (!m_linedetector.processImageSynthetic(img, line, centroid, false))
@@ -1484,5 +1491,14 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	//update centroid
 	m_centroid[0] = centroid[0];
 	m_centroid[1] = centroid[1];
+
+	::Eigen::Vector2d displacement(0, img.rows);
+	::Eigen::Matrix3d rot = RotateZ(-90 * M_PI/180.0);
+	::Eigen::Vector2d tmp = rot.block(0, 0, 2, 2).transpose() * ::Eigen::Map<::Eigen::Vector2d>(m_centroid, 2) - rot.block(0, 0, 2, 2).transpose() * displacement;
+
+	memcpy(m_centroid, tmp.data(), 2 * sizeof(double));
+
+	tmp = rot.block(0, 0, 2, 2).transpose() * ::Eigen::Map<::Eigen::Vector2d>(m_tangent, 2);
+	memcpy(m_tangent, tmp.data(), 2 * sizeof(double));
 
 }
