@@ -129,7 +129,7 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(5), m_theta_filter(5)
+	, m_radius_filter(5, NULL), m_theta_filter(5, NULL)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -161,6 +161,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 	::std::string svm_base_folder = "./SVM_params/";
 	m_linedetected = false;
+	m_theta_filter.setDistance(angularDistanceMinusPItoPI);
 
 	// circumnavigation
 	m_circumnavigation = true;
@@ -1259,7 +1260,11 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		if (m_circumnavigation)
 			this->computeCircumnavigationParameters(img);
-		
+		else 
+		{
+			m_theta_filter.resetFilter();							// this is not the proper place
+			m_radius_filter.resetFilter();
+		}
 	}
 	else ::std::cout << "Problem with BOW" << ::std::endl;
 }

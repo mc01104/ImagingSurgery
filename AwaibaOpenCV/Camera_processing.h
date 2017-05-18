@@ -222,8 +222,8 @@ private:
 	vtkSmartPointer<vtkCellArray> lines;
 
 	LineDetector		m_linedetector;
-	RecursiveFilter::MovingAverageFilter	m_radius_filter;
-	RecursiveFilter::MovingAverageFilter	m_theta_filter;
+	RecursiveFilter::RecursiveMovingAverage	m_radius_filter;
+	RecursiveFilter::RecursiveMovingAverage	m_theta_filter;
 
 
 public:

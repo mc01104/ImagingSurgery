@@ -95,3 +95,32 @@ MovingAverageFilter::computeAverage()
 		sum += *it;
 	return sum/data.size();
 }
+
+RecursiveMovingAverage::RecursiveMovingAverage(int windowSize, double (*distance)(const double, const double))
+	:MovingAverageFilter(windowSize), prevValue(0)
+{
+}
+
+RecursiveMovingAverage::~RecursiveMovingAverage()
+{
+}
+
+double
+RecursiveMovingAverage::step(double incomingValue)
+{
+	if (this->data.size() >= 2 * this->windowSize)
+	{
+		double delta = 0;
+		if (this->distance_fun)
+			delta = this->distance_fun(incomingValue, this->data.front());
+		else 
+			delta = incomingValue - this->data.front();
+		prevValue = (prevValue * this->windowSize + delta)/this->windowSize;
+
+		this->updateDataBuffer(incomingValue);
+	}
+	else
+		prevValue = MovingAverageFilter::step(incomingValue);
+
+	return prevValue;
+}

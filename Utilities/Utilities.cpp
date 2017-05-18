@@ -110,3 +110,7 @@ void cartesian2DPointToPolar(const ::Eigen::Vector2d& point_cart, double& radius
 	radius = point_cart.norm();
 }
 
+double angularDistanceMinusPItoPI(const double angle1, const double angle2)
+{
+	return ::std::atan2(::std::sin(angle1 - angle2), ::std::cos(angle1 - angle2));	
+}

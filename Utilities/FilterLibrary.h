@@ -14,8 +14,8 @@ namespace RecursiveFilter
 	
 		Filter(int windowSize);
 		virtual ~Filter();
-		void	updateDataBuffer(double incomingValue);
-		void	resetFilter();
+		virtual void	updateDataBuffer(double incomingValue);
+		virtual void	resetFilter();
 		virtual double step(double incomingValue) = 0;
 	};
 
@@ -30,8 +30,6 @@ namespace RecursiveFilter
 		double		step(double incomingValue);
 
 	private:
-		//void		updateDataBuffer(double incomingValue);
-
 		double		computeMedian();
 	};
 
@@ -43,7 +41,23 @@ namespace RecursiveFilter
 		~MovingAverageFilter();
 
 		double step(double incomingValue);
-	private:
-		double computeAverage();
+	protected:
+		virtual double computeAverage();
 	};
+
+	class RecursiveMovingAverage : public MovingAverageFilter
+	{
+		double prevValue;
+		double (*distance_fun)(const double, const double);
+	public:
+		RecursiveMovingAverage(int windowSize = 5, double (*distance)(const double, const double) = NULL);
+		
+		~RecursiveMovingAverage();
+		
+		void setDistance(double (*distance)(const double, const double)) {distance_fun = distance;};
+
+		virtual double step(double incomingValue);
+
+	};
+
 };
