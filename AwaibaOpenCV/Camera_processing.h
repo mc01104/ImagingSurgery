@@ -171,6 +171,9 @@ private:
 	double				m_tangent[2];
 	bool				m_linedetected;
 
+	double				m_centroidImageFrame[2];
+	double				m_tangentImageFrame[2];
+
 	// Thread functions
     void acquireImages(void);
 	void displayImages(void);

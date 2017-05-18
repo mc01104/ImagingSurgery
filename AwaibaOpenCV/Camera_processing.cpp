@@ -548,8 +548,8 @@ void Camera_processing::displayImages(void)
 			if (teleop) // draw a green circle on frame when teleoperating
 				cv::circle( frame_rotated, Point( 220, 10 ), 5, Scalar( 0, 255, 0 ),  -1);
 
-			if (true)
-				::cv::line( frame_rotated, ::cv::Point(m_centroid[0],m_centroid[1]), ::cv::Point(m_centroid[1]+m_tangent[0]*100,m_centroid[3]+m_tangent[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			if (m_circumnavigation)
+				::cv::line( frame_rotated, ::cv::Point(m_centroidImageFrame[0],m_centroidImageFrame[1]), ::cv::Point(m_centroidImageFrame[1]+m_tangentImageFrame[0]*100,m_centroidImageFrame[3]+m_tangentImageFrame[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 
 			cv::imshow( "Display", frame_rotated );
 			key = waitKey(1);
@@ -752,46 +752,13 @@ bool Camera_processing::networkKinematics(void)
 
 	do {
 
-		/*****
-		Receive data through the network
-		*****/
+		//Receive data through the network
         iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-
-		//::std::cout << iResult << ::std::endl;
-
-        //if ( iResult > 0 )
-        //    printf("Bytes received: %d\n", iResult);
-        //else if ( iResult == 0 )
-        //    printf("Connection closed\n");
-        //else
-        //    printf("recv failed with error: %d\n", WSAGetLastError());
-
-		/*****
-		Solve the kinematcs
-		*****/
 
 		// Convert the received data to a vector of doubles
 		::std::string conf_str(recvbuf);
 		::std::vector<double> configuration = DoubleVectorFromString(conf_str);
-
-		//double tmp_configuration[18] = {0,0,0,0,0,0,90, 108, 0, 100, 1, 0, 0, 1, 108, 0, 120, 20};
-		//::std::vector<double> configuration2(tmp_configuration, tmp_configuration + 17);
 		this->parseNetworkMessage(configuration);
-
-		//::std::cout << "Robot configuration: ";
-		//for (int i = 0; i < m_configuration.size(); ++i)		
-		//	::std::cout << m_configuration[i] << " ";
-		//::std::cout << ::std::endl;
-		//::std::cout << "heart rate:" << m_input_frequency << ::std::endl;
-
-		//::std::cout << "Robot target pose: ";
-		//for (int i = 0; i < 3; ++i)		
-		//	::std::cout << m_target[i] << " ";
-		
-		//::std::cout << ::std::endl;
-		//mutex_teleop.lock();
-		//m_teleop = ( configuration.size()>0 ? (bool) configuration.back() : false); //TODO: implementation bugin here maybe. Check with Georgios how is the data sent from the CTR program in non-teleop mode
-		//mutex_teleop.unlock();
 
 		// Convert the received the configuration to comply with the definition of the mechanics based kinematics implementation
 		double rotation[3] = {0};
@@ -813,11 +780,6 @@ bool Camera_processing::networkKinematics(void)
 			mutex_robotshape.lock();
 			m_SolutionFrames = SolutionFrames;
 			mutex_robotshape.unlock();
-
-			// obsolete -> it is performed in parseNetworkMessage
-			//mutex_robotjoints.lock();
-			//m_configuration = configuration;
-			//mutex_robotjoints.unlock();
 		}
 
 		float force = 0.0;
@@ -826,7 +788,6 @@ bool Camera_processing::networkKinematics(void)
 		if (m_outputForce)
 		{
 			m_mutex_force.lock();
-			//PredictForce();
 			force = m_contactAvgOverHeartCycle;
 			newMeasurement = m_contactMeasured;
 			m_contactMeasured = false;
@@ -843,9 +804,10 @@ bool Camera_processing::networkKinematics(void)
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
-		//if (newMeasurement) iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
-		if (m_linedetected) iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
-		else iResult = send( ConnectSocket, "NOF", 5, 0 );
+		if (m_linedetected) 
+			iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
+		else 
+			iResult = send( ConnectSocket, "NOF", 5, 0 );
 
     } while( (iResult > 0) && m_running);
 
@@ -1470,7 +1432,7 @@ void Camera_processing::initializeArrow()
 
 void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
-	::cv::namedWindow("test", 0);
+	//::cv::namedWindow("test", 0);
 
 	// apply rotation
 	Mat frame_rotated = Mat(250,250,CV_8UC3);
@@ -1520,13 +1482,15 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	double lambda = (image_center - centroidEig).transpose() * tangentEig;
 	centroidEig += lambda * tangentEig;
-
+	memcpy(m_centroidImageFrame, centroidEig.data(), 2 * sizeof(double));
+	memcpy(m_tangentImageFrame, tangentEig.data(), 2 * sizeof(double));
+	
 	// only for visualization -> needs to be in old frame
-	::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-    ::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-	::cv::circle(frame_rotated, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
-	::cv::imshow("test", frame_rotated);
-	::cv::waitKey(1);
+	//::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+ //   ::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+	//::cv::circle(frame_rotated, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+	//::cv::imshow("test", frame_rotated);
+	//::cv::waitKey(1);
 	// only for visualization -> needs to be in old frame
 
 	::Eigen::Vector2d displacement(0, img.rows);

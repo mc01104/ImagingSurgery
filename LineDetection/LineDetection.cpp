@@ -49,7 +49,7 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
 		lineDetected = true;
 	::cv::namedWindow( "line", 0 );
 
-	if (true)
+	if (display)
 	{
         if (lineDetected)
         {
@@ -192,9 +192,9 @@ bool LineDetector::processImageSynthetic(::cv::Mat img, ::cv::Vec4f& line,cv::Ve
 
     if (this->detectLineSynthetic(img_crop,line, centroid))
 		lineDetected = true;
-	::cv::namedWindow( "line", 0 );
+	//::cv::namedWindow( "line", 0 );
 
-	if (true)
+	if (display)
 	{
         if (lineDetected)
         {
