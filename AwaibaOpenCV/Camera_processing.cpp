@@ -836,7 +836,7 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	if (this->m_input_frequency < 0)
 		this->m_input_frequency= 80;
 	//::std::cout << m_input_frequency << ::std::endl;
-	this->m_FramesPerHeartCycle = 12* 60 * m_cameraFrameRate/m_input_frequency;
+	this->m_FramesPerHeartCycle = 2* 60 * m_cameraFrameRate/m_input_frequency;
 
 	// need to add plane stuff
 	this->mutex_robotshape.lock();
