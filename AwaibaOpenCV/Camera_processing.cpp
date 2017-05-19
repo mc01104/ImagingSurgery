@@ -505,7 +505,7 @@ void Camera_processing::displayImages(void)
 	Mat frame_rotated = Mat(250,250,CV_8UC3);
 	char key;
 	::std::cout << "Start Display" << ::std::endl;
-	namedWindow( "Display", 0 );
+	//namedWindow( "Display", 0 );
 
 	bool display = false;
 	bool rec = false;
@@ -532,7 +532,7 @@ void Camera_processing::displayImages(void)
 		teleop = m_teleop;
 		mutex_teleop.unlock();
 
-		if (display)
+		if (false)
 		{
 
 			display = false;
@@ -548,7 +548,7 @@ void Camera_processing::displayImages(void)
 			if (teleop) // draw a green circle on frame when teleoperating
 				cv::circle( frame_rotated, Point( 220, 10 ), 5, Scalar( 0, 255, 0 ),  -1);
 
-			if (m_circumnavigation)
+			if (m_circumnavigation && m_linedetected)
 				::cv::line( frame_rotated, ::cv::Point(m_centroidImageFrame[0],m_centroidImageFrame[1]), ::cv::Point(m_centroidImageFrame[1]+m_tangentImageFrame[0]*100,m_centroidImageFrame[3]+m_tangentImageFrame[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 
 			cv::imshow( "Display", frame_rotated );
@@ -1432,7 +1432,7 @@ void Camera_processing::initializeArrow()
 
 void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
-	//::cv::namedWindow("test", 0);
+	::cv::namedWindow("test", 0);
 
 	// apply rotation
 	Mat frame_rotated = Mat(250,250,CV_8UC3);
@@ -1486,11 +1486,11 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	memcpy(m_tangentImageFrame, tangentEig.data(), 2 * sizeof(double));
 	
 	// only for visualization -> needs to be in old frame
-	//::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
- //   ::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-	//::cv::circle(frame_rotated, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
-	//::cv::imshow("test", frame_rotated);
-	//::cv::waitKey(1);
+	::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+    ::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+	::cv::circle(frame_rotated, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+	::cv::imshow("test", frame_rotated);
+	::cv::waitKey(1);
 	// only for visualization -> needs to be in old frame
 
 	::Eigen::Vector2d displacement(0, img.rows);
