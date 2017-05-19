@@ -505,7 +505,7 @@ void Camera_processing::displayImages(void)
 	Mat frame_rotated = Mat(250,250,CV_8UC3);
 	char key;
 	::std::cout << "Start Display" << ::std::endl;
-	//namedWindow( "Display", 0 );
+	namedWindow( "Display", 0 );
 
 	bool display = false;
 	bool rec = false;
@@ -532,8 +532,15 @@ void Camera_processing::displayImages(void)
 		teleop = m_teleop;
 		mutex_teleop.unlock();
 
-		if (false)
+		if (true)
 		{
+			if (m_circumnavigation)
+				this->computeCircumnavigationParameters(frame);
+			else 
+			{
+				m_theta_filter.resetFilter();							// this is not the proper place
+				m_radius_filter.resetFilter();
+			}
 
 			display = false;
 			double rot = robot_rotation;
@@ -548,8 +555,8 @@ void Camera_processing::displayImages(void)
 			if (teleop) // draw a green circle on frame when teleoperating
 				cv::circle( frame_rotated, Point( 220, 10 ), 5, Scalar( 0, 255, 0 ),  -1);
 
-			if (m_circumnavigation && m_linedetected)
-				::cv::line( frame_rotated, ::cv::Point(m_centroidImageFrame[0],m_centroidImageFrame[1]), ::cv::Point(m_centroidImageFrame[1]+m_tangentImageFrame[0]*100,m_centroidImageFrame[3]+m_tangentImageFrame[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			//if (m_circumnavigation && m_linedetected)
+			//	::cv::line( frame_rotated, ::cv::Point(m_centroidImageFrame[0],m_centroidImageFrame[1]), ::cv::Point(m_centroidImageFrame[1]+m_tangentImageFrame[0]*100,m_centroidImageFrame[3]+m_tangentImageFrame[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 
 			cv::imshow( "Display", frame_rotated );
 			key = waitKey(1);
@@ -804,7 +811,7 @@ bool Camera_processing::networkKinematics(void)
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
-		if (m_linedetected) 
+		if (newMeasurement) 
 			iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
 		else 
 			iResult = send( ConnectSocket, "NOF", 5, 0 );
@@ -1220,13 +1227,13 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 
 		}
 
-		if (m_circumnavigation)
-			this->computeCircumnavigationParameters(img);
-		else 
-		{
-			m_theta_filter.resetFilter();							// this is not the proper place
-			m_radius_filter.resetFilter();
-		}
+		//if (m_circumnavigation)
+		//	this->computeCircumnavigationParameters(img);
+		//else 
+		//{
+		//	m_theta_filter.resetFilter();							// this is not the proper place
+		//	m_radius_filter.resetFilter();
+		//}
 	}
 	else ::std::cout << "Problem with BOW" << ::std::endl;
 }
@@ -1435,15 +1442,15 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::namedWindow("test", 0);
 
 	// apply rotation
-	Mat frame_rotated = Mat(250,250,CV_8UC3);
+	Mat frame_rotated2 = Mat(250,250,CV_8UC3);
 	Point center = Point(img.cols/2, img.rows/2 );
     Mat rot_mat = getRotationMatrix2D(center, rotation - robot_rotation * 180.0/3.141592, 1.0 );
-	warpAffine(img, frame_rotated, rot_mat, frame_rotated.size() );
+	warpAffine(img, frame_rotated2, rot_mat, frame_rotated2.size() );
 
 
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
-	if (!m_linedetector.processImageSynthetic(frame_rotated, line, centroid, false))
+	if (!m_linedetector.processImageSynthetic(frame_rotated2, line, centroid, false))
 	{
 		m_linedetected = false;
 		return;
@@ -1453,8 +1460,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	m_linedetected = true;
 
 	::Eigen::Vector2d centroidEig;
-	centroidEig(0) = centroid[0];
-	centroidEig(1) = centroid[1];
+	centroidEig(0) = centroid[0] + 32;
+	centroidEig(1) = centroid[1] + 32;
 
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
@@ -1486,10 +1493,10 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	memcpy(m_tangentImageFrame, tangentEig.data(), 2 * sizeof(double));
 	
 	// only for visualization -> needs to be in old frame
-	::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-    ::cv::line( frame_rotated, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-	::cv::circle(frame_rotated, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
-	::cv::imshow("test", frame_rotated);
+	::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+    ::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+	::cv::circle(frame_rotated2, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+	::cv::imshow("test", frame_rotated2);
 	::cv::waitKey(1);
 	// only for visualization -> needs to be in old frame
 
