@@ -1447,19 +1447,15 @@ void Camera_processing::initializeArrow()
 
 void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
+
+	// initialize line detection window
 	::cv::namedWindow("test", 0);
 
-	// apply rotation
-	Mat frame_rotated2 = Mat(250,250,CV_8UC3);
-	Point center = Point(img.cols/2, img.rows/2 );
-    Mat rot_mat = getRotationMatrix2D(center,  rotation - robot_rotation * 180.0/3.141592, 1.0 );
-	warpAffine(img, frame_rotated2, rot_mat, frame_rotated2.size() );
-
-
+	// detect the line on the unrotated frame (edges at the image corners due to rotation mess up the line detection)
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
-	//if (!m_linedetector.processImageSynthetic(frame_rotated2, line, centroid, false))
-	if (!m_linedetector.processImage(frame_rotated2, line, centroid, false))
+	//if (!m_linedetector.processImageSynthetic(img, line, centroid, false))
+	if (!m_linedetector.processImage(img, line, centroid, false))
 	{
 		m_linedetected = false;
 		return;
@@ -1468,6 +1464,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	// update valve tangent parameters
 	m_linedetected = true;
 
+	// adjust for the cropping
 	::Eigen::Vector2d centroidEig;
 	centroidEig(0) = centroid[0] + 32;
 	centroidEig(1) = centroid[1] + 32;
@@ -1479,8 +1476,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	::Eigen::Vector2d image_center((int) img.rows/2, (int) img.rows/2);
 
-	// ------------------------------//
-	// bring to r-theta
+	// bring to polar coordinated to perform filtering and then move back to point + tangent representation
 	double r, theta;
 	::Eigen::VectorXd closest_point;
 	nearestPointToLine(image_center, centroidEig, tangentEig, closest_point);
@@ -1496,11 +1492,20 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	centroidEig += image_center;
 	// -----------------------------//
 
+	// find closest point from center to line -> we will bring that point to the center of the images
 	double lambda = (image_center - centroidEig).transpose() * tangentEig;
 	centroidEig += lambda * tangentEig;
-	memcpy(m_centroidImageFrame, centroidEig.data(), 2 * sizeof(double));
-	memcpy(m_tangentImageFrame, tangentEig.data(), 2 * sizeof(double));
-	
+
+	// apply rotation to compensate image initial rotation + robot's 3 tube rotation
+	Mat frame_rotated2 = Mat(250,250,CV_8UC3);
+	Point center = Point(img.cols/2, img.rows/2 );
+    Mat rot_mat = getRotationMatrix2D(center,  rotation - robot_rotation * 180.0/3.141592, 1.0 );
+	warpAffine(img, frame_rotated2, rot_mat, frame_rotated2.size() );
+
+	::Eigen::Matrix3d rot1 = RotateZ(rotation * M_PI/180.0 - robot_rotation);
+	centroidEig = rot1.block(0, 0, 2, 2).transpose() * centroidEig;
+	tangentEig = rot1.block(0, 0, 2, 2).transpose() * tangentEig;
+
 	// only for visualization -> needs to be in old frame
 	::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
     ::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
@@ -1509,6 +1514,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::waitKey(1);
 	// only for visualization -> needs to be in old frame
 
+	// last transformation to align image frame with robot frame for convenience
 	::Eigen::Vector2d displacement(0, img.rows);
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 
@@ -1517,9 +1523,6 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	memcpy(m_centroid, centroidEig.data(), 2 * sizeof(double));
 	memcpy(m_tangent, tangentEig.data(), 2 * sizeof(double));
-
-	centroidEig += lambda * tangentEig;
-
 
 }
 
