@@ -108,7 +108,7 @@ RecursiveMovingAverage::~RecursiveMovingAverage()
 double
 RecursiveMovingAverage::step(double incomingValue)
 {
-	if (this->data.size() >= 2 * this->windowSize)
+	if (this->data.size() == this->windowSize)
 	{
 		double delta = 0;
 		if (this->distance_fun)

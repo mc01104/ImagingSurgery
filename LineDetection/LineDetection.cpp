@@ -25,8 +25,8 @@ bool LineDetector::processImage(::cv::Mat img, bool display, int crop)
 	{
         if (lineDetected)
         {
-            ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-            ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+            //::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+            //::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
             //::cv::line( img, ::cv::Point(line[3],line[2]), ::cv::Point(line[3]+line[1]*(-50),line[2]+line[0]*(-50)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
         }
 
