@@ -25,8 +25,8 @@ bool LineDetector::processImage(::cv::Mat img, bool display, int crop)
 	{
         if (lineDetected)
         {
-            //::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-            //::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+            ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+            ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
             //::cv::line( img, ::cv::Point(line[3],line[2]), ::cv::Point(line[3]+line[1]*(-50),line[2]+line[0]*(-50)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
         }
 
@@ -233,14 +233,17 @@ bool LineDetector::detectLineSynthetic(const ::cv::Mat img, ::cv::Vec4f &line, :
 	
     ::std::vector< ::cv::Point> nonzero;
     ::cv::findNonZero(thresholded_binary, nonzero);
-	//::cv::namedWindow("thresholded", 0);
-	//::cv::imshow("thresholded", thresholded_binary);
-	//::cv::waitKey(1);
     if (nonzero.size()>80)
 	{
         ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 
 		this->computeCentroid(nonzero, centroid);
+		::cv::namedWindow("thresholded", 0);
+		::cv::line( thresholded_binary, ::cv::Point(centroid(0), centroid(1)), ::cv::Point(centroid(0)+line(0)*100, centroid(1)+line(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		::cv::line( thresholded_binary, ::cv::Point(centroid(0), centroid(1)), ::cv::Point(centroid(0)+line(0)*(-100), centroid(1)+line(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		::cv::imshow("thresholded", thresholded_binary);
+		::cv::waitKey(1);
+
 		return true;
 	}
 

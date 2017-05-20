@@ -358,6 +358,7 @@ void Camera_processing::processInput(char key)
 		break;
 	case 'a':
 		initializeApex();
+		break;
 	case 'r':
 		if (m_record) m_newdir = true;
 		m_record = !m_record;
@@ -811,7 +812,7 @@ bool Camera_processing::networkKinematics(void)
 		ss << force << " " << m_linedetected << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
 
 		if (m_apex_initialized)
-			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4];
+			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4] << " ";
 		else
 			ss << "0";
 		ss << ::std::endl;
@@ -1454,8 +1455,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	// detect the line on the unrotated frame (edges at the image corners due to rotation mess up the line detection)
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
-	//if (!m_linedetector.processImageSynthetic(img, line, centroid, false))
-	if (!m_linedetector.processImage(img, line, centroid, false))
+	if (!m_linedetector.processImageSynthetic(img, line, centroid, false))
+	//if (!m_linedetector.processImage(img, line, centroid, false))
 	{
 		m_linedetected = false;
 		return;
@@ -1466,8 +1467,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// adjust for the cropping
 	::Eigen::Vector2d centroidEig;
-	centroidEig(0) = centroid[0] + 32;
-	centroidEig(1) = centroid[1] + 32;
+	centroidEig(0) = centroid[0] + 20;
+	centroidEig(1) = centroid[1] + 20;
 
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
@@ -1483,7 +1484,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	cartesian2DPointToPolar(closest_point.segment(0, 2) - image_center, r, theta);
 
 	// filter
-	r = m_radius_filter.step(r);
+	//r = m_radius_filter.step(r);
 	theta = m_theta_filter.step(theta);
 
 	//bring back to centroid-tangent
@@ -1503,8 +1504,9 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	warpAffine(img, frame_rotated2, rot_mat, frame_rotated2.size() );
 
 	::Eigen::Matrix3d rot1 = RotateZ(rotation * M_PI/180.0 - robot_rotation);
-	centroidEig = rot1.block(0, 0, 2, 2).transpose() * centroidEig;
-	tangentEig = rot1.block(0, 0, 2, 2).transpose() * tangentEig;
+	//::Eigen::Vector2d displacement(125, 125);
+	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
+	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
 
 	// only for visualization -> needs to be in old frame
 	::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
