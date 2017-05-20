@@ -50,7 +50,7 @@ namespace RecursiveFilter
 		double prevValue;
 		double (*distance_fun)(const double, const double);
 	public:
-		RecursiveMovingAverage(int windowSize = 5, double (*distance)(const double, const double) = NULL);
+		RecursiveMovingAverage(int windowSize = 15, double (*distance)(const double, const double) = NULL);
 		
 		~RecursiveMovingAverage();
 		

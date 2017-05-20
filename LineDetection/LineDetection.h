@@ -14,7 +14,7 @@ class LineDetector
 		LineDetector();
 		~LineDetector();
         bool processImage(::cv::Mat img, bool display=false, int crop = 12);
-		bool processImage(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, bool display=false, int crop = 12);
+		bool processImage(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, bool display=false, int crop = 32);
 		bool processImageSynthetic(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &centroid, bool display=false, int crop = 32);
 
 	private:

@@ -534,7 +534,7 @@ void Camera_processing::displayImages(void)
 
 		if (true)
 		{
-			if (m_circumnavigation)
+			if (true)
 				this->computeCircumnavigationParameters(frame);
 			else 
 			{
@@ -1444,13 +1444,14 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	// apply rotation
 	Mat frame_rotated2 = Mat(250,250,CV_8UC3);
 	Point center = Point(img.cols/2, img.rows/2 );
-    Mat rot_mat = getRotationMatrix2D(center, rotation - robot_rotation * 180.0/3.141592, 1.0 );
+    Mat rot_mat = getRotationMatrix2D(center,  rotation - robot_rotation * 180.0/3.141592, 1.0 );
 	warpAffine(img, frame_rotated2, rot_mat, frame_rotated2.size() );
 
 
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
-	if (!m_linedetector.processImageSynthetic(frame_rotated2, line, centroid, false))
+	//if (!m_linedetector.processImageSynthetic(frame_rotated2, line, centroid, false))
+	if (!m_linedetector.processImage(frame_rotated2, line, centroid, false))
 	{
 		m_linedetected = false;
 		return;
@@ -1501,7 +1502,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	// only for visualization -> needs to be in old frame
 
 	::Eigen::Vector2d displacement(0, img.rows);
-	::Eigen::Matrix3d rot = RotateZ(-90 * M_PI/180.0);
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 
 	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
 	tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
