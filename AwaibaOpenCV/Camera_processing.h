@@ -189,6 +189,7 @@ private:
 	void displayValve(double normal[3], double center[3], double radius);
 	void updateRobotTargetVisualization(double targetPosition[3]);
 	void initializeTarget();
+	void initializeApex();
 
 	void computeCircumnavigationParameters(const ::cv::Mat& img);
 	// camera management functions
@@ -228,6 +229,10 @@ private:
 	RecursiveFilter::RecursiveMovingAverage	m_radius_filter;
 	RecursiveFilter::RecursiveMovingAverage	m_theta_filter;
 
+	double		apex_coordinates[5];
+	bool		m_apex_initialized;
+
+	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
 
 public:
 	void updatePoints();

@@ -250,6 +250,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 		m_AwaibaSensorSrc.Start(device);
 
+		m_apex_initialized = false;
 		
 		//*** Automatic Exposure Control Registers ***/
 		m_Manager.SetFPGAData(0x00500000,0x02010200);
@@ -355,6 +356,8 @@ void Camera_processing::processInput(char key)
 	case 27:
 		m_running=false;
 		break;
+	case 'a':
+		initializeApex();
 	case 'r':
 		if (m_record) m_newdir = true;
 		m_record = !m_record;
@@ -365,7 +368,6 @@ void Camera_processing::processInput(char key)
 			::std::cout << "contact mode is on"  << ::std::endl;
 		break;
 	case 'f':
-		//m_outputForce = !m_outputForce;
 		m_estimateFreq = !m_estimateFreq;
 		if (m_estimateFreq)
 		{
@@ -806,7 +808,13 @@ bool Camera_processing::networkKinematics(void)
 
 		/// create network message for circumnavigation
 		::ostringstream ss;
-		ss << force << " " << m_linedetected << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " " << ::std::endl;
+		ss << force << " " << m_linedetected << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
+
+		if (m_apex_initialized)
+			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4];
+		else
+			ss << "0";
+		ss << ::std::endl;
 
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
@@ -1513,4 +1521,36 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	centroidEig += lambda * tangentEig;
 
 
+}
+
+void Camera_processing::initializeApex()
+{
+	mutex_robotshape.lock();
+	SE3 tipFrame = m_SolutionFrames.back();
+	mutex_robotshape.unlock();
+
+	for (int i = 0; i < m_configuration.size(); ++i)
+		apex_coordinates[i] = this->m_configuration[i];
+
+	double apex_position[3] = {0};
+	for (int i = 0; i < 3; ++i)
+		apex_position[i] = tipFrame.GetPosition()[i];
+	double normal[3] = {0, 0, 1};
+
+	apexSource  = vtkSmartPointer<vtkRegularPolygonSource>::New();
+	apexSource->SetRadius(5);						
+	apexSource->SetCenter(apex_position);				
+	apexSource->SetNormal(normal);
+
+	vtkSmartPointer<vtkPolyDataMapper> apexMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	apexMapper->SetInputConnection(apexSource->GetOutputPort());
+
+	vtkSmartPointer<vtkActor> apexActor = vtkSmartPointer<vtkActor>::New();
+	apexActor->SetMapper(apexMapper);
+
+	apexActor->GetProperty()->SetOpacity(0.2);
+	apexActor->GetProperty()->SetColor(1,0,0);
+	renDisplay3D->AddActor(apexActor);
+
+	m_apex_initialized = true;
 }
