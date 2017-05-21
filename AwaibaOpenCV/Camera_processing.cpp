@@ -1467,8 +1467,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// adjust for the cropping
 	::Eigen::Vector2d centroidEig;
-	centroidEig(0) = centroid[0] + 20;
-	centroidEig(1) = centroid[1] + 20;
+	centroidEig(0) = centroid[0];
+	centroidEig(1) = centroid[1];
 
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
@@ -1504,7 +1504,6 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	warpAffine(img, frame_rotated2, rot_mat, frame_rotated2.size() );
 
 	::Eigen::Matrix3d rot1 = RotateZ(rotation * M_PI/180.0 - robot_rotation);
-	//::Eigen::Vector2d displacement(125, 125);
 	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
 	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
 

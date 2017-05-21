@@ -47,21 +47,9 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
 
     if (this->detectLine(img_crop,line, centroid))
 		lineDetected = true;
-	//::cv::namedWindow( "line", 0 );
 
-	if (false)
-	{
-        if (lineDetected)
-        {
-    //        ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-    //        ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-    //        //::cv::line( img, ::cv::Point(line[3],line[2]), ::cv::Point(line[3]+line[1]*(-50),line[2]+line[0]*(-50)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-    //  ::cv::imshow("line", img);
-    //::cv::waitKey(1);
-		}
-
- 
-	}
+	centroid[0] += crop;
+	centroid[1] += crop;
 
     return lineDetected;
 
@@ -130,16 +118,16 @@ bool LineDetector::detectLine(const ::cv::Mat img, ::cv::Vec4f &line, ::cv::Vec2
     ::cv::Mat thresholded_binary(img.size(),CV_8UC1);
 
 	this->thresholdImage(img,thresholded);
-	//::cv::invert(thresholded, thresholded);
     thresholded.convertTo(thresholded_binary,CV_8UC1);
-
 	
     ::std::vector< ::cv::Point> nonzero;
     ::cv::findNonZero(thresholded_binary, nonzero);
+
 	::cv::namedWindow("thresholded", 0);
 	::cv::imshow("thresholded", thresholded_binary);
 	::cv::waitKey(1);
-    if (nonzero.size()>80)
+
+	if (nonzero.size()>80)
 	{
         ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 
@@ -192,22 +180,9 @@ bool LineDetector::processImageSynthetic(::cv::Mat img, ::cv::Vec4f& line,cv::Ve
 
     if (this->detectLineSynthetic(img_crop,line, centroid))
 		lineDetected = true;
-	//::cv::namedWindow( "line", 0 );
 
-	if (false)
-	{
-        if (lineDetected)
-        {
-         //   ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-   //         ::cv::line( img, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-   //         //::cv::line( img, ::cv::Point(line[3],line[2]), ::cv::Point(line[3]+line[1]*(-50),line[2]+line[0]*(-50)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-			//::cv::circle(img, ::cv::Point(centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
-			//::cv::imshow("line", img);
-			//::cv::waitKey(1);
-		}
-
- 
-	}
+	centroid[0] += crop;
+	centroid[1] += crop;
 
     return lineDetected;
 
