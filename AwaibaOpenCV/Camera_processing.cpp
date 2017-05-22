@@ -930,13 +930,9 @@ void Camera_processing::displayValve(double normal[3], double center[3], double 
 	// line instead of arrow - TBD
 	addArrow(normal, center);
 
-
-		updatePoints();
-		//pointsPolydata->Reset();
-		//pointsPolydata->Squeeze();
-		//pointsPolydata->SetPoints(points);
-		vertexFilter->Update();
-		polydata->ShallowCopy(vertexFilter->GetOutput());
+	updatePoints();
+	vertexFilter->Update();
+	polydata->ShallowCopy(vertexFilter->GetOutput());
 	
 }
 
@@ -1538,7 +1534,8 @@ void Camera_processing::initializeApex()
 
 	double apex_position[3] = {0};
 	for (int i = 0; i < 3; ++i)
-		apex_position[i] = tipFrame.GetPosition()[i];
+		apex_position[i] = tipFrame.GetPosition()[i] + 20.0 * tipFrame.GetZ()[i];	// compensate for the robot's straight segment
+
 	double normal[3] = {0, 0, 1};
 
 	apexSource  = vtkSmartPointer<vtkRegularPolygonSource>::New();
