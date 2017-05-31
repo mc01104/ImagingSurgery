@@ -5,6 +5,8 @@
 #include <deque>
 #include <iostream>
 #include <Eigen/Dense>
+//#include <algorithm>
+#include <cctype>
 
 //namespace utilities
 //{
@@ -184,3 +186,7 @@ void nearestPointToLine(const ::Eigen::VectorXd& point, const ::Eigen::VectorXd&
 void cartesian2DPointToPolar(const ::Eigen::Vector2d& point_cart, double& radius, double& angle);
 
 double angularDistanceMinusPItoPI(const double angle1, const double angle2);
+
+bool is_not_digit(char c);
+
+bool numeric_string_compare(const std::string& s1, const std::string& s2);
