@@ -190,3 +190,5 @@ double angularDistanceMinusPItoPI(const double angle1, const double angle2);
 bool is_not_digit(char c);
 
 bool numeric_string_compare(const std::string& s1, const std::string& s2);
+
+void computePerpendicularVector(const ::Eigen::Vector2d& in_vector, ::Eigen::Vector2d& out_vector);

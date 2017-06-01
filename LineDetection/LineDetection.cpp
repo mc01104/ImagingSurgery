@@ -45,7 +45,10 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
 
 	bool lineDetected = false;
 
-    if (this->detectLine(img_crop,line, centroid))
+  //  if (this->detectLine(img_crop,line, centroid))
+		//lineDetected = true;
+
+    if (this->detectLineAllChannels(img_crop,line, centroid))
 		lineDetected = true;
 
 	centroid[0] += crop;
@@ -223,4 +226,103 @@ bool LineDetector::detectLineSynthetic(const ::cv::Mat img, ::cv::Vec4f &line, :
 	}
 
 	else return false;
+}
+
+bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid)
+{
+    ::cv::Mat thresholded;
+	
+    ::cv::Mat thresholded_binary(img.size(),CV_8UC1);
+
+	this->thresholdImageAllChannels(img,thresholded);
+    thresholded.convertTo(thresholded_binary,CV_8UC1);
+	
+    ::std::vector< ::cv::Point> nonzero;
+    ::cv::findNonZero(thresholded_binary, nonzero);
+
+	::cv::namedWindow("thresholded", 0);
+	::cv::imshow("thresholded", thresholded_binary);
+	::cv::waitKey(10);
+
+	if (nonzero.size()>80)
+	{
+        ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
+
+		this->computeCentroid(nonzero, centroid);
+		return true;
+	}
+
+	else return false;
+}
+
+void LineDetector::thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thresholded)
+{
+    ::cv::Mat O1, O2, O3;
+    this->RGBtoOpponent(img, O1, O2, O3); 
+
+	double min, max;
+    ::cv::minMaxLoc(O1, &min, &max);
+	O1 = O1 - min;
+	::cv::minMaxLoc(O1, &min, &max);
+	O1 /= max;
+	O1 *= 255;
+
+    ::cv::minMaxLoc(O2, &min, &max);
+	O2 = O2 - min;
+	::cv::minMaxLoc(O2, &min, &max);
+	O2 /= max;
+	O2 *= 255;
+
+    ::cv::minMaxLoc(O3, &min, &max);
+	O3 = O3 - min;
+	::cv::minMaxLoc(O3, &min, &max);
+	O3 /= max;
+	O3 *= 255;
+
+	// normalize image
+	O1.convertTo(O1, CV_8UC1);
+	O2.convertTo(O2, CV_8UC1);
+	O3.convertTo(O3, CV_8UC1);
+
+	// histogram equalization
+	cv::equalizeHist(O1, O1);
+	cv::equalizeHist(O2, O2);
+	cv::equalizeHist(O3, O3);
+
+	// invert image
+	::cv::minMaxLoc(O1, &min, &max);
+	O1 = 255 - O1;
+	O2 = 255 - O2;
+	O3 = 255 - O3;
+
+	::cv::threshold(O1, O1, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+	::cv::threshold(O2, O2, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+	::cv::threshold(O3, O3, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+	// mask circle
+    ::cv::Mat circle_img = ::cv::Mat::zeros(O1.size(), CV_32FC1);
+    ::cv::circle(circle_img, ::cv::Size(O1.size[0]/2, O1.size[1]/2), 125, ::cv::Scalar(255, 255, 255), -1);
+	::cv::normalize(circle_img, circle_img,1 , ::cv::NORM_L2);
+	circle_img = circle_img * 255;
+	circle_img.convertTo(circle_img, CV_8UC1);
+
+	O1 = O1.mul(circle_img);
+	O2 = O2.mul(circle_img);
+	O3 = O3.mul(circle_img);
+
+
+	// combine all channels
+	::cv::Mat out;
+    ::cv::bitwise_and(O1, O2, out);
+    ::cv::bitwise_and(out, O3, out);
+
+	//threshold
+	::cv::threshold(out, thresholded, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+	//::cv::imshow("O1", O1);
+	//::cv::imshow("O2", O2);
+	//::cv::imshow("O3", O3);
+	//::cv::imshow("out", O1);
+	//::cv::waitKey(10);  
+
 }

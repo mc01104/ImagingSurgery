@@ -8,6 +8,9 @@
 #include "MechanicsBasedKinematics.h"
 #include "LieGroup.h"
 #include "LineDetection.h"
+#include "FilterLibrary.h"
+
+#include "Classifier.h"
 
 #include <opencv2/core/core.hpp>
 
@@ -16,11 +19,16 @@ class ReplayEngine
 		::std::string		dataFilename;
 		::std::string		pathToImages;
 
+		::std::string		pathToClassifier;
+
 		::std::mutex		robot_mutex;
 		::std::mutex		img_mutex;
 
 		CTR*							robot;
 		MechanicsBasedKinematics*		kinematics;
+		double							velocitityCommand[2];
+		double							robot_rotation;
+		double							imageInitRotation;
 
 		double				joints[5];
 		::std::vector<SE3>  frames;
@@ -29,7 +37,13 @@ class ReplayEngine
 		::std::vector<::std::string> imList;
 		::std::deque<::std::string> imQueue;
 
+		bool				lineDetected;
 		LineDetector		lineDetector;
+		RecursiveFilter::RecursiveMovingAverage		r_filter;
+		RecursiveFilter::RecursiveMovingAverage		theta_filter;
+
+
+		BagOfFeatures		bof;
 public:	
 
 		ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages);
@@ -39,6 +53,11 @@ public:
 		const ::std::string& getDataPath() const {return dataFilename;};
 
 		const ::std::string& getpathToImages()  const {return pathToImages;};
+
+		void setClassifier(const ::BagOfFeatures& classifier)
+		{
+			this->bof = classifier;
+		};
 
 		void run();
 
@@ -51,7 +70,7 @@ public:
 
 		static void networkPlot(void* tData);
 
-		void updateRobot(const double jointValues[], ::std::vector<SE3>& frames);
+		bool updateRobot(const double jointValues[], ::std::vector<SE3>& frames);
 
 		void getFrames(::std::vector<SE3>& frames) 
 		{
@@ -78,5 +97,7 @@ public:
 
 		void getCurrentImage(::cv::Mat& im);
 
-		void processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img , ::cv::Vec2f& centroid);
+		void processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img , ::cv::Vec2f& centroid, ::Eigen::Vector2d& centroidEig, ::Eigen::Vector2d& tangentEig);
+
+		void applyVisualServoingController(const ::Eigen::Vector2d& centroid, const ::Eigen::Vector2d& tangent, ::Eigen::Vector2d& commandedVelocity);
 };

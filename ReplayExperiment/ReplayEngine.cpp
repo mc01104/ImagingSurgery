@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#define _WINSOCKAPI_ // define this before including windows.h for avoiding winsock function redefinitions causing errors
 #include <Windows.h>
 #include <thread>
 
@@ -6,6 +7,7 @@
 
 #include "Utilities.h"
 #include "FileUtils.h"
+#include "HTransform.h"
 
 #include <vtkTubeFilter.h>
 #include <vtkSmartPointer.h>
@@ -33,7 +35,13 @@ VTK_CREATE(vtkRenderWindow, renderwindowDisplay3D);
 VTK_CREATE(vtkRenderWindowInteractor, irenDisplay3D);
 VTK_CREATE(vtkInteractorStyleTrackballCamera, irenDisplay3DStyle);
 
-//VTK_MODULE_INIT(vtkRenderingFreeType)
+// Winsock includes for network
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include "targetver.h"
+#define DEFAULT_BUFLEN 512
+#define DEFAULT_PORT "27015"
+#define DEFAULT_PORT_PLOT "27016"
 
 class CommandSubclass2 : public vtkCommand
 {
@@ -62,7 +70,8 @@ public:
 
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
-	: dataFilename(dataFilename), pathToImages(pathToImages)
+	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(1), theta_filter(1, &angularDistanceMinusPItoPI),
+	lineDetected(false), robot_rotation(0), imageInitRotation(-90)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -73,8 +82,13 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 
 	for (int i = 0; i < count; ++i)
 		imQueue.push_back(imList[i]);
-}
 
+	r_filter.resetFilter();
+	theta_filter.resetFilter();
+
+	velocitityCommand[0] = 0;
+	velocitityCommand[1] = 0;	
+}
 
 ReplayEngine::~ReplayEngine()
 {
@@ -82,19 +96,19 @@ ReplayEngine::~ReplayEngine()
 	delete kinematics;
 }
 
-
 void ReplayEngine::run()
 {
 	::std::thread simulation_thread(&ReplayEngine::simulate, this);
 	::std::thread robot_display_thread(&ReplayEngine::displayRobot, this);
 	::std::thread rendering_thread(&ReplayEngine::vtkRender, this);
+	::std::thread network_thread(&ReplayEngine::networkPlot, this);
 	
 	simulation_thread.join();
 	robot_display_thread.join();
 	rendering_thread.join();
+	network_thread.join();
 	
 }
-
 
 void ReplayEngine::simulate(void* tData)
 {
@@ -111,7 +125,11 @@ void ReplayEngine::simulate(void* tData)
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
 
+	bool solved = false;
 	::cv::Mat tmpImage;
+
+	float response = 0;
+
 	for(it; it != dataStr.end(); ++it)
 	{
 		tmpData = DoubleVectorFromString(*it);
@@ -119,8 +137,9 @@ void ReplayEngine::simulate(void* tData)
 		tDataSim->robot_mutex.lock();
 
 		tDataSim->setJoints(tmpData.data());
-		tDataSim->updateRobot(tmpData.data(), frames);
+		solved = tDataSim->updateRobot(tmpData.data(), frames);
 		tDataSim->setFrames(frames);
+		tDataSim->robot_rotation = tDataSim->kinematics->GetInnerTubeRotation();
 
 		tDataSim->robot_mutex.unlock();
 
@@ -129,15 +148,40 @@ void ReplayEngine::simulate(void* tData)
 		tDataSim->getCurrentImage(tmpImage);
 		tDataSim->img_mutex.unlock();
 
-		::cv::Vec4f line;
-		::cv::Vec2f centroid;
-		tDataSim->lineDetector.processImage(tmpImage, line, centroid);
-		tDataSim->processDetectedLine(line, tmpImage, centroid);
+		tDataSim->bof.predict(tmpImage, response);
+
+		tDataSim->lineDetected = false;
+		
+		::Eigen::Vector2d centroidEig, tangentEig, velCommand;
+		if (response == 1)
+		{
+			::cv::Vec4f line;
+			::cv::Vec2f centroid;
+			tDataSim->lineDetected = tDataSim->lineDetector.processImage(tmpImage, line, centroid);
+		
+			if (tDataSim->lineDetected)
+				tDataSim->processDetectedLine(line, tmpImage, centroid, centroidEig, tangentEig);
+		}
+
+		tDataSim->applyVisualServoingController(centroidEig, tangentEig, velCommand);
+		tDataSim->robot_mutex.lock();
+		memcpy(tDataSim->velocitityCommand, velCommand.data(), 2 * sizeof(double));
+		tDataSim->robot_mutex.unlock();
+
+		::cv::Point center = ::cv::Point(tmpImage.cols/2, tmpImage.rows/2 );
+		::cv::Mat rot_mat = getRotationMatrix2D(center, tDataSim->imageInitRotation - tDataSim->robot_rotation * 180.0/3.141592, 1.0 );
+		warpAffine(tmpImage, tmpImage, rot_mat, tmpImage.size() );
+
+		if (tDataSim->lineDetected)
+		{
+			::cv::line( tmpImage, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			::cv::line( tmpImage, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			::cv::circle(tmpImage, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+		}
 
 		::cv::imshow("Display", tmpImage);
 		::cv::waitKey(10);  
 
-		::std::cout << counter++ << ::std::endl;
 	}
 
 	::std::cout << "Exiting Simulation Thread" << ::std::endl;
@@ -241,9 +285,115 @@ void ReplayEngine::vtkRender(void* tData)
 
 void ReplayEngine::networkPlot(void* tData)
 {
+	ReplayEngine* tDataNet = reinterpret_cast<ReplayEngine*> (tData);
+	WSADATA wsaData;
+    int iResult;
+
+    SOCKET ListenSocket = INVALID_SOCKET;
+    SOCKET ClientSocket = INVALID_SOCKET;
+
+    struct addrinfo *result = NULL;
+    struct addrinfo hints;
+
+    int iSendResult;
+    char recvbuf[DEFAULT_BUFLEN];
+    int recvbuflen = DEFAULT_BUFLEN;
+
+    // Initialize Winsock
+    iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (iResult != 0) {
+        printf("WSAStartup failed with error: %d\n", iResult);
+        return;
+    }
+
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    // Resolve the server address and port
+    iResult = getaddrinfo(NULL, DEFAULT_PORT_PLOT, &hints, &result);
+    if ( iResult != 0 ) {
+        printf("getaddrinfo failed with error: %d\n", iResult);
+        WSACleanup();
+        return;
+    }
+
+    // Create a SOCKET for connecting to server
+    ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (ListenSocket == INVALID_SOCKET) {
+        printf("socket failed with error: %ld\n", WSAGetLastError());
+        freeaddrinfo(result);
+        WSACleanup();
+        return;
+    }
+
+    // Setup the TCP listening socket // this conflicts with using namespace std in LieGroup -> FIX IT!
+    iResult = ::bind( ListenSocket, result->ai_addr, (int)result->ai_addrlen);
+    if (iResult == SOCKET_ERROR) {
+        printf("bind failed with error: %d\n", WSAGetLastError());
+        freeaddrinfo(result);
+        closesocket(ListenSocket);
+        WSACleanup();
+        return;
+    }
+
+    freeaddrinfo(result);
+
+    iResult = listen(ListenSocket, SOMAXCONN);
+    if (iResult == SOCKET_ERROR) {
+        printf("listen failed with error: %d\n", WSAGetLastError());
+        closesocket(ListenSocket);
+        WSACleanup();
+        return;
+    }
+
+    // Accept a client socket
+    ClientSocket = accept(ListenSocket, NULL, NULL);
+    if (ClientSocket == INVALID_SOCKET) {
+        printf("accept failed with error: %d\n", WSAGetLastError());
+        closesocket(ListenSocket);
+        WSACleanup();
+        return;
+    }
+
+    // No longer need server socket
+    closesocket(ListenSocket);
+	int counter = 0;
+	double localVel[2] = {0};
+    do {
+		::std::ostringstream ss;
+		
+		tDataNet->robot_mutex.lock();
+		memcpy(localVel, tDataNet->velocitityCommand, 2 * sizeof(double));
+		tDataNet->robot_mutex.unlock();
+
+		ss << "vel_x,vel_y," << localVel[0]<< "," << localVel[1];
+
+		iSendResult = send( ClientSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
+        if (iSendResult == SOCKET_ERROR) {
+            printf("send failed with error: %d\n", WSAGetLastError());
+            closesocket(ClientSocket);
+            WSACleanup();
+            return;
+        }
+        else if (iSendResult == 0)
+            printf("Connection closing...\n");
+ 
+		iResult = recv(ClientSocket, recvbuf, DEFAULT_BUFLEN, 0);
+
+    } while (iResult > 0);
+
+    closesocket(ClientSocket);
+    WSACleanup();
+
+	tDataNet->networkPlot(tDataNet);
+    return;
+
 }
 
-void ReplayEngine::updateRobot(const double jointValues[], ::std::vector<SE3>& frames)
+bool ReplayEngine::updateRobot(const double jointValues[], ::std::vector<SE3>& frames)
 {
 	memcpy(this->joints, jointValues, 5 * sizeof(double));
 	
@@ -252,8 +402,11 @@ void ReplayEngine::updateRobot(const double jointValues[], ::std::vector<SE3>& f
 
 	MechanicsBasedKinematics::RelativeToAbsolute(this->robot, this->joints, rotation, translation);
 
-	this->kinematics->ComputeKinematics(rotation, translation);
-
+	bool solved = this->kinematics->ComputeKinematics(rotation, translation);
+	
+	if (!solved)
+		return false;
+	
 	double smax = robot->GetLength();
 	::std::vector<double> arcLength;
 	int nPoints = 30;
@@ -264,7 +417,7 @@ void ReplayEngine::updateRobot(const double jointValues[], ::std::vector<SE3>& f
 
 	kinematics->GetBishopFrame(arcLength, frames);
 
-
+	return true;
 }
 
 void ReplayEngine::setJoints(double joints[])
@@ -323,6 +476,85 @@ void ReplayEngine::getCurrentImage(::cv::Mat& im)
 	im = this->img;
 }
 
-void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img , ::cv::Vec2f& centroid)
+void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img , ::cv::Vec2f& centroid, ::Eigen::Vector2d& centroidEig, ::Eigen::Vector2d& tangentEig)
 {
+	
+	centroidEig(0) = centroid[0];
+	centroidEig(1) = centroid[1];
+
+	tangentEig[0] = line[0];
+	tangentEig[1] = line[1];
+	tangentEig.normalize();
+
+	::Eigen::Vector2d image_center((int) img.rows/2, (int) img.rows/2);
+
+	// bring to polar coordinated to perform filtering and then move back to point + tangent representation
+	double r, theta;
+	::Eigen::VectorXd closest_point;
+	nearestPointToLine(image_center, centroidEig, tangentEig, closest_point);
+	cartesian2DPointToPolar(closest_point.segment(0, 2) - image_center, r, theta);
+
+	// filter
+	r = this->r_filter.step(r);
+	theta = this->theta_filter.step(theta);
+
+	//bring back to centroid-tangent
+	centroidEig(0) = r * cos(theta);
+	centroidEig(1) = r * sin(theta);
+
+	computePerpendicularVector(centroidEig, tangentEig);
+	centroidEig += image_center;
+
+	// find closest point from center to line -> we will bring that point to the center of the images
+	double lambda = (image_center - centroidEig).transpose() * tangentEig;
+	centroidEig += lambda * tangentEig;
+
+	//// apply rotation to compensate image initial rotation + robot's 3 tube rotation
+	//::cv::Mat frame_rotated = ::cv::Mat(250,250,CV_8UC3);
+	//::cv::Point center = ::cv::Point(img.cols/2, img.rows/2 );
+ //   ::cv::Mat rot_mat = getRotationMatrix2D(center,  -this->robot_rotation * 180.0/3.141592, 1.0 );
+	//warpAffine(img, img, rot_mat, frame_rotated.size() );
+
+	::Eigen::Matrix3d rot1 = RotateZ(this->imageInitRotation * M_PI/180.0 - this->robot_rotation);
+	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
+	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
+
+
+	//// only for visualization -> needs to be in old frame
+	//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+ //   ::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+	//::cv::circle(img, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+
+	//// last transformation to align image frame with robot frame for convenience
+	//::Eigen::Vector2d displacement(0, img.rows);
+	//::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+
+	//centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
+	//tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
+
+}
+
+void ReplayEngine::applyVisualServoingController(const ::Eigen::Vector2d& centroid, const ::Eigen::Vector2d& tangent, ::Eigen::Vector2d& commandedVelocity)
+{
+	if (!this->lineDetected)
+	{
+		commandedVelocity.setZero();
+		return;
+	}
+
+	// later this needs to be computed from the plane normal
+	::Eigen::Matrix3d rot = ::Eigen::Matrix3d::Identity();
+
+	::Eigen::Vector2d error, imageCenter;
+	imageCenter << 125, 125;
+
+	double gain = 0.3;
+	error = imageCenter - centroid;
+	error /= 26.27;
+	error *= -gain;
+
+	error -= gain * tangent;
+
+	commandedVelocity = error;
+
 }

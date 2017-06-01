@@ -147,3 +147,25 @@ bool numeric_string_compare(const std::string& s1, const std::string& s2)
 
     return std::lexicographical_compare(it1, s1_.end(), it2, s2_.end());
 }
+
+void computePerpendicularVector(const ::Eigen::Vector2d& in_vector, ::Eigen::Vector2d& out_vector)
+{
+	::Eigen::Vector2d tmp(in_vector);
+	tmp.normalize();
+
+	double radius, angle;
+	cartesian2DPointToPolar(tmp, radius, angle);
+
+	if (::std::sin(angle) == 0)
+	{
+		out_vector(0) = 0;
+		out_vector(1) = 1;
+	}
+	else
+	{
+		out_vector(0) = 1;
+		out_vector(1) = -::std::cos(angle)/::std::sin(angle);
+		out_vector.normalize();
+	}
+
+}

@@ -79,7 +79,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\LineDetection;..\Classifier;..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories);C:\dev\VTK-6.3.0\Common\Core;C:\dev\opencv\build\install\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\MechanicsBasedKinematics;..\LineDetection;..\Classifier;..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories);C:\dev\VTK-6.3.0\Common\Core;C:\dev\opencv\build\install\include</AdditionalIncludeDirectories>
       <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
