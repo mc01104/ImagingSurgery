@@ -70,8 +70,8 @@ public:
 
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
-	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(1), theta_filter(1, &angularDistanceMinusPItoPI),
-	lineDetected(false), robot_rotation(0), imageInitRotation(-90)
+	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(3), theta_filter(1, &angularDistanceMinusPItoPI),
+	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -86,8 +86,8 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	r_filter.resetFilter();
 	theta_filter.resetFilter();
 
-	velocitityCommand[0] = 0;
-	velocitityCommand[1] = 0;	
+	velocityCommand[0] = 0;
+	velocityCommand[1] = 0;	
 }
 
 ReplayEngine::~ReplayEngine()
@@ -112,6 +112,8 @@ void ReplayEngine::run()
 
 void ReplayEngine::simulate(void* tData)
 {
+	//::cv::VideoWriter video("line_detection_3.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
+
 	ReplayEngine* tDataSim = reinterpret_cast<ReplayEngine*> (tData);
 
 	::std::vector<::std::string> dataStr = ReadLinesFromFile(tDataSim->getDataPath());
@@ -148,44 +150,23 @@ void ReplayEngine::simulate(void* tData)
 		tDataSim->getCurrentImage(tmpImage);
 		tDataSim->img_mutex.unlock();
 
-		tDataSim->bof.predict(tmpImage, response);
-
-		tDataSim->lineDetected = false;
-		
-		::Eigen::Vector2d centroidEig, tangentEig, velCommand;
-		if (response == 1)
+		switch(tDataSim->status)
 		{
-			::cv::Vec4f line;
-			::cv::Vec2f centroid;
-			tDataSim->lineDetected = tDataSim->lineDetector.processImage(tmpImage, line, centroid);
-		
-			if (tDataSim->lineDetected)
-				tDataSim->processDetectedLine(line, tmpImage, centroid, centroidEig, tangentEig);
+			case LINE_DETECTION:
+				tDataSim->detectLine(tmpImage);
+				break;
+			case WALL_DETECTION:
+				tDataSim->detectWall(tmpImage);
+				break;
 		}
-
-		tDataSim->applyVisualServoingController(centroidEig, tangentEig, velCommand);
-		tDataSim->robot_mutex.lock();
-		memcpy(tDataSim->velocitityCommand, velCommand.data(), 2 * sizeof(double));
-		tDataSim->robot_mutex.unlock();
-
-		::cv::Point center = ::cv::Point(tmpImage.cols/2, tmpImage.rows/2 );
-		::cv::Mat rot_mat = getRotationMatrix2D(center, tDataSim->imageInitRotation - tDataSim->robot_rotation * 180.0/3.141592, 1.0 );
-		warpAffine(tmpImage, tmpImage, rot_mat, tmpImage.size() );
-
-		if (tDataSim->lineDetected)
-		{
-			::cv::line( tmpImage, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-			::cv::line( tmpImage, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-			::cv::circle(tmpImage, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
-		}
-
 		::cv::imshow("Display", tmpImage);
+		//video.write(tmpImage);
 		::cv::waitKey(10);  
 
 	}
 
 	::std::cout << "Exiting Simulation Thread" << ::std::endl;
-
+	//video.release();
 }
 
 void ReplayEngine::displayRobot(void* tData)
@@ -366,7 +347,7 @@ void ReplayEngine::networkPlot(void* tData)
 		::std::ostringstream ss;
 		
 		tDataNet->robot_mutex.lock();
-		memcpy(localVel, tDataNet->velocitityCommand, 2 * sizeof(double));
+		memcpy(localVel, tDataNet->velocityCommand, 2 * sizeof(double));
 		tDataNet->robot_mutex.unlock();
 
 		ss << "vel_x,vel_y," << localVel[0]<< "," << localVel[1];
@@ -509,28 +490,9 @@ void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img ,
 	double lambda = (image_center - centroidEig).transpose() * tangentEig;
 	centroidEig += lambda * tangentEig;
 
-	//// apply rotation to compensate image initial rotation + robot's 3 tube rotation
-	//::cv::Mat frame_rotated = ::cv::Mat(250,250,CV_8UC3);
-	//::cv::Point center = ::cv::Point(img.cols/2, img.rows/2 );
- //   ::cv::Mat rot_mat = getRotationMatrix2D(center,  -this->robot_rotation * 180.0/3.141592, 1.0 );
-	//warpAffine(img, img, rot_mat, frame_rotated.size() );
-
 	::Eigen::Matrix3d rot1 = RotateZ(this->imageInitRotation * M_PI/180.0 - this->robot_rotation);
 	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
 	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
-
-
-	//// only for visualization -> needs to be in old frame
-	//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
- //   ::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-	//::cv::circle(img, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
-
-	//// last transformation to align image frame with robot frame for convenience
-	//::Eigen::Vector2d displacement(0, img.rows);
-	//::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
-
-	//centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
-	//tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
 
 }
 
@@ -556,5 +518,77 @@ void ReplayEngine::applyVisualServoingController(const ::Eigen::Vector2d& centro
 	error -= gain * tangent;
 
 	commandedVelocity = error;
+
+}
+
+void ReplayEngine::detectLine(::cv::Mat& img)
+{
+		float response = 0;
+		this->bof.predict(img, response);
+
+		this->lineDetected = false;
+		
+		::Eigen::Vector2d centroidEig, tangentEig, velCommand;
+		if (response == 1)
+		{
+			::cv::Vec4f line;
+			::cv::Vec2f centroid;
+			this->lineDetected = this->lineDetector.processImage(img, line, centroid);
+		
+			if (this->lineDetected)
+				this->processDetectedLine(line, img, centroid, centroidEig, tangentEig);
+		}
+
+		this->applyVisualServoingController(centroidEig, tangentEig, velCommand);
+		this->robot_mutex.lock();
+		memcpy(this->velocityCommand, velCommand.data(), 2 * sizeof(double));
+		this->robot_mutex.unlock();
+
+		::cv::Point center = ::cv::Point(img.cols/2, img.rows/2 );
+		::cv::Mat rot_mat = getRotationMatrix2D(center, this->imageInitRotation - this->robot_rotation * 180.0/3.141592, 1.0 );
+		warpAffine(img, img, rot_mat, img.size() );
+
+		if (this->lineDetected)
+		{
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			::cv::circle(img, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+		}
+
+}
+
+void ReplayEngine::detectWall(::cv::Mat& img)
+{
+	int x, y;
+	this->wallDetected = this->wallDetector.processImage(img, x, y, true);
+
+	::Eigen::Vector3d velCommand;
+	this->applyVisualServoingController(x, y,velCommand);
+
+	this->robot_mutex.lock();
+	memcpy(this->velocityCommand, velCommand.data(), 3 * sizeof(double));
+	this->robot_mutex.unlock();
+
+	PrintCArray(velCommand.data(), 3);
+}
+
+void ReplayEngine::applyVisualServoingController(int x, int y, ::Eigen::Vector3d& commandedVelocity)
+{
+	if (!this->wallDetected)
+	{
+		commandedVelocity.setZero();
+		return;
+	}
+
+	double scaling_factor = 26;
+	double Kp = 2.0/scaling_factor;
+	::Eigen::Vector2d error, imageCenter;
+	if (x >= 100)
+		commandedVelocity[1] = Kp * (x - 100);
+	else if (x <= 20)
+		commandedVelocity[1] = -Kp * (x - 20);
+
+	// forward velocity
+	commandedVelocity[2] = 2.0;    // mm/sec
 
 }

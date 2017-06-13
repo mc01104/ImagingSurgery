@@ -8,6 +8,7 @@
 #include "MechanicsBasedKinematics.h"
 #include "LieGroup.h"
 #include "LineDetection.h"
+#include "WallSegmentation.h"
 #include "FilterLibrary.h"
 
 #include "Classifier.h"
@@ -16,6 +17,7 @@
 
 class ReplayEngine
 {
+		
 		::std::string		dataFilename;
 		::std::string		pathToImages;
 
@@ -26,7 +28,7 @@ class ReplayEngine
 
 		CTR*							robot;
 		MechanicsBasedKinematics*		kinematics;
-		double							velocitityCommand[2];
+		double							velocityCommand[2];
 		double							robot_rotation;
 		double							imageInitRotation;
 
@@ -44,6 +46,13 @@ class ReplayEngine
 
 
 		BagOfFeatures		bof;
+
+		WallSegmentation	wallDetector;
+		bool				wallDetected;
+
+public:
+		enum STATUS {LINE_DETECTION, WALL_DETECTION} status;
+
 public:	
 
 		ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages);
@@ -60,6 +69,8 @@ public:
 		};
 
 		void run();
+
+		void setStatus(::ReplayEngine::STATUS status) {this->status = status;};
 
 	private:
 		static void simulate(void* tData);
@@ -88,7 +99,6 @@ public:
 				this->frames.push_back(frames[i]);
 		};
 
-
 		void setJoints(double joints[]);
 
 		void initializeOrigin();
@@ -99,5 +109,15 @@ public:
 
 		void processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img , ::cv::Vec2f& centroid, ::Eigen::Vector2d& centroidEig, ::Eigen::Vector2d& tangentEig);
 
+		// this simulates the line-following controller
 		void applyVisualServoingController(const ::Eigen::Vector2d& centroid, const ::Eigen::Vector2d& tangent, ::Eigen::Vector2d& commandedVelocity);
+
+		// this simulates the wall-following controller
+		void applyVisualServoingController(int x, int y, ::Eigen::Vector3d& commandedVelocity);
+
+		void detectLine(::cv::Mat& imag);
+
+		void detectWall(::cv::Mat& img, int& x, int& y);
+
+		void detectWall(::cv::Mat& img);
 };

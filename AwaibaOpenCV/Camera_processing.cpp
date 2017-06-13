@@ -129,7 +129,7 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(5, NULL), m_theta_filter(5, NULL)
+	, m_radius_filter(5, NULL), m_theta_filter(5, NULL), m_wall_detector()
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -210,7 +210,8 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_measured_period = 0.0;
 	robot_rotation = 0.0;
 	// recompute from recorded data
-	m_cameraFrameRate = 48.0;
+	//m_cameraFrameRate = 48.0;
+	m_cameraFrameRate = 46.0;
 
 	// All errors are reported as std::exception.
 	try

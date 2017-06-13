@@ -59,6 +59,7 @@
 #include "LieGroup.h"
 #include "FilterLibrary.h"
 #include "LineDetection.h"
+#include "WallSegmentation.h"
 
 using namespace Core;
 using namespace cv;
@@ -232,6 +233,7 @@ private:
 	double		apex_coordinates[5];
 	bool		m_apex_initialized;
 
+	WallSegmentation	m_wall_detector;
 	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
 
 public:
