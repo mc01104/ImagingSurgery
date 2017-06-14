@@ -97,7 +97,7 @@ MovingAverageFilter::computeAverage()
 }
 
 RecursiveMovingAverage::RecursiveMovingAverage(int windowSize, double (*distance)(const double, const double))
-	:MovingAverageFilter(windowSize), prevValue(0)
+	:MovingAverageFilter(windowSize), prevValue(0), distance_fun(distance)
 {
 }
 
