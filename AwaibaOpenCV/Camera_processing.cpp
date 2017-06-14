@@ -164,7 +164,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_theta_filter.setDistance(angularDistanceMinusPItoPI);
 
 	// circumnavigation
-	m_circumnavigation = true;
+	m_circumnavigation = false;
+	m_apex_to_valve = false;
+
 	// Parse options in camera.csv file
 	// TODO: handle errors better and do not fallback to default config
 	ParseOptions op = ParseOptions("./camera_info.csv");
@@ -252,7 +254,10 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		m_AwaibaSensorSrc.Start(device);
 
 		m_apex_initialized = false;
-		
+		m_centroid_apex_to_valve[0] = 0;
+		m_centroid_apex_to_valve[1] = 0;
+		m_wall_detected = false;
+
 		//*** Automatic Exposure Control Registers ***/
 		m_Manager.SetFPGAData(0x00500000,0x02010200);
 #endif
@@ -538,8 +543,10 @@ void Camera_processing::displayImages(void)
 
 		if (true)
 		{
-			if (true)
+			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
+			else if (m_apex_to_valve)
+				this->computeApexToValveParameters(frame);
 			else 
 			{
 				m_theta_filter.resetFilter();							// this is not the proper place
@@ -810,7 +817,9 @@ bool Camera_processing::networkKinematics(void)
 
 		/// create network message for circumnavigation
 		::ostringstream ss;
-		ss << force << " " << m_linedetected << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
+		ss << force << " " << m_linedetected << " " << m_contact_response << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
+
+		ss << m_apex_to_valve << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
 
 		if (m_apex_initialized)
 			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4] << " ";
@@ -861,20 +870,22 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 
 	// new flag for circumnavigation
 	m_circumnavigation = msg.data()[10];
+	m_apex_to_valve = msg.data()[11];
 
-	m_input_plane_received = msg.data()[11];
+	m_input_plane_received = msg.data()[12];
 	if (m_input_plane_received)
 	{
-		memcpy(m_normal, &msg.data()[12], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[15], 3 * sizeof(double));
-		m_radius = msg.data()[18];
+		memcpy(m_normal, &msg.data()[13], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[16], 3 * sizeof(double));
+		m_radius = msg.data()[19];
 
 		pointsOnValve.clear();
-		int num_of_points = msg.data()[19];
+		int num_of_points = msg.data()[20];
 		for (int i = 0; i < 3 * num_of_points; ++i)
-			pointsOnValve.push_back(msg[20+i]);
+			pointsOnValve.push_back(msg[21+i]);
 	}
 	this->mutex_robotshape.unlock();
+
 }
 
 void Camera_processing::initializeValveDisplay()
@@ -1555,4 +1566,38 @@ void Camera_processing::initializeApex()
 	renDisplay3D->AddActor(apexActor);
 
 	m_apex_initialized = true;
+}
+
+void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
+{
+	int x, y;
+	this->m_wall_detected = this->m_wall_detector.processImage(img, x, y);
+
+	// adjust for the cropping
+	::Eigen::Vector2d centroidEig;
+	centroidEig(0) = x;
+	centroidEig(1) = y;
+
+
+	::Eigen::Vector2d image_center((int) img.rows/2, (int) img.rows/2);
+
+	// apply rotation to compensate image initial rotation + robot's 3 tube rotation
+	Mat frame_rotated2 = Mat(250,250,CV_8UC3);
+	Point center = Point(img.cols/2, img.rows/2 );
+    Mat rot_mat = getRotationMatrix2D(center,  rotation - robot_rotation * 180.0/3.141592, 1.0 );
+	warpAffine(img, frame_rotated2, rot_mat, frame_rotated2.size() );
+
+	::Eigen::Matrix3d rot1 = RotateZ(rotation * M_PI/180.0 - robot_rotation);
+	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
+
+
+	// last transformation to align image frame with robot frame for convenience
+	::Eigen::Vector2d displacement(0, img.rows);
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+
+	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
+
+	memcpy(m_centroid_apex_to_valve, centroidEig.data(), 2 * sizeof(double));
+
+
 }

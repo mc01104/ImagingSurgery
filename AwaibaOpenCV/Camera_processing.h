@@ -193,6 +193,7 @@ private:
 	void initializeApex();
 
 	void computeCircumnavigationParameters(const ::cv::Mat& img);
+	void computeApexToValveParameters(const ::cv::Mat& img);
 	// camera management functions
 	void changeExposure(float delta);
 
@@ -234,6 +235,11 @@ private:
 	bool		m_apex_initialized;
 
 	WallSegmentation	m_wall_detector;
+	bool				m_apex_to_valve;
+	double				m_centroid_apex_to_valve[2];
+	bool				m_wall_detected;
+
+
 	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
 
 public:
