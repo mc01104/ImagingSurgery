@@ -1463,17 +1463,17 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	// detect the line on the unrotated frame (edges at the image corners due to rotation mess up the line detection)
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
-	//if (!m_linedetector.processImageSynthetic(img, line, centroid, false))
-	if (!m_linedetector.processImage(img, line, centroid, false))
+
+	m_linedetected = false;
+	if (m_contact_response == 1)
 	{
-		m_linedetected = false;
-		return;
+		//m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
+		m_linedetected = m_linedetector.processImage(img, line, centroid, false);
 	}
 
-	// update valve tangent parameters
-	m_linedetected = true;
+	if (!m_linedetected)
+		return;
 
-	// adjust for the cropping
 	::Eigen::Vector2d centroidEig;
 	centroidEig(0) = centroid[0];
 	centroidEig(1) = centroid[1];
@@ -1492,7 +1492,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	cartesian2DPointToPolar(closest_point.segment(0, 2) - image_center, r, theta);
 
 	// filter
-	//r = m_radius_filter.step(r);
+	r = m_radius_filter.step(r);
 	theta = m_theta_filter.step(theta);
 
 	//bring back to centroid-tangent
