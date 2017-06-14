@@ -1573,7 +1573,7 @@ void Camera_processing::initializeApex()
 void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 {
 	int x, y;
-	this->m_wall_detected = this->m_wall_detector.processImage(img, x, y);
+	this->m_wall_detected = this->m_wall_detector.processImage(img, x, y, true);
 
 	// adjust for the cropping
 	::Eigen::Vector2d centroidEig;
@@ -1598,7 +1598,8 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 
 	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
-
+	//centroidEig(0) = 26;
+	//centroidEig(1) = 106;
 	memcpy(m_centroid_apex_to_valve, centroidEig.data(), 2 * sizeof(double));
 
 
