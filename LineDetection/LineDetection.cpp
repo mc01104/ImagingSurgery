@@ -21,7 +21,7 @@ bool LineDetector::processImage(::cv::Mat img, bool display, int crop)
     if (this->detectLine(img_crop,line))
 		lineDetected = true;
 
-	if (display)
+	if (false)
 	{
         if (lineDetected)
         {

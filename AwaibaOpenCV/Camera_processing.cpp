@@ -129,7 +129,7 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(5, NULL), m_theta_filter(5, NULL), m_wall_detector()
+	, m_radius_filter(1, NULL), m_theta_filter(1, NULL), m_wall_detector()
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -862,7 +862,7 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	if (this->m_input_frequency < 0)
 		this->m_input_frequency= 80;
 	//::std::cout << m_input_frequency << ::std::endl;
-	this->m_FramesPerHeartCycle = 12* 60 * m_cameraFrameRate/m_input_frequency;
+	this->m_FramesPerHeartCycle = 2* 60 * m_cameraFrameRate/m_input_frequency;
 
 	// need to add plane stuff
 	this->mutex_robotshape.lock();
@@ -1498,7 +1498,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
 	centroidEig(1) = r * sin(theta);
-	computePerpendicularVector(centroidEig, tangentEig);
+	//computePerpendicularVector(centroidEig, tangentEig);
 
 	centroidEig += image_center;
 	// -----------------------------//
