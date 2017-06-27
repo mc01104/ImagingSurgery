@@ -858,11 +858,10 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->mutex_teleop.unlock();
 
 	this->m_input_frequency = msg[6];
-	//::std::cout << m_input_frequency << ::std::endl;
+
 	if (this->m_input_frequency < 0)
 		this->m_input_frequency= 80;
-	//::std::cout << m_input_frequency << ::std::endl;
-	this->m_FramesPerHeartCycle = 2* 60 * m_cameraFrameRate/m_input_frequency;
+
 
 	// need to add plane stuff
 	this->mutex_robotshape.lock();
@@ -872,17 +871,19 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	m_circumnavigation = msg.data()[10];
 	m_apex_to_valve = msg.data()[11];
 
-	m_input_plane_received = msg.data()[12];
+	this->m_FramesPerHeartCycle = msg.data()[12]* 60 * m_cameraFrameRate/m_input_frequency;
+
+	m_input_plane_received = msg.data()[13];
 	if (m_input_plane_received)
 	{
-		memcpy(m_normal, &msg.data()[13], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[16], 3 * sizeof(double));
-		m_radius = msg.data()[19];
+		memcpy(m_normal, &msg.data()[14], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[17], 3 * sizeof(double));
+		m_radius = msg.data()[20];
 
 		pointsOnValve.clear();
-		int num_of_points = msg.data()[20];
+		int num_of_points = msg.data()[21];
 		for (int i = 0; i < 3 * num_of_points; ++i)
-			pointsOnValve.push_back(msg[21+i]);
+			pointsOnValve.push_back(msg[22+i]);
 	}
 	this->mutex_robotshape.unlock();
 
