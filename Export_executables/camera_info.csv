@@ -5,4 +5,5 @@ rotation,-90.0
 ipaddress,192.168.0.3
 rendershape,1
 svmdir,.\\SVM_params_surgery\\
+svmdirbench,.\\SVM_params_bench\\
 KFParams,0.03,0.1

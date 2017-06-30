@@ -88,6 +88,7 @@ using namespace cv;
 using namespace RecursiveFilter;
 
 //#define __DESKTOP_DEVELOPMENT__
+#define	__BENCHTOP__
 
 // VTK global variables (only way to get a thread running ...)
 ::std::mutex mutex_vtkRender;
@@ -184,7 +185,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		ipaddress = op.getIPAddress();
 		renderShape = op.getRenderShape();
 		svm_base_folder = op.getSVMDir();
-
+		
 		m_KFParams = op.getKFParams();
 
 	}
@@ -204,6 +205,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 //#ifndef __DESKTOP_DEVELOPMENT__
 	::std::cout << "Initializing Force estimator ..." << ::std::endl;
+#ifdef __BENCHTOP__
+	svm_base_folder = "SVM_params_bench\\";
+#endif
 	InitForceEstimator(svm_base_folder + "output_", 3.0, m_KFParams[0], m_KFParams[1]);
 	::std::cout << "Force estimator initialized" << ::std::endl;
 //#endif
@@ -1159,8 +1163,11 @@ void Camera_processing::InitForceEstimator(::std::string svm_base_path, float fo
 {
 	try
 	{
-
-		//m_bow.LoadFromFile(svm_base_path);
+#ifdef  __BENCHTOP__
+		m_bow.LoadFromFile(svm_base_path);
+#else
+		m_bof.load(svm_base_path);
+#endif
 		m_bof.load(svm_base_path);
 		m_kalman = ::cv::KalmanFilter(1,1);
 		m_force_gain = force_gain;
@@ -1206,12 +1213,18 @@ void Camera_processing::updateHeartFrequency()
 
 void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 {
-	//::std::vector<::std::string> classes = m_bow.getClasses();
+#ifdef __BENCHTOP__
+	::std::vector<::std::string> classes = m_bow.getClasses();
+#else
 	::std::vector<::std::string> classes = m_bof.getClasses();
+#endif
+
 	float response = 0.0;
-	
-	//if (m_bow.predictBOW(img,response)) 
+#ifdef __BENCHTOP__
+	if (m_bow.predictBOW(img,response)) 
+#else
 	if (m_bof.predict(img,response)) 
+#endif
 	{
 
 		if (classes[(int) response] == "Free") response = 0.0;
