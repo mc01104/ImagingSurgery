@@ -547,7 +547,7 @@ void Camera_processing::displayImages(void)
 
 		if (true)
 		{
-			if (m_circumnavigation)
+			if (true)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
 				this->computeApexToValveParameters(frame);
@@ -1481,8 +1481,11 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	m_linedetected = false;
 	if (m_contact_response == 1)
 	{
-		//m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
+#ifdef __BENCHTOP__
+		m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
+#else
 		m_linedetected = m_linedetector.processImage(img, line, centroid, false);
+#endif
 	}
 
 	if (!m_linedetected)

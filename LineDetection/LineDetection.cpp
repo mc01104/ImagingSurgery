@@ -211,7 +211,7 @@ bool LineDetector::detectLineSynthetic(const ::cv::Mat img, ::cv::Vec4f &line, :
 	
     ::std::vector< ::cv::Point> nonzero;
     ::cv::findNonZero(thresholded_binary, nonzero);
-    if (nonzero.size()>80)
+    if (nonzero.size()>20)
 	{
         ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 
