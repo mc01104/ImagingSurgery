@@ -547,7 +547,7 @@ void Camera_processing::displayImages(void)
 
 		if (true)
 		{
-			if (true)
+			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
 				this->computeApexToValveParameters(frame);
