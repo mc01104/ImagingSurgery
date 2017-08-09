@@ -19,6 +19,6 @@ class WallSegmentation
 
 	private:
 
-        bool convertImage(const ::cv::Mat &img, cv::Mat &S, cv::Mat &A);
+        bool convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv::Mat& V);
         bool thresholdImage(const cv::Mat &img, ::cv::Mat &output);
 };

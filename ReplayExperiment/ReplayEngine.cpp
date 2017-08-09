@@ -23,6 +23,10 @@
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkCubeSource.h>
 
+#include <vtkWindowToImageFilter.h>
+#include <vtkPNGWriter.h>
+#include <vtkAVIWriter.h>
+
 #include "vtkAutoInit.h" 
 VTK_MODULE_INIT(vtkRenderingOpenGL); // VTK was built with vtkRenderingOpenGL2
 VTK_MODULE_INIT(vtkInteractionStyle);
@@ -70,8 +74,9 @@ public:
 
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
-	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(3), theta_filter(1, &angularDistanceMinusPItoPI),
-	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false)
+	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(3), theta_filter(3, &angularDistanceMinusPItoPI),
+	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
+	filter(5)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -80,7 +85,9 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	for (int i = 0; i < count; ++i)
+	this->offset = 200;
+
+	for (int i = 0 + this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
 
 	r_filter.resetFilter();
@@ -88,6 +95,9 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 
 	velocityCommand[0] = 0;
 	velocityCommand[1] = 0;	
+
+	filter.resetFilter();
+	
 }
 
 ReplayEngine::~ReplayEngine()
@@ -101,12 +111,12 @@ void ReplayEngine::run()
 	::std::thread simulation_thread(&ReplayEngine::simulate, this);
 	::std::thread robot_display_thread(&ReplayEngine::displayRobot, this);
 	::std::thread rendering_thread(&ReplayEngine::vtkRender, this);
-	::std::thread network_thread(&ReplayEngine::networkPlot, this);
+	//::std::thread network_thread(&ReplayEngine::networkPlot, this);
 	
 	simulation_thread.join();
 	robot_display_thread.join();
 	rendering_thread.join();
-	network_thread.join();
+	//network_thread.join();
 	
 }
 
@@ -120,7 +130,7 @@ void ReplayEngine::simulate(void* tData)
 
 	::std::vector<double> tmpData;
 
-	::std::vector<::std::string>::const_iterator it = dataStr.begin();
+	::std::vector<::std::string>::const_iterator it = dataStr.begin() + tDataSim->offset;
 	int counter = 0;
 	::std::vector<SE3> frames;
 
@@ -157,11 +167,13 @@ void ReplayEngine::simulate(void* tData)
 				break;
 			case WALL_DETECTION:
 				tDataSim->detectWall(tmpImage);
+				if(tDataSim->checkTransition())
+					tDataSim->setStatus(LINE_DETECTION);
 				break;
 		}
 		::cv::imshow("Display", tmpImage);
 		//video.write(tmpImage);
-		::cv::waitKey(10);  
+		::cv::waitKey(1);  
 
 	}
 
@@ -260,7 +272,19 @@ void ReplayEngine::vtkRender(void* tData)
 
 	localEngine->initializeOrigin();
 
+	//vtkSmartPointer<vtkWindowToImageFilter> screenCaptureFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
+	//screenCaptureFilter->SetInput(renderwindowDisplay3D);
+	//screenCaptureFilter->SetInputBufferTypeToRGBA();
+	//screenCaptureFilter->ReadFrontBufferOff();
+	//screenCaptureFilter->Update();
+
+	//vtkSmartPointer<vtkAVIWriter> writer = vtkSmartPointer<vtkAVIWriter>::New();
+	//writer->SetInputConnection(screenCaptureFilter->GetOutputPort());
+	//writer->SetFileName("test.avi");
+	//writer->Write();
+
 	irenDisplay3D->Start();
+
 	::std::cout << "VTK Rendering Thread exited successfully" << ::std::endl;
 }
 
@@ -447,7 +471,7 @@ void ReplayEngine::popNextImage()
 {
 	::std::string path = checkPath(this->getpathToImages() + "/"  + this->imQueue.front()); 
 	this->imQueue.pop_front();
-
+	//::std::cout << path << ::std::endl;
 	this->img = ::cv::imread(path);
 
 }
@@ -559,17 +583,30 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 void ReplayEngine::detectWall(::cv::Mat& img)
 {
-	int x, y;
-	this->wallDetected = this->wallDetector.processImage(img, x, y, true);
+	float response = 0;
+	this->bof.predict(img, response);
 
-	::Eigen::Vector3d velCommand;
+	::cv::Point center = ::cv::Point(img.cols/2, img.rows/2 );
+	::cv::Mat rot_mat = getRotationMatrix2D(center, this->imageInitRotation - this->robot_rotation * 180.0/3.141592, 1.0 );
+	warpAffine(img, img, rot_mat, img.size() );
+
+	::Eigen::Vector3d velCommand;	
+	velCommand.setZero();
+	::cv::Vec4f line;
+	::cv::Vec2f centroid;
+
+	int x, y;
+	this->wallDetected = this->wallDetector.processImage(img, x, y, true, center.x, center.y, 125);
+
 	this->applyVisualServoingController(x, y,velCommand);
 
 	this->robot_mutex.lock();
 	memcpy(this->velocityCommand, velCommand.data(), 3 * sizeof(double));
 	this->robot_mutex.unlock();
 
-	PrintCArray(velCommand.data(), 3);
+	this->contact.push_back(response);
+	this->contact_filtered.push_back(filter.step(response));
+
 }
 
 void ReplayEngine::applyVisualServoingController(int x, int y, ::Eigen::Vector3d& commandedVelocity)
@@ -591,4 +628,19 @@ void ReplayEngine::applyVisualServoingController(int x, int y, ::Eigen::Vector3d
 	// forward velocity
 	commandedVelocity[2] = 2.0;    // mm/sec
 
+}
+
+
+bool 
+ReplayEngine::checkTransition()
+{
+	if (this->contact_filtered.size() < 20)
+		return false;
+
+	int contact_frames = ::std::count(this->contact_filtered.rbegin(), this->contact_filtered.rbegin() + 20, 1);
+
+	double pct =  ((double) contact_frames)/20.0;
+
+	if (pct > 0.3)
+		return true;
 }

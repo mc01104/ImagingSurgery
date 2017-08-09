@@ -241,18 +241,44 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
     ::cv::findNonZero(thresholded_binary, nonzero);
 
 	::cv::namedWindow("thresholded", 0);
-	::cv::imshow("thresholded", thresholded_binary);
-	::cv::waitKey(10);
+	::cv::Mat	 output;
+	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
 
+	::std::vector<::cv::Vec2f> lines_hough;
 	if (nonzero.size()>80)
 	{
         ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
-
+		::cv::HoughLines(thresholded_binary, lines_hough, 5, 3.1462/180, 10000);
 		this->computeCentroid(nonzero, centroid);
+
+		for( size_t i = 0; i < lines_hough.size(); i++ )
+		{
+			float rho = lines_hough[i][0];
+			float theta = lines_hough[i][1];
+			double a = cos(theta), b = sin(theta);
+			double x0 = a*rho, y0 = b*rho;
+			::cv::Point pt1(cvRound(x0 + 1000*(-b)),
+					  cvRound(y0 + 1000*(a)));
+			::cv::Point pt2(cvRound(x0 - 1000*(-b)),
+					  cvRound(y0 - 1000*(a)));
+			::cv::line( output, pt1, pt2, ::cv::Scalar(0,0,255), 3, 8 );
+		}
+		::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+
+		::cv::imshow("thresholded", output);
+		::cv::waitKey(1);
+
 		return true;
 	}
+	else 
+	{
+		::cv::imshow("thresholded", thresholded_binary);
+		::cv::waitKey(1);
 
-	else return false;
+		return false;
+	}
+
 }
 
 void LineDetector::thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thresholded)
@@ -301,7 +327,7 @@ void LineDetector::thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thr
 
 	// mask circle
     ::cv::Mat circle_img = ::cv::Mat::zeros(O1.size(), CV_32FC1);
-    ::cv::circle(circle_img, ::cv::Size(O1.size[0]/2, O1.size[1]/2), 125, ::cv::Scalar(255, 255, 255), -1);
+    ::cv::circle(circle_img, ::cv::Size(O1.size[0]/2, O1.size[1]/2), 100, ::cv::Scalar(255, 255, 255), -1);
 	::cv::normalize(circle_img, circle_img,1 , ::cv::NORM_L2);
 	circle_img = circle_img * 255;
 	circle_img.convertTo(circle_img, CV_8UC1);

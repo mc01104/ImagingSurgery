@@ -183,6 +183,8 @@ void find_all(Iterator it_start, Iterator it_end, T value, ::std::vector<int>& i
 
 void nearestPointToLine(const ::Eigen::VectorXd& point, const ::Eigen::VectorXd& point_on_line, const ::Eigen::VectorXd& line_tangent, ::Eigen::VectorXd& closest_point);
 
+void distancePointToLine(const ::Eigen::VectorXd& point, const ::Eigen::VectorXd& point_on_line, const ::Eigen::VectorXd& line_tangent, double& distance);
+
 void cartesian2DPointToPolar(const ::Eigen::Vector2d& point_cart, double& radius, double& angle);
 
 double angularDistanceMinusPItoPI(const double angle1, const double angle2);
@@ -192,3 +194,13 @@ bool is_not_digit(char c);
 bool numeric_string_compare(const std::string& s1, const std::string& s2);
 
 void computePerpendicularVector(const ::Eigen::Vector2d& in_vector, ::Eigen::Vector2d& out_vector);
+
+void insertRowEigen(::Eigen::MatrixXd& in_matrix, const ::Eigen::VectorXd& vector_to_add, int i);
+
+void removeColumn(::Eigen::MatrixXd& matrix, unsigned int colToRemove);
+
+void removeRowEigen(::Eigen::MatrixXd& in_matrix, unsigned int rowToRemove);
+
+void appendRowEigen(::Eigen::MatrixXd& in_matrix, const ::Eigen::VectorXd& vector_to_add);
+
+void popFirstRowEigen(::Eigen::MatrixXd& in_matrix);

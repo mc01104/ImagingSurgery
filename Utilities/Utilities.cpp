@@ -104,6 +104,14 @@ void nearestPointToLine(const ::Eigen::VectorXd& point, const ::Eigen::VectorXd&
 	closest_point = point_on_line + lambda * line_tangent;
 }
 
+void distancePointToLine(const ::Eigen::VectorXd& point, const ::Eigen::VectorXd& point_on_line, const ::Eigen::VectorXd& line_tangent, double& distance)
+{
+	::Eigen::VectorXd closest_point;
+	nearestPointToLine(point, point_on_line, line_tangent, closest_point);
+
+	distance = (closest_point - point).norm();
+}
+
 void cartesian2DPointToPolar(const ::Eigen::Vector2d& point_cart, double& radius, double& angle)
 {
 	angle = ::std::atan2(point_cart(1), point_cart(0));
@@ -168,4 +176,55 @@ void computePerpendicularVector(const ::Eigen::Vector2d& in_vector, ::Eigen::Vec
 		out_vector.normalize();
 	}
 
+}
+
+void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove)
+{
+    unsigned int numRows = matrix.rows();
+    unsigned int numCols = matrix.cols()-1;
+
+    if( colToRemove < numCols )
+        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
+
+    matrix.conservativeResize(numRows,numCols);
+}
+
+void removeRowEigen(Eigen::MatrixXd& matrix, unsigned int rowToRemove)
+{
+    unsigned int numRows = matrix.rows() - 1;
+    unsigned int numCols = matrix.cols();
+
+    if( rowToRemove < numRows )
+        matrix.block(rowToRemove, 0, numRows - rowToRemove,numCols) = matrix.block(rowToRemove + 1,0,numRows - rowToRemove, numCols);
+
+    matrix.conservativeResize(numRows,numCols);
+}
+
+void appendColumn(::Eigen::MatrixXd& matrix, ::Eigen::VectorXd& columnToAppend)
+{
+	assert(matrix.rows() == columnToAppend.rows());
+
+	matrix.conservativeResize(matrix.rows(), matrix.cols() + 1);
+	matrix.col(matrix.cols() - 1) = columnToAppend;
+}
+
+void appendRowEigen(::Eigen::MatrixXd& in_matrix, const ::Eigen::VectorXd& vector_to_add)
+{
+	if (in_matrix.size() == 0)
+	{
+		in_matrix.resize(1, vector_to_add.size());
+		in_matrix = vector_to_add.transpose();
+	}
+	else
+	{
+		assert(in_matrix.cols() == vector_to_add.size());
+
+		in_matrix.conservativeResize(in_matrix.rows() + 1, in_matrix.cols());
+		in_matrix.row(in_matrix.rows() - 1) = vector_to_add.transpose();
+	}
+}
+
+void popFirstRowEigen(::Eigen::MatrixXd& in_matrix)
+{
+	removeRowEigen(in_matrix, 0);
 }

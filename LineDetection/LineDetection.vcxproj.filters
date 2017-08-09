@@ -30,6 +30,12 @@
     <ClInclude Include="WallSegmentation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ValveModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelBasedLineEstimation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -39,6 +45,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WallSegmentation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ValveModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelBasedLineEstimation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

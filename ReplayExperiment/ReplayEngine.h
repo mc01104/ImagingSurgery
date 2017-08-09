@@ -50,6 +50,13 @@ class ReplayEngine
 		WallSegmentation	wallDetector;
 		bool				wallDetected;
 
+		int					offset;
+
+		::std::vector<int> contact;
+		::std::vector<int> contact_filtered;
+
+		RecursiveFilter::MedianFilter filter;
+
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION} status;
 
@@ -120,4 +127,6 @@ public:
 		void detectWall(::cv::Mat& img, int& x, int& y);
 
 		void detectWall(::cv::Mat& img);
+
+		bool checkTransition();
 };
