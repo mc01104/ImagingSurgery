@@ -88,7 +88,7 @@ using namespace cv;
 using namespace RecursiveFilter;
 
 //#define __DESKTOP_DEVELOPMENT__
-#define	__BENCHTOP__
+//#define	__BENCHTOP__
 
 // VTK global variables (only way to get a thread running ...)
 ::std::mutex mutex_vtkRender;
