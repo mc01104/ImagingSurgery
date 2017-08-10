@@ -78,7 +78,9 @@ bool CTR::UpdateConfiguration (const double* rotation, const double* translation
 
 	this->ComputeJointLimits();
 	if(!this->CheckJointLimits(translation))
+	{
 		return false;
+	}
 
 	this->UpdateLength();
 

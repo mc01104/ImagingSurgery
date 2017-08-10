@@ -10,16 +10,19 @@
 #include "classifier.h"
 #include "ValveModel.h"
 
+#include "CTRFactory.h"
+#include "CTR.h"
 
 void testVectorOperations();
 void testBuildingModel();
+void testJointConversion();
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	//// ------- LINE DETECTION ----------- ///////
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-23_bypass_cardioscopy/Videos_2017-05-23/2017-05-23_13-34-09";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-23_bypass_cardioscopy/Videos_2017-05-23/2017-05-23_13-38-09";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-23_bypass_cardioscopy/Videos_2017-05-23/2017-05-23_13-21-08";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-23_bypass_cardioscopy/Videos_2017-05-23/2017-05-23_13-21-08";
 
 	//// ------- WALL SEGMENTATION ----------- ///////
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-10-53";
@@ -33,7 +36,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	// check transition
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-32-10";
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-48-07";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-48-07";
 	
 	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
@@ -43,13 +46,29 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
 	engine.setClassifier(contact_classifier);
-	engine.setStatus(ReplayEngine::WALL_DETECTION);
+	engine.setStatus(ReplayEngine::LINE_DETECTION);
 	engine.run();
 	//testVectorOperations();
 
 	//testBuildingModel();
+	//testJointConversion();
+
 
 	return 0;
+}
+
+void testJointConversion()
+{
+	CTR* robot = CTRFactory::buildCTR("");
+	
+	double relative_conf[5] = {0, 0, 30, 0, 10};
+	double rotation[3];
+	double translation[3];
+
+	MechanicsBasedKinematics::RelativeToAbsolute(robot, relative_conf, rotation, translation);
+
+	PrintCArray(translation, 3);
+
 }
 
 void testVectorOperations()

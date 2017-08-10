@@ -248,7 +248,7 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	if (nonzero.size()>80)
 	{
         ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
-		::cv::HoughLines(thresholded_binary, lines_hough, 5, 3.1462/180, 10000);
+		//::cv::HoughLines(thresholded_binary, lines_hough, 5, 3.1462/180, 10000);
 		this->computeCentroid(nonzero, centroid);
 
 		for( size_t i = 0; i < lines_hough.size(); i++ )
@@ -283,6 +283,16 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 
 void LineDetector::thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thresholded)
 {
+	// threshold in HSV to remove LED brightness
+	::cv::Mat V;
+	this->convertImage(img, ::cv::Mat(), ::cv::Mat(), V);
+	const int thresh_V = 250;
+	
+	::cv::Mat mask_v;
+	::cv::threshold(V, mask_v, thresh_V, 255, ::cv::THRESH_BINARY_INV);
+
+
+
     ::cv::Mat O1, O2, O3;
     this->RGBtoOpponent(img, O1, O2, O3); 
 
@@ -342,6 +352,7 @@ void LineDetector::thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thr
     ::cv::bitwise_and(O1, O2, out);
     ::cv::bitwise_and(out, O3, out);
 
+	//::cv::bitwise_and(out, mask_v, out);
 	//threshold
 	::cv::threshold(out, thresholded, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
 
@@ -351,4 +362,25 @@ void LineDetector::thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thr
 	//::cv::imshow("out", O1);
 	//::cv::waitKey(10);  
 
+}
+
+bool LineDetector::convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv::Mat& V)
+{	
+    ::cv::Mat hsv, lab;
+
+    ::std::vector< ::cv::Mat> hsv_split;
+    ::std::vector< ::cv::Mat> lab_split;
+
+    ::cv::cvtColor(img,hsv, CV_BGR2HSV);
+    ::cv::cvtColor(img,lab, CV_BGR2Lab);
+
+    ::cv::split(hsv,hsv_split);
+    ::cv::split(lab,lab_split);
+
+
+    S = hsv_split[1];
+	V = hsv_split[2];
+    A = lab_split[1];
+
+    return true;
 }

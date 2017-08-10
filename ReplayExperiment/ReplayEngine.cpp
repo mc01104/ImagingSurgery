@@ -85,7 +85,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 200;
+	this->offset = 10;
 
 	for (int i = 0 + this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -552,13 +552,24 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 		this->lineDetected = false;
 		
+		double position[3];
+		this->getTipPosition(position);
+
+		double innerTubeRotation = 0;
+		this->getInnerTubeRotation(innerTubeRotation);
+
+		double velocity[3];
+		memcpy(velocity, velocityCommand, 2 * sizeof(double));
+		velocity[2] = 0;
+		
 		::Eigen::Vector2d centroidEig, tangentEig, velCommand;
 		if (response == 1)
 		{
-			::cv::Vec4f line;
-			::cv::Vec2f centroid;
-			this->lineDetected = this->lineDetector.processImage(img, line, centroid);
-		
+			::cv::Vec4f line, line2;
+			::cv::Vec2f centroid, centroid2;
+			//this->lineDetected = this->lineDetector.processImage(img, line, centroid);
+			this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
+
 			if (this->lineDetected)
 				this->processDetectedLine(line, img, centroid, centroidEig, tangentEig);
 		}
@@ -643,4 +654,22 @@ ReplayEngine::checkTransition()
 
 	if (pct > 0.3)
 		return true;
+}
+
+
+void ReplayEngine::getTipPosition(double position[3])
+{
+	::std::vector<SE3> frames;
+	this->getFrames(frames);
+
+	Vec3 tmpPosition = frames.back().GetPosition();
+
+	for (int i = 0; i < 3; ++i)
+		position[i] = tmpPosition[i];
+}
+
+
+void ReplayEngine::getInnerTubeRotation(double& innerTubeRotation)
+{
+	innerTubeRotation = this->kinematics->GetInnerTubeRotation();
 }

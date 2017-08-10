@@ -8,6 +8,7 @@
 #include "MechanicsBasedKinematics.h"
 #include "LieGroup.h"
 #include "LineDetection.h"
+#include "ModelBasedLineEstimation.h"
 #include "WallSegmentation.h"
 #include "FilterLibrary.h"
 
@@ -43,6 +44,8 @@ class ReplayEngine
 		LineDetector		lineDetector;
 		RecursiveFilter::RecursiveMovingAverage		r_filter;
 		RecursiveFilter::RecursiveMovingAverage		theta_filter;
+
+		ModelBasedLineEstimation	modelBasedLine;
 
 
 		BagOfFeatures		bof;
@@ -98,6 +101,8 @@ public:
 				frames.push_back(this->frames[i]);
 		};
 
+		void getTipPosition(double position[3]);
+
 		void setFrames(::std::vector<SE3>& frames) 
 		{
 			
@@ -129,4 +134,6 @@ public:
 		void detectWall(::cv::Mat& img);
 
 		bool checkTransition();
+
+		void getInnerTubeRotation(double& rotation);
 };

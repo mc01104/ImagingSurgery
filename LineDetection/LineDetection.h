@@ -29,7 +29,7 @@ class LineDetector
 
 		bool detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid = ::cv::Vec2f());
 		void thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thresholded);
-
+		bool convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv::Mat& V);
 
 };
 
