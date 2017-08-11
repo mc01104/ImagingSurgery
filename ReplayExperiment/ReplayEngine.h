@@ -16,6 +16,12 @@
 
 #include <opencv2/core/core.hpp>
 
+#include <vtkPolyLineSource.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkRegularPolygonSource.h>
+#include <vtkProperty.h>
+
 class ReplayEngine
 {
 		
@@ -59,6 +65,11 @@ class ReplayEngine
 		::std::vector<int> contact_filtered;
 
 		RecursiveFilter::MedianFilter filter;
+
+		vtkSmartPointer<vtkRegularPolygonSource> circleSource;
+		vtkSmartPointer<vtkPolyDataMapper> mapperCircle;
+		vtkSmartPointer<vtkActor> actorCircle;
+
 
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION} status;
@@ -136,4 +147,6 @@ public:
 		bool checkTransition();
 
 		void getInnerTubeRotation(double& rotation);
+
+		void initializeValveModel();
 };

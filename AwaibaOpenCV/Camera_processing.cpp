@@ -261,7 +261,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		m_centroid_apex_to_valve[0] = 0;
 		m_centroid_apex_to_valve[1] = 0;
 		m_wall_detected = false;
-
+		m_state_transition = false;
 		//*** Automatic Exposure Control Registers ***/
 		m_Manager.SetFPGAData(0x00500000,0x02010200);
 #endif
@@ -824,6 +824,8 @@ bool Camera_processing::networkKinematics(void)
 		ss << force << " " << m_linedetected << " " << m_contact_response << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
 
 		ss << m_apex_to_valve << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
+
+		ss << m_state_transition << " ";
 
 		if (m_apex_initialized)
 			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4] << " ";
@@ -1619,5 +1621,10 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	//centroidEig(1) = 106;
 	memcpy(m_centroid_apex_to_valve, centroidEig.data(), 2 * sizeof(double));
 
+	int contact_frames = ::std::count(this->m_contactBufferFiltered .rbegin(), this->m_contactBufferFiltered.rbegin() + 20, 1);
 
+	double pct =  ((double) contact_frames)/20.0;
+
+	if (pct > 0.3)
+		this->m_state_transition = true;
 }

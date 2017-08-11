@@ -28,8 +28,12 @@
 #include <vtkAVIWriter.h>
 
 #include "vtkAutoInit.h" 
-VTK_MODULE_INIT(vtkRenderingOpenGL); // VTK was built with vtkRenderingOpenGL2
+
 VTK_MODULE_INIT(vtkInteractionStyle);
+VTK_MODULE_INIT(vtkRenderingOpenGL);
+VTK_MODULE_INIT(vtkRenderingFreeType); // VTK was built with vtkRenderingOpenGL2
+
+
 
 #define VTK_CREATE(type, name) \
     vtkSmartPointer<type> name = vtkSmartPointer<type>::New()
@@ -74,7 +78,7 @@ public:
 
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
-	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(3), theta_filter(3, &angularDistanceMinusPItoPI),
+	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(1), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
 	filter(5)
 {
@@ -97,6 +101,10 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	velocityCommand[1] = 0;	
 
 	filter.resetFilter();
+
+	circleSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
+	mapperCircle = vtkSmartPointer<vtkPolyDataMapper>::New();
+	actorCircle =	vtkSmartPointer<vtkActor>::New();
 	
 }
 
@@ -204,11 +212,15 @@ void ReplayEngine::displayRobot(void* tData)
 	tubeMapper->SetInputConnection(tubeFilter->GetOutputPort());
 	vtkSmartPointer<vtkActor> tubeActor = vtkSmartPointer<vtkActor>::New();
 	tubeActor->SetMapper(tubeMapper);
-
+	
 	renDisplay3D->AddActor(tubeActor);
 
 	auto start = std::chrono::high_resolution_clock::now();
 	::Eigen::Vector3d tmp;
+
+	double* center;
+	double radius;
+	double* normal;
 
 	::std::vector<SE3> robotFrames;
 	while(1)
@@ -239,7 +251,12 @@ void ReplayEngine::displayRobot(void* tData)
 					lineSource->SetPoint(1, 0.0,0.0,10.0);
 				}
 				
-	
+				center = tDataDisplayRobot->modelBasedLine.getModel().getCenter();
+				radius = tDataDisplayRobot->modelBasedLine.getModel().getRadius();
+				normal = tDataDisplayRobot->modelBasedLine.getModel().getNormal();
+				tDataDisplayRobot->circleSource->SetCenter(center);
+				tDataDisplayRobot->circleSource->SetRadius(radius);
+				tDataDisplayRobot->circleSource->SetNormal(normal);
 			}
 			catch (runtime_error& ex) 
 			{
@@ -272,6 +289,7 @@ void ReplayEngine::vtkRender(void* tData)
 
 	localEngine->initializeOrigin();
 
+	localEngine->initializeValveModel();
 	//vtkSmartPointer<vtkWindowToImageFilter> screenCaptureFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
 	//screenCaptureFilter->SetInput(renderwindowDisplay3D);
 	//screenCaptureFilter->SetInputBufferTypeToRGBA();
@@ -444,7 +462,7 @@ void ReplayEngine::initializeOrigin()
  
 	vtkSmartPointer<vtkActor> actor2 =  vtkSmartPointer<vtkActor>::New();
 	actor2->SetMapper(mapper2);
-
+	actor2->GetProperty()->SetColor(1,0,0);
 	renDisplay3D->AddActor(actor2);
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -459,8 +477,8 @@ void ReplayEngine::initializeOrigin()
 	mapper3->SetInputConnection(cubeSource3->GetOutputPort());
  
 	vtkSmartPointer<vtkActor> actor3 =  vtkSmartPointer<vtkActor>::New();
-	//actor3->GetProperty()->SetColor(0.0,1.0,0.0);
-	//actor3->GetProperty()->SetOpacity(0.65);
+	actor3->GetProperty()->SetColor(0.0,1.0,0.0);
+	actor3->GetProperty()->SetOpacity(0.65);
 	actor3->SetMapper(mapper3);
 
 	renDisplay3D->AddActor(actor3);
@@ -663,7 +681,7 @@ void ReplayEngine::getTipPosition(double position[3])
 	this->getFrames(frames);
 
 	Vec3 tmpPosition = frames.back().GetPosition();
-
+	tmpPosition += 20 * frames.back().GetZ();
 	for (int i = 0; i < 3; ++i)
 		position[i] = tmpPosition[i];
 }
@@ -672,4 +690,25 @@ void ReplayEngine::getTipPosition(double position[3])
 void ReplayEngine::getInnerTubeRotation(double& innerTubeRotation)
 {
 	innerTubeRotation = this->kinematics->GetInnerTubeRotation();
+}
+
+void ReplayEngine::initializeValveModel()
+{
+	circleSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
+	circleSource->SetNumberOfSides(50);
+	circleSource->SetRadius(0);						
+	double tmp[3] = {0, 0, 0};
+	circleSource->SetCenter(tmp);				
+	circleSource->SetNormal(tmp);
+
+	mapperCircle = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapperCircle->SetInputConnection(circleSource->GetOutputPort());
+
+	actorCircle =	vtkSmartPointer<vtkActor>::New();
+	actorCircle->SetMapper(mapperCircle);
+	actorCircle->GetProperty()->SetColor(0, 1, 1);
+	actorCircle->GetProperty()->SetOpacity(0.3);
+	
+	renDisplay3D->AddActor(actorCircle);
+
 }

@@ -175,6 +175,8 @@ private:
 	double				m_centroidImageFrame[2];
 	double				m_tangentImageFrame[2];
 
+	bool				m_state_transition;
+
 	// Thread functions
     void acquireImages(void);
 	void displayImages(void);
