@@ -21,6 +21,8 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkRegularPolygonSource.h>
 #include <vtkProperty.h>
+#include <vtkSphereSource.h>
+#include <vtkLineSource.h>
 
 class ReplayEngine
 {
@@ -70,6 +72,14 @@ class ReplayEngine
 		vtkSmartPointer<vtkPolyDataMapper> mapperCircle;
 		vtkSmartPointer<vtkActor> actorCircle;
 
+
+		vtkSmartPointer<vtkSphereSource> pointOnCircleSource;
+		vtkSmartPointer<vtkPolyDataMapper> pointOnCircleMapper;
+		vtkSmartPointer<vtkActor> pointOnCircleActor;
+
+		vtkSmartPointer<vtkLineSource> lineSource;
+		vtkSmartPointer<vtkPolyDataMapper> lineMapper;
+		vtkSmartPointer<vtkActor> lineActor;
 
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION} status;
@@ -149,4 +159,6 @@ public:
 		void getInnerTubeRotation(double& rotation);
 
 		void initializeValveModel();
+
+
 };

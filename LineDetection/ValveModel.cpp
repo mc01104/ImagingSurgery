@@ -76,11 +76,11 @@ ValveModel::getTangentEstimate(double x, double y, double z, ::Eigen::Vector3d& 
 	double t = this->computeCircleParameter(x, y, z);
 
 	tangent = -this->radius * ::std::sin(t) * this->v1 + this->radius * ::std::cos(t) * this->v2;
-	tangent.normalize();
+	if (tangent.norm() != 0)
+		tangent.normalize();
 	
-	//::Eigen::Vector3d solution = this->center + this->radius * ::std::cos(t) * this->v1 + this->radius * ::std::sin(t) * this->v2;
-	//tangent = solution + 2 * tangentUnit;
-	//tangent.normalize();
+
+	point_on_circle = this->center + this->radius * ::std::cos(t) * this->v1 + this->radius * ::std::sin(t) * this->v2;
 }
 
 void 
@@ -159,7 +159,7 @@ ValveModel::getClosestPointOnCircle(double x, double y, double z, ::Eigen::Vecto
 {
 	double t = this->computeCircleParameter(x, y, z);
 
-	point = this->center + this->radius * ::std::sin(t) * this->v1 + this->radius * ::std::cos(t) * this->v2;
+	point = this->center + this->radius * ::std::cos(t) * this->v1 + this->radius * ::std::sin(t) * this->v2;
 }
 
 
@@ -168,3 +168,4 @@ ValveModel::getNormal()
 {
 	return this->v3.data();
 }
+

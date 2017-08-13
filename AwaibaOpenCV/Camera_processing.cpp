@@ -159,6 +159,11 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	newImg = false;
 	newImg_force = false;
 
+	for (int i = 0 ;i < 3; ++i)
+		robot_position[i] = desired_vel[i] = m_model_robot_position[i] = 0;
+
+	inner_tube_rotation = 0;
+
 
 	::std::string svm_base_folder = "./SVM_params/";
 	m_linedetected = false;
@@ -676,8 +681,11 @@ void Camera_processing::recordImages(void)
 					}
 					joints_file << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_contact_response << ",";
 					
+					//for (int i = 0; i < 3; ++i)
+					//	joints_file << m_SolutionFrames.back().GetPosition()[i] << ",";
 					for (int i = 0; i < 3; ++i)
-						joints_file << m_SolutionFrames.back().GetPosition()[i] << ",";
+						joints_file << m_model_robot_position[i] << " ";
+
 					joints_file << '\n';
 					joints_file.close();
 				}
@@ -788,9 +796,11 @@ bool Camera_processing::networkKinematics(void)
 		MechanicsBasedKinematics::RelativeToAbsolute(robot, &m_configuration[0], rotation, translation);
 
 		// compute kinematics and get tip rotation of innermost tube
+		Vec3 position;
 		if (kinematics->ComputeKinematics(rotation, translation))
 		{
 			robot_rotation = kinematics->GetInnerTubeRotation();
+			this->inner_tube_rotation = robot_rotation;
 			double smax = robot->GetLength();
 
 			robot_arclength.clear();
@@ -802,7 +812,12 @@ bool Camera_processing::networkKinematics(void)
 			mutex_robotshape.lock();
 			m_SolutionFrames = SolutionFrames;
 			mutex_robotshape.unlock();
+			position = SolutionFrames.back().GetPosition();
+			
 		}
+
+		for (int i = 0; i < 3; ++i)
+			this->robot_position[i] = position[i];
 
 		float force = 0.0;
 		bool newMeasurement = false;
@@ -824,6 +839,9 @@ bool Camera_processing::networkKinematics(void)
 		ss << force << " " << m_linedetected << " " << m_contact_response << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
 
 		ss << m_apex_to_valve << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
+		
+		if (m_circumnavigation)
+			m_state_transition = false;
 
 		ss << m_state_transition << " ";
 
@@ -879,17 +897,19 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 
 	this->m_FramesPerHeartCycle = msg.data()[12]* 60 * m_cameraFrameRate/m_input_frequency;
 
-	m_input_plane_received = msg.data()[13];
+	memcpy(this->m_model_robot_position, &msg.data()[13], 3 * sizeof(double));
+	 
+	m_input_plane_received = msg.data()[16];
 	if (m_input_plane_received)
 	{
-		memcpy(m_normal, &msg.data()[14], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[17], 3 * sizeof(double));
-		m_radius = msg.data()[20];
+		memcpy(m_normal, &msg.data()[17], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[20], 3 * sizeof(double));
+		m_radius = msg.data()[23];
 
 		pointsOnValve.clear();
-		int num_of_points = msg.data()[21];
+		int num_of_points = msg.data()[24];
 		for (int i = 0; i < 3 * num_of_points; ++i)
-			pointsOnValve.push_back(msg[22+i]);
+			pointsOnValve.push_back(msg[25+i]);
 	}
 	this->mutex_robotshape.unlock();
 
@@ -1481,12 +1501,15 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::Vec2f centroid;
 
 	m_linedetected = false;
+
 	if (m_contact_response == 1)
 	{
+
 #ifdef __BENCHTOP__
 		m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
 #else
-		m_linedetected = m_linedetector.processImage(img, line, centroid, false);
+		//m_linedetected = m_linedetector.processImage(img, line, centroid, false);
+		m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #endif
 	}
 

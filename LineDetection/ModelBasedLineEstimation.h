@@ -50,6 +50,12 @@ class ModelBasedLineEstimation
 			::cv::Vec4f& line, ::cv::Vec2f& centroid);
 
 		ValveModel getModel() {return this->valveModel; };
+
+		double*	getCurrentPoint() {return this->robot_predicted_position;};
+		void	getClosestPointOnCircle(double point[3]);
+		bool	getTangent(double p1[3], double p2[3]);
+		bool	getPredicetedTangent(::cv::Vec4f& line);
+
 	protected:
 		void predict(double robot_position[3], double robot_desired_velocity[3]);
 

@@ -115,38 +115,47 @@ ModelBasedLineEstimation::computePointsForFitting()
 	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
 
-	::cv::namedWindow("thresholded", 0);
-	::cv::imshow("thresholded", output);
-	::cv::waitKey(1);
+	//::cv::namedWindow("thresholded", 0);
+	//::cv::imshow("thresholded", output);
+	//::cv::waitKey(1);
 }
 
 
 bool
 ModelBasedLineEstimation::fitLine()
 {
-	::cv::namedWindow("fit-line", 0);
+	//::cv::namedWindow("fit-line", 0);
 	if (this->highProbPointsToFit.size() > 1380)
 	{
         ::cv::fitLine(this->highProbPointsToFit, this->fittedLine, CV_DIST_L2, 0, 0.01, 0.01);
 
 		this->computeCentroid();
 
-        ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*100,fittedLine[3]+fittedLine[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-        ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*(-100),fittedLine[3]+fittedLine[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-		::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
+		::Eigen::Matrix3d rot1 = RotateZ(0*this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
+		::Eigen::Vector3d predTang;
+
+  //      ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*100,fittedLine[3]+fittedLine[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+  //      ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*(-100),fittedLine[3]+fittedLine[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		//::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
 
 		if (this->valveModel.isInitialized())
 		{
-			::cv::line( this->current_img, ::cv::Point(predictedLine[2],predictedLine[3]), ::cv::Point(predictedLine[2]+predictedLine[0]*100,predictedLine[3]+predictedLine[1]*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-			::cv::line( this->current_img, ::cv::Point(predictedLine[2],predictedLine[3]), ::cv::Point(predictedLine[2]+predictedLine[0]*(-100),predictedLine[3]+predictedLine[1]*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-			::cv::circle(this->current_img, ::cv::Point(this->predictedcentroid[0], predictedcentroid[1]), 5, ::cv::Scalar(255,0,0));
+			//predTang[0] = predictedLine[0];
+			//predTang[1] = predictedLine[1];
+			//predTang = rot1 * predTang;
+			//predictedLine[0] = predTang[0];
+			//predictedLine[1] = predTang[1];
+			//
+			//::cv::line( this->current_img, ::cv::Point(predictedLine[2],predictedLine[3]), ::cv::Point(predictedLine[2]+predictedLine[0]*100,predictedLine[3]+predictedLine[1]*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+			//::cv::line( this->current_img, ::cv::Point(predictedLine[2],predictedLine[3]), ::cv::Point(predictedLine[2]+predictedLine[0]*(-100),predictedLine[3]+predictedLine[1]*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+			//::cv::circle(this->current_img, ::cv::Point(this->predictedcentroid[0], predictedcentroid[1]), 5, ::cv::Scalar(255,0,0));
 		}
 
-		::cv::imshow("fit-line", this->current_img);
+		//::cv::imshow("fit-line", this->current_img);
 		return true;
 	}
 
-	::cv::imshow("fit-line", this->current_img);
+	//::cv::imshow("fit-line", this->current_img);
 
 	return false;
 }
@@ -377,7 +386,7 @@ void ModelBasedLineEstimation::computePredictedTangent()
 	::Eigen::MatrixXd proj;
 	this->valveModel.getProjectionMatrixToPlane(proj);
 
-	tangent = proj * tangent;
+	//tangent = proj * tangent;
 	this->predictedLine[0] = tangent[0];
 	this->predictedLine[1] = tangent[1];
 }
@@ -401,3 +410,42 @@ ModelBasedLineEstimation::computePredictionCovariance()
 	//TO BE IMPLEMENTED
 	pred_line_covariance = 3;
 }
+
+
+void
+ModelBasedLineEstimation::getClosestPointOnCircle(double point[3])
+{
+	::Eigen::Vector3d tmp;
+	valveModel.getClosestPointOnCircle(this->robot_predicted_position[0], this->robot_predicted_position[1], this->robot_predicted_position[2], tmp);
+	memcpy(point, tmp.data(), 3*sizeof(double));
+}
+
+bool 
+ModelBasedLineEstimation::getTangent(double p1[3], double p2[3])
+{
+	double x = this->robot_predicted_position[0];
+	double y = this->robot_predicted_position[1];
+	double z = this->robot_predicted_position[2];
+
+	::Eigen::Vector3d tangent, point_on_circle;
+	this->valveModel.getTangentEstimate(x, y, z, tangent, point_on_circle);
+
+	::Eigen::Vector3d p1Eig, p2Eig;
+	p1Eig = point_on_circle - 10 * tangent;
+	p2Eig = point_on_circle + 10 * tangent;
+
+	if (p1Eig == p2Eig)
+		return false;
+	memcpy(p1, p1Eig.data(), 3 * sizeof(double));
+	memcpy(p2, p2Eig.data(), 3 * sizeof(double));
+
+	return true;
+}
+
+bool	
+ModelBasedLineEstimation::getPredicetedTangent(::cv::Vec4f& line)
+{
+	for (int i = 0; i < 4; ++i)
+		line[i] = this->predictedLine[i];
+	return this->valveModel.isInitialized(); 
+};

@@ -60,6 +60,7 @@
 #include "FilterLibrary.h"
 #include "LineDetection.h"
 #include "WallSegmentation.h"
+#include "ModelBasedLineEstimation.h"
 
 using namespace Core;
 using namespace cv;
@@ -156,6 +157,12 @@ private:
 	std::deque<float> m_durations;
 	float m_measured_period;
 
+	double robot_position[3];
+	double desired_vel[3];
+	double inner_tube_rotation;
+
+	double m_model_robot_position[3];
+
 	// these are recieved through network
 	double				m_normal[3];
 	double				m_center[3];
@@ -230,6 +237,7 @@ private:
 	vtkSmartPointer<vtkCellArray> lines;
 
 	LineDetector		m_linedetector;
+	ModelBasedLineEstimation	m_modelBasedLine;
 	RecursiveFilter::RecursiveMovingAverage	m_radius_filter;
 	RecursiveFilter::RecursiveMovingAverage	m_theta_filter;
 

@@ -89,7 +89,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 10;
+	this->offset = 1000;
 
 	for (int i = 0 + this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -106,6 +106,10 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	mapperCircle = vtkSmartPointer<vtkPolyDataMapper>::New();
 	actorCircle =	vtkSmartPointer<vtkActor>::New();
 	
+	pointOnCircleSource = vtkSmartPointer<vtkSphereSource>::New();
+	pointOnCircleMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	pointOnCircleActor =  vtkSmartPointer<vtkActor>::New(); ;
+
 }
 
 ReplayEngine::~ReplayEngine()
@@ -222,6 +226,9 @@ void ReplayEngine::displayRobot(void* tData)
 	double radius;
 	double* normal;
 
+	double p1[3] = {0, 0, 0};
+	double p2[3] = {0, 0, 0};
+
 	::std::vector<SE3> robotFrames;
 	while(1)
 	{
@@ -257,6 +264,20 @@ void ReplayEngine::displayRobot(void* tData)
 				tDataDisplayRobot->circleSource->SetCenter(center);
 				tDataDisplayRobot->circleSource->SetRadius(radius);
 				tDataDisplayRobot->circleSource->SetNormal(normal);
+
+				//tDataDisplayRobot->modelBasedLine.getClosestPointOnCircle(center);
+				//tDataDisplayRobot->pointOnCircleSource->SetCenter(center);
+				//tDataDisplayRobot->pointOnCircleSource->SetRadius(2);
+
+				bool line = tDataDisplayRobot->modelBasedLine.getTangent(p1, p2);
+
+				if (line)
+				{
+					tDataDisplayRobot->lineSource->SetPoint1(p1);
+					tDataDisplayRobot->lineSource->SetPoint2(p2);
+					//tDataDisplayRobot->lineSource->Update();
+				}
+
 			}
 			catch (runtime_error& ex) 
 			{
@@ -518,8 +539,8 @@ void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img ,
 	cartesian2DPointToPolar(closest_point.segment(0, 2) - image_center, r, theta);
 
 	// filter
-	r = this->r_filter.step(r);
-	theta = this->theta_filter.step(theta);
+	//r = this->r_filter.step(r);
+	//theta = this->theta_filter.step(theta);
 
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
@@ -579,17 +600,21 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		double velocity[3];
 		memcpy(velocity, velocityCommand, 2 * sizeof(double));
 		velocity[2] = 0;
-		
-		::Eigen::Vector2d centroidEig, tangentEig, velCommand;
+		bool predictedLineDetected = false;
+		::Eigen::Vector2d centroidEig, tangentEig, velCommand, centroidEig2, tangentEig2;
 		if (response == 1)
 		{
 			::cv::Vec4f line, line2;
 			::cv::Vec2f centroid, centroid2;
 			//this->lineDetected = this->lineDetector.processImage(img, line, centroid);
 			this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
+			 predictedLineDetected = this->modelBasedLine.getPredicetedTangent(line2);
 
 			if (this->lineDetected)
 				this->processDetectedLine(line, img, centroid, centroidEig, tangentEig);
+			if (predictedLineDetected)
+				this->processDetectedLine(line2, img, centroid2, centroidEig2, tangentEig2);
+
 		}
 
 		this->applyVisualServoingController(centroidEig, tangentEig, velCommand);
@@ -607,6 +632,13 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 			::cv::circle(img, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
 		}
+		if (predictedLineDetected)
+		{
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig2(0)*100, centroidEig(1)+tangentEig2(1)*100), ::cv::Scalar(0, 255, 255), 2, CV_AA);
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig2(0)*(-100), centroidEig(1)+tangentEig2(1)*(-100)), ::cv::Scalar(0, 255, 255), 2, CV_AA);
+			::cv::circle(img, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+		}
+
 
 }
 
@@ -708,7 +740,35 @@ void ReplayEngine::initializeValveModel()
 	actorCircle->SetMapper(mapperCircle);
 	actorCircle->GetProperty()->SetColor(0, 1, 1);
 	actorCircle->GetProperty()->SetOpacity(0.3);
-	
-	renDisplay3D->AddActor(actorCircle);
 
+	//renDisplay3D->AddActor(actorCircle);
+
+	pointOnCircleSource->SetRadius(0);						
+	pointOnCircleSource->SetCenter(tmp);				
+
+	pointOnCircleMapper->SetInputConnection(pointOnCircleSource->GetOutputPort());
+
+	pointOnCircleActor->SetMapper(pointOnCircleMapper);
+	pointOnCircleActor->GetProperty()->SetColor(1, 1, 1);
+	pointOnCircleActor->GetProperty()->SetOpacity(0.3);
+
+	//renDisplay3D->AddActor(pointOnCircleActor);
+
+	  // Create two points, P0 and P1
+	  double p0[3] = {1.0, 0.0, 0.0};
+	  double p1[3] = {0.0, 1.0, 0.0};
+ 
+	  lineSource = 	vtkSmartPointer<vtkLineSource>::New();
+	  lineSource->SetPoint1(p0);
+	  lineSource->SetPoint2(p1);
+	  lineSource->Update();
+ 
+	  // Visualize
+	  lineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	  lineMapper->SetInputConnection(lineSource->GetOutputPort());
+	  lineActor = vtkSmartPointer<vtkActor>::New();
+	  lineActor->SetMapper(lineMapper);
+	  lineActor->GetProperty()->SetLineWidth(4);
+
+	  renDisplay3D->AddActor(lineActor);
 }
