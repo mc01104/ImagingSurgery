@@ -912,7 +912,9 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 			pointsOnValve.push_back(msg[25+i]);
 	}
 	this->mutex_robotshape.unlock();
-
+	//::std::cout << "apex:" << m_apex_to_valve << ::std::endl;
+	//::std::cout << "circ:" << m_circumnavigation << ::std::endl;
+	//::std::cout << "state tran: " << m_state_transition << ::std::endl;
 }
 
 void Camera_processing::initializeValveDisplay()
