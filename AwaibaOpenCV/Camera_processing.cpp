@@ -89,6 +89,7 @@ using namespace RecursiveFilter;
 
 //#define __DESKTOP_DEVELOPMENT__
 //#define	__BENCHTOP__
+#define __ONLINE_MODEL__
 
 // VTK global variables (only way to get a thread running ...)
 ::std::mutex mutex_vtkRender;
@@ -158,7 +159,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_OK = false;
 	newImg = false;
 	newImg_force = false;
-
+	m_use_automatic_transition = false;
 	for (int i = 0 ;i < 3; ++i)
 		robot_position[i] = desired_vel[i] = m_model_robot_position[i] = 0;
 
@@ -172,7 +173,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	// circumnavigation
 	m_circumnavigation = false;
 	m_apex_to_valve = false;
-
+	m_use_online_model = false;
 	// Parse options in camera.csv file
 	// TODO: handle errors better and do not fallback to default config
 	ParseOptions op = ParseOptions("./camera_info.csv");
@@ -374,6 +375,9 @@ void Camera_processing::processInput(char key)
 	case 'a':
 		initializeApex();
 		break;
+	case 't':
+		m_use_automatic_transition != m_use_automatic_transition;
+		break;
 	case 'r':
 		if (m_record) m_newdir = true;
 		m_record = !m_record;
@@ -383,6 +387,8 @@ void Camera_processing::processInput(char key)
 		if (m_sendContact)
 			::std::cout << "contact mode is on"  << ::std::endl;
 		break;
+	case 'm':
+		m_use_online_model != m_use_online_model;
 	case 'f':
 		m_estimateFreq = !m_estimateFreq;
 		if (m_estimateFreq)
@@ -937,6 +943,25 @@ void Camera_processing::initializeValveDisplay()
 	actorCircle->GetProperty()->SetOpacity(0.3);
 	renDisplay3D->AddActor(actorCircle);
 
+
+	circleSourceOnLine = vtkSmartPointer<vtkRegularPolygonSource>::New();
+	circleSourceOnLine->SetNumberOfSides(50);
+	circleSourceOnLine->SetRadius(0);						
+	circleSourceOnLine->SetCenter(tmp);				
+	circleSourceOnLine->SetNormal(tmp);
+
+	mapperCircleOnLine = vtkSmartPointer<vtkPolyDataMapper>::New();
+
+	mapperCircleOnLine->SetInputConnection(circleSourceOnLine->GetOutputPort());;
+	actorCircleOnline =	vtkSmartPointer<vtkActor>::New();
+	actorCircleOnline->SetMapper(mapperCircleOnLine);
+	actorCircleOnline->GetProperty()->SetColor(0, 1, 1);
+	actorCircleOnline->GetProperty()->SetEdgeColor(0,1,1);
+	actorCircleOnline->GetProperty()->SetEdgeVisibility(1);
+	actorCircleOnline->GetProperty()->SetOpacity(0.3);
+	renDisplay3D->AddActor(actorCircleOnline);
+
+
 	// initializing vtk structure for points-on-valve visualization
 	points = vtkSmartPointer<vtkPoints>::New();
 	points->InsertNextPoint (0.0, 0.0, 0.0);
@@ -1081,6 +1106,13 @@ void Camera_processing::robotDisplay(void)
 				this->mutex_robotshape.lock();
 				this->m_input_plane_received = planeReceived;
 				this->mutex_robotshape.unlock();
+
+				if (this->m_use_online_model)
+				{
+					this->circleSourceOnLine->SetCenter(this->m_modelBasedLine.getModel().getCenter());
+					this->circleSourceOnLine->SetRadius(this->m_modelBasedLine.getModel().getRadius());
+					this->circleSourceOnLine->SetNormal(this->m_modelBasedLine.getModel().getNormal());
+				}
 			}
 			catch (runtime_error& ex) 
 			{
@@ -1510,8 +1542,10 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 #ifdef __BENCHTOP__
 		m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
 #else
-		//m_linedetected = m_linedetector.processImage(img, line, centroid, false);
-		m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
+		if (!this->m_use_online_model)
+			m_linedetected = m_linedetector.processImage(img, line, centroid, false);
+		else
+			m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #endif
 	}
 
@@ -1649,7 +1683,7 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	int contact_frames = ::std::count(this->m_contactBufferFiltered .rbegin(), this->m_contactBufferFiltered.rbegin() + 20, 1);
 
 	double pct =  ((double) contact_frames)/20.0;
-
-	if (pct > 0.3)
-		this->m_state_transition = true;
+	if (m_use_automatic_transition)
+		if (pct > 0.3)
+			this->m_state_transition = true;
 }

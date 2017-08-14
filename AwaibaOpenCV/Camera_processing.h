@@ -215,6 +215,11 @@ private:
 	vtkSmartPointer<vtkPolyDataMapper> mapperCircle;
 	vtkSmartPointer<vtkActor> actorCircle;
 
+	vtkSmartPointer<vtkRegularPolygonSource> circleSourceOnLine;
+	vtkSmartPointer<vtkPolyDataMapper> mapperCircleOnLine;
+	vtkSmartPointer<vtkActor> actorCircleOnline;
+
+
 	vtkSmartPointer<vtkArrowSource> arrowSource;
 	vtkSmartPointer<vtkMatrix4x4> matrix;
 	vtkSmartPointer<vtkTransform> transform;
@@ -251,7 +256,8 @@ private:
 
 
 	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
-
+	bool			m_use_automatic_transition;
+	bool			m_use_online_model;
 public:
 	void updatePoints();
 	void addArrow(double normal[3], double center[3]);
