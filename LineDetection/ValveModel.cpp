@@ -19,6 +19,7 @@ ValveModel::~ValveModel()
 {
 }
 
+// ---------TESTED--------------//
 bool
 ValveModel::updateModel(double x, double y, double z)
 {
@@ -37,7 +38,6 @@ ValveModel::updateModel(double x, double y, double z)
 	if (!checkForPointInBuffer)
 		appendRowEigen(this->points, tmpX);
 
-	::std::cout << "num of points:" << this->points.rows() <<  ::std::endl;
 
 	if (this->points.rows() <25)
 		return false;
@@ -63,8 +63,6 @@ ValveModel::updateModel(double x, double y, double z)
 	this->center += this->column_means;
 
 	this->currentParameterValue = this->computeCircleParameter(x, y, z);
-	::std::cout << "estimated center:" << this->center.transpose();
-	::std::cout << " ---- estimated radius:" << this->radius << ::std::endl;
 	
 	this->initialized = true;
 	return true;
@@ -94,6 +92,7 @@ ValveModel::resetModel()
 	initialized = false;
 }
 
+// ---------TESTED------------ //
 double
 ValveModel::computeCircleParameter(double x, double y, double z)
 {
@@ -115,6 +114,7 @@ ValveModel::projectPoints()
 	this->projectedPoints = this->pointsCentered * this->projectionMatrix.transpose();	
 }
 
+// ----- TESTED ---- //
 void
 ValveModel::fitCircle()
 {
@@ -135,6 +135,7 @@ ValveModel::fitCircle()
 	//this->computeVariance();
 }
 
+// ----- TESTED ---- //
 double
 ValveModel::circleObjectiveFunction(double t, const ::Eigen::Vector3d& point)
 {

@@ -28,9 +28,9 @@ bool WallSegmentation::processImage(::cv::Mat img, int& x, int& y, bool display,
     img_blur.copyTo(intermediate_img,ow_mask);
     this->thresholdImage(intermediate_img,thresholded_mask);
 
-
+	int num_of_points = ::cv::countNonZero(thresholded_mask);
     //int x = 0,y = 0;
-    if (::cv::countNonZero(thresholded_mask)>80)
+    if (::cv::countNonZero(thresholded_mask)>2000)
     {
         ::cv::Moments M = ::cv::moments(thresholded_mask,true);
         x = int(M.m10/M.m00);

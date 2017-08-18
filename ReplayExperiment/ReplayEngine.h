@@ -40,6 +40,8 @@ class ReplayEngine
 		double							velocityCommand[2];
 		double							robot_rotation;
 		double							imageInitRotation;
+		double							actualPosition[3];
+
 
 		double				joints[5];
 		::std::vector<SE3>  frames;
@@ -50,11 +52,14 @@ class ReplayEngine
 
 		bool				lineDetected;
 		LineDetector		lineDetector;
-		RecursiveFilter::RecursiveMovingAverage		r_filter;
+		RecursiveFilter::MovingAverageFilter		r_filter;
 		RecursiveFilter::RecursiveMovingAverage		theta_filter;
+		RecursiveFilter::AngularMovingAverageFilter theta_filter_complex;
 
 		ModelBasedLineEstimation	modelBasedLine;
 
+		::Eigen::Vector2d	m_valve_tangent_prev;
+		::Eigen::Vector2d	m_velocity_prev;
 
 		BagOfFeatures		bof;
 
@@ -80,6 +85,8 @@ class ReplayEngine
 		vtkSmartPointer<vtkLineSource> lineSource;
 		vtkSmartPointer<vtkPolyDataMapper> lineMapper;
 		vtkSmartPointer<vtkActor> lineActor;
+
+		int		counter;
 
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION} status;
@@ -160,5 +167,8 @@ public:
 
 		void initializeValveModel();
 
+		void updateRobotPositionModel(double fourier[3]);
+
+		void checkTangentDirection(::Eigen::Vector2d& tangentEig);
 
 };

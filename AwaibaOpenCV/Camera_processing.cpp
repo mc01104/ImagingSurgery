@@ -782,7 +782,13 @@ bool Camera_processing::networkKinematics(void)
         WSACleanup();
         return 1;
     }
-	std::cout << "Successfully connected to server" << std::endl;
+
+	//test
+	if (iResult !=0)
+		::std::cout << "connection error" << ::std::endl;
+	else
+		::std::cout << "Successfully connected to server" << std::endl;
+
 	m_network = true;
 
 
@@ -945,7 +951,7 @@ void Camera_processing::initializeValveDisplay()
 
 
 	circleSourceOnLine = vtkSmartPointer<vtkRegularPolygonSource>::New();
-	circleSourceOnLine->SetNumberOfSides(50);
+	circleSourceOnLine->SetNumberOfSides(10);
 	circleSourceOnLine->SetRadius(0);						
 	circleSourceOnLine->SetCenter(tmp);				
 	circleSourceOnLine->SetNormal(tmp);

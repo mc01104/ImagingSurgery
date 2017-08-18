@@ -28,6 +28,7 @@
 #include <vtkAVIWriter.h>
 
 #include "vtkAutoInit.h" 
+#include "vtkKeyboardInteractionStyle.h"
 
 VTK_MODULE_INIT(vtkInteractionStyle);
 VTK_MODULE_INIT(vtkRenderingOpenGL);
@@ -41,7 +42,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType); // VTK was built with vtkRenderingOpenGL2
 VTK_CREATE(vtkRenderer, renDisplay3D);
 VTK_CREATE(vtkRenderWindow, renderwindowDisplay3D);
 VTK_CREATE(vtkRenderWindowInteractor, irenDisplay3D);
-VTK_CREATE(vtkInteractorStyleTrackballCamera, irenDisplay3DStyle);
+VTK_CREATE(KeyPressInteractorStyle, irenDisplay3DStyle);
 
 // Winsock includes for network
 #include <winsock2.h>
@@ -78,9 +79,9 @@ public:
 
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
-	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(1), theta_filter(1, &angularDistanceMinusPItoPI),
+	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(20), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5)
+	filter(5), theta_filter_complex(20)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -89,14 +90,15 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 1000;
+	this->offset = 0;
 
-	for (int i = 0 + this->offset; i < count; ++i)
+	for (int i = this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
 
 	r_filter.resetFilter();
 	theta_filter.resetFilter();
-
+	theta_filter_complex.resetFilter();
+	
 	velocityCommand[0] = 0;
 	velocityCommand[1] = 0;	
 
@@ -108,7 +110,18 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	
 	pointOnCircleSource = vtkSmartPointer<vtkSphereSource>::New();
 	pointOnCircleMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	pointOnCircleActor =  vtkSmartPointer<vtkActor>::New(); ;
+	pointOnCircleActor =  vtkSmartPointer<vtkActor>::New();
+
+	for (int i = 0; i < 3; ++i)
+		actualPosition[i] = 0.0;
+
+	m_valve_tangent_prev[0] = -1;
+	m_valve_tangent_prev[1] = 0;
+
+	for (int i = 0; i < 2; ++i)
+		m_velocity_prev[i] = 0.0;	
+
+	counter = 0;
 
 }
 
@@ -164,7 +177,7 @@ void ReplayEngine::simulate(void* tData)
 		solved = tDataSim->updateRobot(tmpData.data(), frames);
 		tDataSim->setFrames(frames);
 		tDataSim->robot_rotation = tDataSim->kinematics->GetInnerTubeRotation();
-
+		tDataSim->updateRobotPositionModel(&tmpData.data()[8]);
 		tDataSim->robot_mutex.unlock();
 
 		tDataSim->img_mutex.lock();
@@ -183,6 +196,8 @@ void ReplayEngine::simulate(void* tData)
 					tDataSim->setStatus(LINE_DETECTION);
 				break;
 		}
+
+		tDataSim->counter++;
 		::cv::imshow("Display", tmpImage);
 		//video.write(tmpImage);
 		::cv::waitKey(1);  
@@ -207,7 +222,7 @@ void ReplayEngine::displayRobot(void* tData)
 
 	vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
 	tubeFilter->SetInputConnection(lineSource->GetOutputPort());
-	tubeFilter->SetRadius(0.9); 
+	tubeFilter->SetRadius(0.9);                  
 	tubeFilter->SetNumberOfSides(30);
 	tubeFilter->Update();
 
@@ -265,9 +280,9 @@ void ReplayEngine::displayRobot(void* tData)
 				tDataDisplayRobot->circleSource->SetRadius(radius);
 				tDataDisplayRobot->circleSource->SetNormal(normal);
 
-				//tDataDisplayRobot->modelBasedLine.getClosestPointOnCircle(center);
-				//tDataDisplayRobot->pointOnCircleSource->SetCenter(center);
-				//tDataDisplayRobot->pointOnCircleSource->SetRadius(2);
+				tDataDisplayRobot->modelBasedLine.getClosestPointOnCircle(center);
+				tDataDisplayRobot->pointOnCircleSource->SetCenter(center);
+				tDataDisplayRobot->pointOnCircleSource->SetRadius(2);
 
 				bool line = tDataDisplayRobot->modelBasedLine.getTangent(p1, p2);
 
@@ -275,7 +290,6 @@ void ReplayEngine::displayRobot(void* tData)
 				{
 					tDataDisplayRobot->lineSource->SetPoint1(p1);
 					tDataDisplayRobot->lineSource->SetPoint2(p2);
-					//tDataDisplayRobot->lineSource->Update();
 				}
 
 			}
@@ -510,7 +524,7 @@ void ReplayEngine::popNextImage()
 {
 	::std::string path = checkPath(this->getpathToImages() + "/"  + this->imQueue.front()); 
 	this->imQueue.pop_front();
-	//::std::cout << path << ::std::endl;
+
 	this->img = ::cv::imread(path);
 
 }
@@ -539,8 +553,8 @@ void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img ,
 	cartesian2DPointToPolar(closest_point.segment(0, 2) - image_center, r, theta);
 
 	// filter
-	//r = this->r_filter.step(r);
-	//theta = this->theta_filter.step(theta);
+	r = this->r_filter.step(r);
+	theta = this->theta_filter_complex.step(theta);
 
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
@@ -567,21 +581,36 @@ void ReplayEngine::applyVisualServoingController(const ::Eigen::Vector2d& centro
 		return;
 	}
 
-	// later this needs to be computed from the plane normal
-	::Eigen::Matrix3d rot = ::Eigen::Matrix3d::Identity();
+	// required only in simulation!!!!
+	// last transformation to align image frame with robot frame for convenience
+	// --------------------------------------------//
+	::Eigen::Vector2d displacement(0, img.rows);
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 
+	::Eigen::Vector2d centroidEig = rot.block(0, 0, 2, 2).transpose() * centroid - rot.block(0, 0, 2, 2).transpose() * displacement;
+	::Eigen::Vector2d tangentEig = rot.block(0, 0, 2, 2).transpose() * tangent;
+	// --------------------------------------------//
+
+	this->checkTangentDirection(tangentEig);
 	::Eigen::Vector2d error, imageCenter;
 	imageCenter << 125, 125;
 
-	double gain = 0.3;
-	error = imageCenter - centroid;
+	double gain = 1;
+	error = imageCenter - centroidEig;
 	error /= 26.27;
 	error *= -gain;
-
-	error -= gain * tangent;
-
+	error.setZero();
+	error += gain * tangentEig;
+	
 	commandedVelocity = error;
+	double tmp = m_valve_tangent_prev.transpose() * tangentEig;
+	tmp /= (m_valve_tangent_prev.norm() * tangentEig.norm());
 
+	double angle = ::std::acos(tmp) * 180/M_PI;
+	m_valve_tangent_prev = tangentEig;
+
+	m_velocity_prev(0) = commandedVelocity(0);
+	m_velocity_prev(1) = commandedVelocity(1);
 }
 
 void ReplayEngine::detectLine(::cv::Mat& img)
@@ -598,24 +627,30 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		this->getInnerTubeRotation(innerTubeRotation);
 
 		double velocity[3];
+		double p1[3];
+		double p2[3];
 		memcpy(velocity, velocityCommand, 2 * sizeof(double));
 		velocity[2] = 0;
 		bool predictedLineDetected = false;
 		::Eigen::Vector2d centroidEig, tangentEig, velCommand, centroidEig2, tangentEig2;
+		::cv::Vec4f line, line2;
 		if (response == 1)
 		{
-			::cv::Vec4f line, line2;
+
 			::cv::Vec2f centroid, centroid2;
-			//this->lineDetected = this->lineDetector.processImage(img, line, centroid);
 			this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
-			 predictedLineDetected = this->modelBasedLine.getPredicetedTangent(line2);
+			predictedLineDetected = this->modelBasedLine.getPredicetedTangent(line2);
+			centroidEig2(0) = line2[2];
+			centroidEig2(1) = line2[3];
+
+			tangentEig2(0) = line2[1];
+			tangentEig2(1) = line2[0];
 
 			if (this->lineDetected)
 				this->processDetectedLine(line, img, centroid, centroidEig, tangentEig);
-			if (predictedLineDetected)
-				this->processDetectedLine(line2, img, centroid2, centroidEig2, tangentEig2);
 
 		}
+
 
 		this->applyVisualServoingController(centroidEig, tangentEig, velCommand);
 		this->robot_mutex.lock();
@@ -623,7 +658,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		this->robot_mutex.unlock();
 
 		::cv::Point center = ::cv::Point(img.cols/2, img.rows/2 );
-		::cv::Mat rot_mat = getRotationMatrix2D(center, this->imageInitRotation - this->robot_rotation * 180.0/3.141592, 1.0 );
+		::cv::Mat rot_mat = getRotationMatrix2D(center,this->imageInitRotation - this->robot_rotation * 180.0/3.141592, 1.0 );
 		warpAffine(img, img, rot_mat, img.size() );
 
 		if (this->lineDetected)
@@ -634,9 +669,15 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		}
 		if (predictedLineDetected)
 		{
-			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig2(0)*100, centroidEig(1)+tangentEig2(1)*100), ::cv::Scalar(0, 255, 255), 2, CV_AA);
-			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig2(0)*(-100), centroidEig(1)+tangentEig2(1)*(-100)), ::cv::Scalar(0, 255, 255), 2, CV_AA);
-			::cv::circle(img, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+			::Eigen::Vector2d v1;
+			v1(0) = line2[0];
+			v1(1) = line2[1];
+			::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+			::Eigen::Vector2d tangentEigPlot = rot.block(0, 0, 2, 2)* v1;
+
+			::cv::line( img, ::cv::Point(125, 125), ::cv::Point(125+tangentEigPlot(0)*100, 125+tangentEigPlot(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+			::cv::line( img, ::cv::Point(125, 125), ::cv::Point(125+tangentEigPlot(0)*(-100),125+tangentEigPlot(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+
 		}
 
 
@@ -657,7 +698,7 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 	::cv::Vec2f centroid;
 
 	int x, y;
-	this->wallDetected = this->wallDetector.processImage(img, x, y, true, center.x, center.y, 125);
+	this->wallDetected = this->wallDetector.processImage(img, x, y, true, center.x, center.y, 110);
 
 	this->applyVisualServoingController(x, y,velCommand);
 
@@ -727,7 +768,7 @@ void ReplayEngine::getInnerTubeRotation(double& innerTubeRotation)
 void ReplayEngine::initializeValveModel()
 {
 	circleSource = vtkSmartPointer<vtkRegularPolygonSource>::New();
-	circleSource->SetNumberOfSides(50);
+	circleSource->SetNumberOfSides(20);
 	circleSource->SetRadius(0);						
 	double tmp[3] = {0, 0, 0};
 	circleSource->SetCenter(tmp);				
@@ -741,7 +782,7 @@ void ReplayEngine::initializeValveModel()
 	actorCircle->GetProperty()->SetColor(0, 1, 1);
 	actorCircle->GetProperty()->SetOpacity(0.3);
 
-	//renDisplay3D->AddActor(actorCircle);
+	renDisplay3D->AddActor(actorCircle);
 
 	pointOnCircleSource->SetRadius(0);						
 	pointOnCircleSource->SetCenter(tmp);				
@@ -752,7 +793,7 @@ void ReplayEngine::initializeValveModel()
 	pointOnCircleActor->GetProperty()->SetColor(1, 1, 1);
 	pointOnCircleActor->GetProperty()->SetOpacity(0.3);
 
-	//renDisplay3D->AddActor(pointOnCircleActor);
+	renDisplay3D->AddActor(pointOnCircleActor);
 
 	  // Create two points, P0 and P1
 	  double p0[3] = {1.0, 0.0, 0.0};
@@ -771,4 +812,23 @@ void ReplayEngine::initializeValveModel()
 	  lineActor->GetProperty()->SetLineWidth(4);
 
 	  renDisplay3D->AddActor(lineActor);
+}
+
+
+void ReplayEngine::updateRobotPositionModel(double fourier[3])
+{
+	memcpy(this->actualPosition, fourier, 3 * sizeof(double));
+}
+
+
+void ReplayEngine::checkTangentDirection(::Eigen::Vector2d& tangentEig)
+{
+
+	double tmp = m_valve_tangent_prev[0] * tangentEig[0] + m_valve_tangent_prev[1] * tangentEig[1];
+
+	if (tmp < 0)
+	{
+		tangentEig[0] *= -1;
+		tangentEig[1] *= -1;
+	}
 }

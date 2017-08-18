@@ -96,6 +96,36 @@ MovingAverageFilter::computeAverage()
 	return sum/data.size();
 }
 
+
+AngularMovingAverageFilter::AngularMovingAverageFilter(int windowSize)	: MovingAverageFilter(windowSize)
+{
+}
+
+AngularMovingAverageFilter::~AngularMovingAverageFilter()
+{
+}
+
+double
+AngularMovingAverageFilter::computeAverage()
+{
+	//do stuff here
+	double sum_X = 0, sum_Y = 0;
+	for (int i = 0; i < this->data.size(); ++i)
+	{
+		sum_X += ::std::cos(data[i]);
+		sum_Y += ::std::sin(data[i]);
+	}
+
+	return ::std::atan2(sum_Y/this->data.size(), sum_X/this->data.size());
+
+}
+
+double
+AngularMovingAverageFilter::step(double incomingValue)
+{
+	return MovingAverageFilter::step(incomingValue);
+}
+
 RecursiveMovingAverage::RecursiveMovingAverage(int windowSize, double (*distance)(const double, const double))
 	:MovingAverageFilter(windowSize), prevValue(0), distance_fun(distance)
 {
@@ -112,9 +142,9 @@ RecursiveMovingAverage::step(double incomingValue)
 	{
 		double delta = 0;
 		if (this->distance_fun)
-			delta = this->distance_fun(incomingValue, this->data.front());
+			delta = this->distance_fun(incomingValue, this->data.back());
 		else 
-			delta = incomingValue - this->data.front();
+			delta = incomingValue - this->data.back();
 		prevValue = (prevValue * this->windowSize + delta)/this->windowSize;
 
 		this->updateDataBuffer(incomingValue);

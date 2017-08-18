@@ -45,6 +45,19 @@ namespace RecursiveFilter
 		virtual double computeAverage();
 	};
 
+	class AngularMovingAverageFilter : public MovingAverageFilter
+	{
+		public:
+			AngularMovingAverageFilter(int windowSize = 5);
+			~AngularMovingAverageFilter();
+
+			double step(double incomingValue);
+
+		protected:
+			virtual double computeAverage();
+	};
+
+
 	class RecursiveMovingAverage : public MovingAverageFilter
 	{
 		double prevValue;

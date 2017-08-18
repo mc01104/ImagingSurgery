@@ -16,8 +16,8 @@ ModelBasedLineEstimation::ModelBasedLineEstimation():
 	for(int i = 0; i < 3; ++i)
 		robot_position[i] = robot_velocity[i] = robot_predicted_position[i] = 0;
 
-	channel_pixel_position_unrotated[0] = 105;
-	channel_pixel_position_unrotated[1] = 76;     
+	channel_pixel_position_unrotated[0] = 64;
+	channel_pixel_position_unrotated[1] = 150;     
 }
 
 ModelBasedLineEstimation::~ModelBasedLineEstimation()
@@ -70,6 +70,7 @@ ModelBasedLineEstimation::predict(double robot_position[3], double robot_desired
 
 	if (this->valveModel.isInitialized())
 	{
+		// not sure if this function is correct
 		this->computePredictedTangent();
 		//this->computeClosestCirclePoint();
 
@@ -98,6 +99,7 @@ ModelBasedLineEstimation::update(const ::cv::Mat& img)
 		this->addPointToModel();
 }
 
+// =========OK=============//
 void 
 ModelBasedLineEstimation::computePointsForFitting()
 {
@@ -115,9 +117,8 @@ ModelBasedLineEstimation::computePointsForFitting()
 	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
 
-	//::cv::namedWindow("thresholded", 0);
-	//::cv::imshow("thresholded", output);
-	//::cv::waitKey(1);
+	::cv::imshow("thresholded", output);
+	::cv::waitKey(1);
 }
 
 
@@ -134,9 +135,9 @@ ModelBasedLineEstimation::fitLine()
 		::Eigen::Matrix3d rot1 = RotateZ(0*this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
 		::Eigen::Vector3d predTang;
 
-  //      ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*100,fittedLine[3]+fittedLine[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-  //      ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*(-100),fittedLine[3]+fittedLine[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-		//::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
+        ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*100,fittedLine[3]+fittedLine[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+        ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*(-100),fittedLine[3]+fittedLine[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
 
 		if (this->valveModel.isInitialized())
 		{
@@ -151,13 +152,13 @@ ModelBasedLineEstimation::fitLine()
 			//::cv::circle(this->current_img, ::cv::Point(this->predictedcentroid[0], predictedcentroid[1]), 5, ::cv::Scalar(255,0,0));
 		}
 
-		//::cv::imshow("fit-line", this->current_img);
+		::cv::imshow("fit-line", this->current_img);
 		return true;
 	}
 
 	//::cv::imshow("fit-line", this->current_img);
-
-	return false;
+	//::cv::waitKey(0);
+ 	return false;
 }
 
 void ModelBasedLineEstimation::computeCentroid()
@@ -191,7 +192,6 @@ ModelBasedLineEstimation::addPointToModel()
 
 	this->convertLineCentroidTo3DWorkspace(tmp_point);
 
-	//PrintCArray(tmp_point, 3);
 	this->valveModel.updateModel(tmp_point[0], tmp_point[1], tmp_point[2]);
 }
 
@@ -348,20 +348,29 @@ ModelBasedLineEstimation::rejectOutliers()
 void 
 ModelBasedLineEstimation::convertLineCentroidTo3DWorkspace(double tmp_point[3])
 {
-	::Eigen::Matrix3d rot1 = RotateZ(this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
-	::Eigen::Vector2d robot_channel_position;
 
+
+	::Eigen::Matrix3d rot1 = RotateZ(this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
+
+	::Eigen::Vector2d robot_channel_position;
 	robot_channel_position[0] = this->channel_pixel_position_unrotated[0];
 	robot_channel_position[1] = this->channel_pixel_position_unrotated[1];
 
 	robot_channel_position = rot1.block(0, 0, 2, 2).transpose()* (robot_channel_position - this->image_center * ::Eigen::Vector2d::Ones()) + this->image_center * ::Eigen::Vector2d::Ones();
 
-	// is the centroid rotated???
-	::Eigen::Vector2d centroid_Eig;
-	centroid_Eig(0) = this->centroid[0];
-	centroid_Eig(1) = this->centroid[1];
+	// required only in simulation!!!!
+	// last transformation to align image frame with robot frame for convenience
+	// --------------------------------------------//
+	::Eigen::Vector2d displacement(0, this->current_img.rows);
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+	
+	//align image coordinate frame with robot base frame
+	robot_channel_position = rot.block(0, 0, 2, 2).transpose() * robot_channel_position - rot.block(0, 0, 2, 2).transpose() * displacement;
 
-	::Eigen::Vector2d DP = (centroid_Eig - robot_channel_position)/this->scaling_factor;
+	// --------------------------------------------//
+
+
+	// is the centroid rotated???
 
 	// project current robot position on the plane
 	::Eigen::MatrixXd proj;
@@ -383,8 +392,8 @@ void ModelBasedLineEstimation::computePredictedTangent()
 	::Eigen::Vector3d tangent, point_on_circle;
 	this->valveModel.getTangentEstimate(this->robot_predicted_position[0], this->robot_predicted_position[1], this->robot_predicted_position[2], tangent, point_on_circle);
 
-	::Eigen::MatrixXd proj;
-	this->valveModel.getProjectionMatrixToPlane(proj);
+	//::Eigen::MatrixXd proj;
+	//this->valveModel.getProjectionMatrixToPlane(proj);
 
 	//tangent = proj * tangent;
 	this->predictedLine[0] = tangent[0];
@@ -445,7 +454,17 @@ ModelBasedLineEstimation::getTangent(double p1[3], double p2[3])
 bool	
 ModelBasedLineEstimation::getPredicetedTangent(::cv::Vec4f& line)
 {
-	for (int i = 0; i < 4; ++i)
-		line[i] = this->predictedLine[i];
-	return this->valveModel.isInitialized(); 
+	//for (int i = 0; i < 4; ++i)
+	//	line[i] = this->predictedLine[i];
+	//return this->valveModel.isInitialized(); 
+	double p1[3]; 
+	double p2[3];
+	this->getTangent(p1, p2);
+
+	::Eigen::Vector3d tangent = ::Eigen::Map<::Eigen::Vector3d> (p1, 3) - ::Eigen::Map<::Eigen::Vector3d> (p2, 3);
+	tangent.normalize();
+	line[0] = tangent[0];
+	line[1] = tangent[1];
+
+	return this->valveModel.isInitialized();
 };
