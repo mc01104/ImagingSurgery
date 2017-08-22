@@ -639,7 +639,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 			::cv::Vec2f centroid, centroid2;
 			this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
-			predictedLineDetected = this->modelBasedLine.getPredicetedTangent(line2);
+			predictedLineDetected = this->modelBasedLine.getPredictedTangent(line2);
 			centroidEig2(0) = line2[2];
 			centroidEig2(1) = line2[3];
 
@@ -679,14 +679,38 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			::cv::line( img, ::cv::Point(125, 125), ::cv::Point(125+tangentEigPlot(0)*(-100),125+tangentEigPlot(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
 
 		}
+		//static ::std::ofstream valve("valve_stats.txt");
+		//double valveCenter[3];
+		//double valveNormal[3];
+		//double radius = 0;
+		//if (this->modelBasedLine.getModel().isInitialized())
+		//{
+		//	::std::cout << "valve radius:" << this->modelBasedLine.getModel().getRadius();
+		//	this->modelBasedLine.getModel().getCenter(valveCenter);
+		//	this->modelBasedLine.getModel().getNormal(valveNormal);
+		//	radius = this->modelBasedLine.getModel().getRadius();
 
+		//	for (int i = 0; i < 3; ++i)
+		//		valve << valveCenter[i] << " ";
 
+		//	for (int i = 0; i < 3; ++i)
+		//		valve << valveNormal[i] << " ";
+
+		//	valve << radius << ::std::endl;
+
+		//}
 }
 
 void ReplayEngine::detectWall(::cv::Mat& img)
 {
 	float response = 0;
 	this->bof.predict(img, response);
+
+	::cv::Vec4f line1;
+	::cv::Vec2f centroid4;
+	if (this->m_dummyLine.processImage(img, line1, centroid4))
+		::std::cout << "valve detected" << ::std::endl;
+
 
 	::cv::Point center = ::cv::Point(img.cols/2, img.rows/2 );
 	::cv::Mat rot_mat = getRotationMatrix2D(center, this->imageInitRotation - this->robot_rotation * 180.0/3.141592, 1.0 );
@@ -698,7 +722,7 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 	::cv::Vec2f centroid;
 
 	int x, y;
-	this->wallDetected = this->wallDetector.processImage(img, x, y, true, center.x, center.y, 110);
+	this->wallDetected = this->wallDetector.processImage(img, x, y, true, center.x, center.y, 125);
 
 	this->applyVisualServoingController(x, y,velCommand);
 
@@ -708,6 +732,7 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 
 	this->contact.push_back(response);
 	this->contact_filtered.push_back(filter.step(response));
+
 
 }
 
@@ -736,15 +761,17 @@ void ReplayEngine::applyVisualServoingController(int x, int y, ::Eigen::Vector3d
 bool 
 ReplayEngine::checkTransition()
 {
-	if (this->contact_filtered.size() < 20)
-		return false;
 
-	int contact_frames = ::std::count(this->contact_filtered.rbegin(), this->contact_filtered.rbegin() + 20, 1);
+	//if (this->contact_filtered.size() < 20)
+	//	return false;
 
-	double pct =  ((double) contact_frames)/20.0;
+	//int contact_frames = ::std::count(this->contact_filtered.rbegin(), this->contact_filtered.rbegin() + 20, 1);
 
-	if (pct > 0.3)
-		return true;
+	//double pct =  ((double) contact_frames)/20.0;
+
+	//if (pct > 0.3)
+	//	return true;
+	return false;
 }
 
 

@@ -39,6 +39,7 @@ class ModelBasedLineEstimation
 		int				image_center;
 
 		bool			line_detected;
+		bool			update_model;
 
 	public:
 
@@ -47,14 +48,14 @@ class ModelBasedLineEstimation
 		~ModelBasedLineEstimation();
 
 		bool step(double robot_position[3], double robot_desired_velocity[3], const ::cv::Mat& img, double innerTubeRotation, 
-			::cv::Vec4f& line, ::cv::Vec2f& centroid);
+			::cv::Vec4f& line, ::cv::Vec2f& centroid, bool update = true);
 
 		ValveModel getModel() {return this->valveModel; };
 
 		double*	getCurrentPoint() {return this->robot_predicted_position;};
 		void	getClosestPointOnCircle(double point[3]);
 		bool	getTangent(double p1[3], double p2[3]);
-		bool	getPredicetedTangent(::cv::Vec4f& line);
+		bool	getPredictedTangent(::cv::Vec4f& line);
 
 	protected:
 		void predict(double robot_position[3], double robot_desired_velocity[3]);

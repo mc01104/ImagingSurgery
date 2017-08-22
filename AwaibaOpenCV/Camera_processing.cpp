@@ -176,6 +176,14 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_use_online_model = false;
 	// Parse options in camera.csv file
 	// TODO: handle errors better and do not fallback to default config
+	
+	m_contact_gain = 0;
+	m_contact_D_gain = 0;
+	m_contact_I_gain = 0;
+	m_contact_desired_ratio = 0;
+	m_is_control_active = 0;
+	m_breathing = 0;
+
 	ParseOptions op = ParseOptions("./camera_info.csv");
 
 	if (op.getStatus())
@@ -376,7 +384,9 @@ void Camera_processing::processInput(char key)
 		initializeApex();
 		break;
 	case 't':
-		m_use_automatic_transition != m_use_automatic_transition;
+		m_use_automatic_transition = !m_use_automatic_transition;
+		if (m_use_automatic_transition)
+			::std::cout << "m_use_automatic_transition" << ::std::endl;
 		break;
 	case 'r':
 		if (m_record) m_newdir = true;
@@ -388,7 +398,10 @@ void Camera_processing::processInput(char key)
 			::std::cout << "contact mode is on"  << ::std::endl;
 		break;
 	case 'm':
-		m_use_online_model != m_use_online_model;
+		m_use_online_model = !m_use_online_model;
+		if (m_use_online_model)
+			::std::cout << "use online model" << ::std::endl;
+		break;
 	case 'f':
 		m_estimateFreq = !m_estimateFreq;
 		if (m_estimateFreq)
@@ -638,7 +651,8 @@ void Camera_processing::recordImages(void)
     compression_params.push_back(3);
 
 	auto start_record = std::chrono::high_resolution_clock::now();
-
+	//::std::ofstream* bundle;
+	static ::std::ofstream bundle;
 	while(m_running)
 	{
 		ImgBuf element;
@@ -650,6 +664,8 @@ void Camera_processing::recordImages(void)
 			if(m_newdir) 
 			{
 				createSaveDir();
+				//bundle = new ofstream(m_imgDir + "data.txt");
+				bundle.open(m_imgDir + "data.txt");
 				start_record = std::chrono::high_resolution_clock::now();
 				m_newdir = false;
 			}
@@ -661,6 +677,9 @@ void Camera_processing::recordImages(void)
 			{
 				m_newdir = true;
 				start_record = now;
+				//bundle->close();
+				bundle.close();
+				delete bundle;
 			}
 
 			frame = element.img;
@@ -683,18 +702,53 @@ void Camera_processing::recordImages(void)
 					ofstream joints_file;
 					joints_file.open (filename_joints);
 					for(std::vector<double>::const_iterator i = robot_joint.begin(); i != robot_joint.end(); ++i) {
-							joints_file << *i << ',';
+							joints_file << *i << ",";
 					}
 					joints_file << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_contact_response << ",";
 					
 					//for (int i = 0; i < 3; ++i)
 					//	joints_file << m_SolutionFrames.back().GetPosition()[i] << ",";
 					for (int i = 0; i < 3; ++i)
-						joints_file << m_model_robot_position[i] << " ";
+						joints_file << m_model_robot_position[i] << ", ";
 
+					joints_file << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio;
 					joints_file << '\n';
 					joints_file.close();
 				}
+
+					//if (bundle)
+					//{
+					//	*bundle << timestamp << ", ";
+					//	for(std::vector<double>::const_iterator i = robot_joint.begin(); i != robot_joint.end(); ++i) {
+					//			*bundle << *i << ", ";
+					//	}
+					//	*bundle << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_contact_response << ",";
+					//
+					//	//for (int i = 0; i < 3; ++i)
+					//	//	joints_file << m_SolutionFrames.back().GetPosition()[i] << ",";
+					//	for (int i = 0; i < 3; ++i)
+					//		*bundle << m_model_robot_position[i] << ", ";
+
+					//	*bundle << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio;
+					//	*bundle << '\n';
+					//}
+				if (bundle.is_open())
+				{
+					bundle << timestamp << ", ";
+					for(std::vector<double>::const_iterator i = robot_joint.begin(); i != robot_joint.end(); ++i) {
+							bundle << *i << ", ";
+					}
+					bundle << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_contact_response << ",";
+					
+					//for (int i = 0; i < 3; ++i)
+					//	joints_file << m_SolutionFrames.back().GetPosition()[i] << ",";
+					for (int i = 0; i < 3; ++i)
+						bundle << m_model_robot_position[i] << ", ";
+
+					bundle << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio;
+					bundle << '\n';
+				}
+
 			}
 			catch (runtime_error& ex) 
 			{
@@ -785,7 +839,10 @@ bool Camera_processing::networkKinematics(void)
 
 	//test
 	if (iResult !=0)
+	{
 		::std::cout << "connection error" << ::std::endl;
+		return false;
+	}
 	else
 		::std::cout << "Successfully connected to server" << std::endl;
 
@@ -853,7 +910,10 @@ bool Camera_processing::networkKinematics(void)
 		ss << m_apex_to_valve << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
 		
 		if (m_circumnavigation)
+		{
 			m_state_transition = false;
+			this->detected_valve.clear();
+		}
 
 		ss << m_state_transition << " ";
 
@@ -910,23 +970,28 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->m_FramesPerHeartCycle = msg.data()[12]* 60 * m_cameraFrameRate/m_input_frequency;
 
 	memcpy(this->m_model_robot_position, &msg.data()[13], 3 * sizeof(double));
-	 
-	m_input_plane_received = msg.data()[16];
+	
+	this->m_contact_gain = msg.data()[16];
+	this->m_contact_D_gain = msg.data()[17];
+	this->m_contact_I_gain = msg.data()[18];
+	this->m_is_control_active = msg.data()[19];
+	this->m_contact_desired_ratio = msg.data()[20];
+	this->m_breathing = msg.data()[21];
+
+	m_input_plane_received = msg.data()[22];
 	if (m_input_plane_received)
 	{
-		memcpy(m_normal, &msg.data()[17], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[20], 3 * sizeof(double));
-		m_radius = msg.data()[23];
+		memcpy(m_normal, &msg.data()[23], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[26], 3 * sizeof(double));
+		m_radius = msg.data()[29];
 
 		pointsOnValve.clear();
-		int num_of_points = msg.data()[24];
+		int num_of_points = msg.data()[30];
 		for (int i = 0; i < 3 * num_of_points; ++i)
-			pointsOnValve.push_back(msg[25+i]);
+			pointsOnValve.push_back(msg[31+i]);
 	}
 	this->mutex_robotshape.unlock();
-	//::std::cout << "apex:" << m_apex_to_valve << ::std::endl;
-	//::std::cout << "circ:" << m_circumnavigation << ::std::endl;
-	//::std::cout << "state tran: " << m_state_transition << ::std::endl;
+
 }
 
 void Camera_processing::initializeValveDisplay()
@@ -1548,9 +1613,9 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 #ifdef __BENCHTOP__
 		m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
 #else
-		if (!this->m_use_online_model)
-			m_linedetected = m_linedetector.processImage(img, line, centroid, false);
-		else
+		//if (!this->m_use_online_model)
+		//	m_linedetected = m_linedetector.processImage(img, line, centroid, false);
+		//else
 			m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #endif
 	}
@@ -1656,6 +1721,16 @@ void Camera_processing::initializeApex()
 
 void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 {
+	// check for valve
+	::cv::Vec2f centroid2;
+	::cv::Vec4f line2;
+	if (m_linedetector.processImage(img, line2, centroid2, false))
+		this->detected_valve.push_back(true);
+
+
+	if (this->detected_valve.size() > 10 && this->m_use_automatic_transition)
+		this->m_state_transition = true;
+
 	int x, y;
 	this->m_wall_detected = this->m_wall_detector.processImage(img, x, y, true);
 
@@ -1688,8 +1763,4 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 
 	int contact_frames = ::std::count(this->m_contactBufferFiltered .rbegin(), this->m_contactBufferFiltered.rbegin() + 20, 1);
 
-	double pct =  ((double) contact_frames)/20.0;
-	if (m_use_automatic_transition)
-		if (pct > 0.3)
-			this->m_state_transition = true;
 }

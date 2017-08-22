@@ -11,13 +11,15 @@ ModelBasedLineEstimation::ModelBasedLineEstimation():
 	image_center(125),
 	pred_line_covariance(0),
 	line_detected(false)	,
-	scaling_factor(26.27)
+	scaling_factor(26.27),
+	update_model(true)
 {
 	for(int i = 0; i < 3; ++i)
 		robot_position[i] = robot_velocity[i] = robot_predicted_position[i] = 0;
 
 	channel_pixel_position_unrotated[0] = 64;
-	channel_pixel_position_unrotated[1] = 150;     
+	channel_pixel_position_unrotated[1] = 150;    
+
 }
 
 ModelBasedLineEstimation::~ModelBasedLineEstimation()
@@ -29,10 +31,10 @@ ModelBasedLineEstimation::~ModelBasedLineEstimation()
 
 
 bool 
-ModelBasedLineEstimation::step(double robot_position[3], double robot_desired_velocity[3], const ::cv::Mat& img, double innerTubeRotation, ::cv::Vec4f& line, ::cv::Vec2f& centroid_out)
+ModelBasedLineEstimation::step(double robot_position[3], double robot_desired_velocity[3], const ::cv::Mat& img, double innerTubeRotation, ::cv::Vec4f& line, ::cv::Vec2f& centroid_out, bool update)
 {
 	this->inner_tube_rotation = innerTubeRotation;
-
+	this->update_model = update;
 	// using the current robot position and the velocity from the visual servoing controller -> predict when the line should be in the next iteration
 	this->predict(robot_position, robot_desired_velocity);
 
@@ -95,7 +97,7 @@ ModelBasedLineEstimation::update(const ::cv::Mat& img)
 
 	this->line_detected = this->fitLine();
 
-	if (this->checkLineFitting())
+	if (this->checkLineFitting() && this->update_model)
 		this->addPointToModel();
 }
 
@@ -139,25 +141,10 @@ ModelBasedLineEstimation::fitLine()
         ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*(-100),fittedLine[3]+fittedLine[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 		::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
 
-		if (this->valveModel.isInitialized())
-		{
-			//predTang[0] = predictedLine[0];
-			//predTang[1] = predictedLine[1];
-			//predTang = rot1 * predTang;
-			//predictedLine[0] = predTang[0];
-			//predictedLine[1] = predTang[1];
-			//
-			//::cv::line( this->current_img, ::cv::Point(predictedLine[2],predictedLine[3]), ::cv::Point(predictedLine[2]+predictedLine[0]*100,predictedLine[3]+predictedLine[1]*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-			//::cv::line( this->current_img, ::cv::Point(predictedLine[2],predictedLine[3]), ::cv::Point(predictedLine[2]+predictedLine[0]*(-100),predictedLine[3]+predictedLine[1]*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-			//::cv::circle(this->current_img, ::cv::Point(this->predictedcentroid[0], predictedcentroid[1]), 5, ::cv::Scalar(255,0,0));
-		}
-
-		::cv::imshow("fit-line", this->current_img);
+		//::cv::imshow("fit-line", this->current_img);
 		return true;
 	}
 
-	//::cv::imshow("fit-line", this->current_img);
-	//::cv::waitKey(0);
  	return false;
 }
 
@@ -349,40 +336,27 @@ void
 ModelBasedLineEstimation::convertLineCentroidTo3DWorkspace(double tmp_point[3])
 {
 
+	::Eigen::Vector2d DP;
+	DP(0) = this->centroid[0] - this->channel_pixel_position_unrotated[0];    // in pixels in unrotated image frame
+	DP(1) = this->centroid[1] - this->channel_pixel_position_unrotated[1];
 
 	::Eigen::Matrix3d rot1 = RotateZ(this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
+	DP = rot1.block(0, 0, 2, 2).transpose() * DP;	// in pixels in rotated image frame
 
-	::Eigen::Vector2d robot_channel_position;
-	robot_channel_position[0] = this->channel_pixel_position_unrotated[0];
-	robot_channel_position[1] = this->channel_pixel_position_unrotated[1];
 
-	robot_channel_position = rot1.block(0, 0, 2, 2).transpose()* (robot_channel_position - this->image_center * ::Eigen::Vector2d::Ones()) + this->image_center * ::Eigen::Vector2d::Ones();
-
-	// required only in simulation!!!!
-	// last transformation to align image frame with robot frame for convenience
-	// --------------------------------------------//
-	::Eigen::Vector2d displacement(0, this->current_img.rows);
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
-	
-	//align image coordinate frame with robot base frame
-	robot_channel_position = rot.block(0, 0, 2, 2).transpose() * robot_channel_position - rot.block(0, 0, 2, 2).transpose() * displacement;
+	DP = rot.block(0, 0, 2, 2).transpose() * DP;	// in pixels in image frame aligned with robot base frame
+	DP /= this->scaling_factor;    // in mm in world frame
 
-	// --------------------------------------------//
-
-
-	// is the centroid rotated???
-
-	// project current robot position on the plane
 	::Eigen::MatrixXd proj;
-	this->valveModel.getProjectionMatrixToPlane(proj);
-	this->projected_robot_position = proj * ::Eigen::Map<::Eigen::Vector3d> (this->robot_position);
-
-	// add DP
-	this->projected_robot_position[0] += DP[0];
-	this->projected_robot_position[1] += DP[1];
+	this->getModel().getProjectionMatrixToPlane(proj);
+	DP = proj * DP;
+	//this->projected_robot_position[0] += DP[0];
+	//this->projected_robot_position[1] += DP[1];
 
 	// bring back to 3D
-	this->centroid_position_3d = proj.transpose() * this->projected_robot_position;
+	this->centroid_position_3d.segment(0, 2) = ::Eigen::Map<::Eigen::Vector3d>(this->robot_position, 3).segment(0, 2) + DP;
+	this->centroid_position_3d(2) = this->robot_position[2];
 
 	memcpy(tmp_point, this->centroid_position_3d.data(), 3 * sizeof(double));
 }
@@ -452,11 +426,8 @@ ModelBasedLineEstimation::getTangent(double p1[3], double p2[3])
 }
 
 bool	
-ModelBasedLineEstimation::getPredicetedTangent(::cv::Vec4f& line)
+ModelBasedLineEstimation::getPredictedTangent(::cv::Vec4f& line)
 {
-	//for (int i = 0; i < 4; ++i)
-	//	line[i] = this->predictedLine[i];
-	//return this->valveModel.isInitialized(); 
 	double p1[3]; 
 	double p2[3];
 	this->getTangent(p1, p2);

@@ -29,8 +29,8 @@ bool WallSegmentation::processImage(::cv::Mat img, int& x, int& y, bool display,
     this->thresholdImage(intermediate_img,thresholded_mask);
 
 	int num_of_points = ::cv::countNonZero(thresholded_mask);
-    //int x = 0,y = 0;
-    if (::cv::countNonZero(thresholded_mask)>2000)
+
+    if (::cv::countNonZero(thresholded_mask)>1000)
     {
         ::cv::Moments M = ::cv::moments(thresholded_mask,true);
         x = int(M.m10/M.m00);
@@ -42,14 +42,12 @@ bool WallSegmentation::processImage(::cv::Mat img, int& x, int& y, bool display,
     int64 t1 = cv::getTickCount();
     double secs = (t1-t0)/cv::getTickFrequency();
 
-    //::std::cout << "Processing the image took " << secs*1000.0 << " milliseconds" << ::std::endl;
-
     if (display)
     {
         ::cv::imshow("Thresholded mask", thresholded_mask);
         ::cv::imshow("Input image", img);
 
-        ::cv::waitKey(10);
+        ::cv::waitKey(1);
     }
 
     return true;
@@ -68,10 +66,14 @@ bool WallSegmentation::thresholdImage(const cv::Mat &img, ::cv::Mat &output)
     const int thresh_S = 64;
 	//const int thresh_V = 200; -> worked first sucess
 	const int thresh_V = 250;
-    const int min_a = 130, max_a = 150;
+    const int min_a = 130, max_a = 145;
 
     ::cv::Mat mask_s;
     ::cv::threshold(S,mask_s,thresh_S,255,::cv::THRESH_BINARY_INV);
+
+	double min, max;
+	::cv::minMaxLoc(A, &min, &max);
+	//::std::cout << "min:" << min << " max:" << max << ::std::endl;
 
 	::cv::Mat mask_v;
 	::cv::threshold(V, mask_v, thresh_V, 255, ::cv::THRESH_BINARY_INV);

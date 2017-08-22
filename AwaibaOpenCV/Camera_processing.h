@@ -258,6 +258,15 @@ private:
 	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
 	bool			m_use_automatic_transition;
 	bool			m_use_online_model;
+
+	double			m_contact_gain;
+	double			m_contact_D_gain;
+	double			m_contact_I_gain;
+	double			m_contact_desired_ratio;
+	int				m_is_control_active;
+	int				m_breathing;
+
+	::std::vector<bool> detected_valve;
 public:
 	void updatePoints();
 	void addArrow(double normal[3], double center[3]);

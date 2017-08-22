@@ -36,10 +36,15 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	// check transition
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-32-10";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_14-34-52";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-48-07";
 	
+	// apex-to-valve
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_12-43-50";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_14-40-02";
+	
 	// circum
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-57-11";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-57-11";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-50-58";
 	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
@@ -49,7 +54,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
 	engine.setClassifier(contact_classifier);
-	engine.setStatus(ReplayEngine::LINE_DETECTION);
+	engine.setStatus(ReplayEngine::WALL_DETECTION);
 	engine.run();
 	//testVectorOperations();
 

@@ -41,10 +41,14 @@ class ValveModel
 
 		bool isInitialized() {return initialized;};
 
+		// remove function returning pointers!!!
 		double* getCenter() {return this->center.data();};
 		double	getRadius() {return this->radius;};
 		double* getNormal();
 
+		void getCenter(double center[3]);
+		void getNormal(double normal[3]);
+		
 		void getProjectionMatrixToPlane(::Eigen::MatrixXd& proj);
 
 		void getClosestPointOnCircle(double x, double y, double z, ::Eigen::Vector3d& point);

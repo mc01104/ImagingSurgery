@@ -57,6 +57,7 @@ class ReplayEngine
 		RecursiveFilter::AngularMovingAverageFilter theta_filter_complex;
 
 		ModelBasedLineEstimation	modelBasedLine;
+		LineDetector			m_dummyLine;
 
 		::Eigen::Vector2d	m_valve_tangent_prev;
 		::Eigen::Vector2d	m_velocity_prev;

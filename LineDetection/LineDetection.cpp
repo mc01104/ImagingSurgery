@@ -45,11 +45,11 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
 
 	bool lineDetected = false;
 
-  //  if (this->detectLine(img_crop,line, centroid))
-		//lineDetected = true;
-
-    if (this->detectLineAllChannels(img_crop,line, centroid))
+    if (this->detectLine(img_crop,line, centroid))
 		lineDetected = true;
+
+  //  if (this->detectLineAllChannels(img_crop,line, centroid))
+		//lineDetected = true;
 
 	centroid[0] += crop;
 	centroid[1] += crop;
@@ -130,7 +130,7 @@ bool LineDetector::detectLine(const ::cv::Mat img, ::cv::Vec4f &line, ::cv::Vec2
 	::cv::imshow("thresholded", thresholded_binary);
 	::cv::waitKey(1);
 
-	if (nonzero.size()>80)
+	if (nonzero.size()>1080)
 	{
         ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 
