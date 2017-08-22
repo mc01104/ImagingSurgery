@@ -438,4 +438,87 @@ ModelBasedLineEstimation::getPredictedTangent(::cv::Vec4f& line)
 	line[1] = tangent[1];
 
 	return this->valveModel.isInitialized();
-};
+}
+
+
+bool 
+ModelBasedLineEstimation::stepBenchtop(double robot_position[3], double robot_desired_velocity[3], const ::cv::Mat& img, double innerTubeRotation, ::cv::Vec4f& line,
+									::cv::Vec2f& centroid_out, bool update)
+{
+	this->inner_tube_rotation = innerTubeRotation;
+	this->update_model = update;
+	// using the current robot position and the velocity from the visual servoing controller -> predict when the line should be in the next iteration
+	this->predict(robot_position, robot_desired_velocity);
+
+	// use the image to compute the line
+	this->updateBenchtop(img);
+	
+	if (!this->line_detected)
+		return false;
+	line = this->fittedLine;
+
+	centroid_out[0] = this->centroid[0];
+	centroid_out[1] = this->centroid[1];
+
+	//temporary!!!!
+	this->predictedcentroid[0] = this->centroid[0];
+	this->predictedcentroid[1] = this->centroid[1];
+
+	this->predictedLine[2] = this->centroid[0];
+	this->predictedLine[3] = this->centroid[1];
+
+	this->computeResidualVariance();
+
+
+	return this->checkLineFitting();
+
+}
+
+void 
+ModelBasedLineEstimation::updateBenchtop(const ::cv::Mat& img)
+{
+	img.copyTo(this->current_img);
+
+	this->computePointsForFittingBenchtop();
+
+	if (false)//this->valveModel.isInitialized())
+		this->rejectOutliers();
+	else
+	{
+		this->highProbPointsToFit.resize(this->pointsToFit.size());
+		::std::copy(this->pointsToFit.begin(), this->pointsToFit.end(), this->highProbPointsToFit.begin());
+	}
+
+	this->line_detected = this->fitLine();
+
+	if (this->checkLineFitting() && this->update_model)
+		this->addPointToModel();
+}
+
+void 
+ModelBasedLineEstimation::computePointsForFittingBenchtop()
+{
+	::cv::Mat img_crop = this->current_img(::cv::Rect(this->crop, this->crop, this->current_img.cols - 2 * this->crop, this->current_img.rows - 2 * this->crop));
+
+    ::cv::Mat thresholded;
+	
+    ::cv::Mat thresholded_binary(this->current_img.size(), CV_8UC1);
+
+	this->thresholdImageAllChannels(this->current_img, thresholded);
+    thresholded.convertTo(thresholded_binary,CV_8UC1);
+	
+    ::cv::findNonZero(thresholded_binary, this->pointsToFit);
+
+	::cv::Mat	 output;
+	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
+
+	::cv::imshow("thresholded", output);
+	::cv::waitKey(1);
+}
+
+void ModelBasedLineEstimation::thresholdImageSynthetic(const ::cv::Mat& img,::cv::Mat& thresholded)
+{
+	::cv::Mat img_grey;
+	::cv::cvtColor(img, img_grey, ::cv::ColorConversionCodes::COLOR_RGB2GRAY); 
+	::cv::threshold(img_grey, thresholded, 50, 255, ::cv::ThresholdTypes::THRESH_BINARY_INV);
+}

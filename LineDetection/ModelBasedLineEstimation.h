@@ -50,6 +50,10 @@ class ModelBasedLineEstimation
 		bool step(double robot_position[3], double robot_desired_velocity[3], const ::cv::Mat& img, double innerTubeRotation, 
 			::cv::Vec4f& line, ::cv::Vec2f& centroid, bool update = true);
 
+		bool stepBenchtop(double robot_position[3], double robot_desired_velocity[3], const ::cv::Mat& img, double innerTubeRotation, 
+			::cv::Vec4f& line, ::cv::Vec2f& centroid, bool update = true);
+
+
 		ValveModel getModel() {return this->valveModel; };
 
 		double*	getCurrentPoint() {return this->robot_predicted_position;};
@@ -61,6 +65,7 @@ class ModelBasedLineEstimation
 		void predict(double robot_position[3], double robot_desired_velocity[3]);
 
 		void update(const ::cv::Mat& img);
+		void updateBenchtop(const ::cv::Mat& img);
 
 		void rejectOutliers();
 
@@ -73,12 +78,14 @@ class ModelBasedLineEstimation
 		void computeClosestCirclePoint();
 
 		void computePointsForFitting();
+		void computePointsForFittingBenchtop();
 
 		bool fitLine();
 
 		bool checkLineFitting();
 
 		void thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thresholded);
+		void thresholdImageSynthetic(const ::cv::Mat& img,::cv::Mat& thresholded);
 
 		bool RGBtoOpponent(const ::cv::Mat &img, ::cv::Mat &O1, ::cv::Mat &O2, ::cv::Mat &O3);
 

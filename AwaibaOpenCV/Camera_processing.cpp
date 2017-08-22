@@ -88,8 +88,8 @@ using namespace cv;
 using namespace RecursiveFilter;
 
 //#define __DESKTOP_DEVELOPMENT__
-//#define	__BENCHTOP__
-#define __ONLINE_MODEL__
+#define	__BENCHTOP__
+
 
 // VTK global variables (only way to get a thread running ...)
 ::std::mutex mutex_vtkRender;
@@ -1619,11 +1619,12 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 #ifdef __BENCHTOP__
 		m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
+		m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #else
 		//if (!this->m_use_online_model)
 		//	m_linedetected = m_linedetector.processImage(img, line, centroid, false);
 		//else
-			m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
+		m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #endif
 	}
 
