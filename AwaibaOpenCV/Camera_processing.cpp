@@ -745,7 +745,7 @@ void Camera_processing::recordImages(void)
 					for (int i = 0; i < 3; ++i)
 						bundle << m_model_robot_position[i] << ", ";
 
-					bundle << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio;
+					bundle << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio; << ", " << m_breathing;
 					bundle << '\n';
 				}
 
