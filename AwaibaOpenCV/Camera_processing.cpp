@@ -652,7 +652,7 @@ void Camera_processing::recordImages(void)
 
 	auto start_record = std::chrono::high_resolution_clock::now();
 	//::std::ofstream* bundle;
-	static ::std::ofstream bundle;
+	::std::ofstream bundle;
 	while(m_running)
 	{
 		ImgBuf element;
@@ -665,6 +665,11 @@ void Camera_processing::recordImages(void)
 			{
 				createSaveDir();
 				//bundle = new ofstream(m_imgDir + "data.txt");
+				if (bundle.is_open())
+				{
+					bundle.flush();
+					bundle.close();
+				}
 				bundle.open(m_imgDir + "data.txt");
 				start_record = std::chrono::high_resolution_clock::now();
 				m_newdir = false;
@@ -678,8 +683,9 @@ void Camera_processing::recordImages(void)
 				m_newdir = true;
 				start_record = now;
 				//bundle->close();
-				bundle.close();
-				delete bundle;
+				//bundle.flush();
+				//bundle.close();
+				//delete bundle;
 			}
 
 			frame = element.img;
@@ -745,8 +751,9 @@ void Camera_processing::recordImages(void)
 					for (int i = 0; i < 3; ++i)
 						bundle << m_model_robot_position[i] << ", ";
 
-					bundle << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio; << ", " << m_breathing;
+					bundle << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio << ", " << m_breathing;
 					bundle << '\n';
+					bundle.flush();
 				}
 
 			}
