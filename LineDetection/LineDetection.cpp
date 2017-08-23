@@ -3,6 +3,7 @@
 
 LineDetector::LineDetector()
 {
+	mode = MODE::CIRCUM;
 }
 
 LineDetector::~LineDetector()
@@ -18,8 +19,10 @@ bool LineDetector::processImage(::cv::Mat img, bool display, int crop)
 
 	bool lineDetected = false;
 
+
     if (this->detectLine(img_crop,line))
 		lineDetected = true;
+
 
 	if (false)
 	{
@@ -38,18 +41,24 @@ bool LineDetector::processImage(::cv::Mat img, bool display, int crop)
 
 }
 
-bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &centroid, bool display, int crop)
+bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &centroid, bool display, int crop, LineDetector::MODE mode)
 {
 
     ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
 
 	bool lineDetected = false;
 
-    if (this->detectLine(img_crop,line, centroid))
-		lineDetected = true;
-
-  //  if (this->detectLineAllChannels(img_crop,line, centroid))
-		//lineDetected = true;
+	switch (mode)
+	{
+		case MODE::TRANSITION:
+			if (this->detectLine(img_crop,line, centroid))
+				lineDetected = true;
+			break;
+		case MODE::CIRCUM:
+		    if (this->detectLineAllChannels(img_crop,line, centroid))
+				lineDetected = true;
+			break;
+	}
 
 	centroid[0] += crop;
 	centroid[1] += crop;
@@ -126,9 +135,9 @@ bool LineDetector::detectLine(const ::cv::Mat img, ::cv::Vec4f &line, ::cv::Vec2
     ::std::vector< ::cv::Point> nonzero;
     ::cv::findNonZero(thresholded_binary, nonzero);
 
-	::cv::namedWindow("thresholded", 0);
-	::cv::imshow("thresholded", thresholded_binary);
-	::cv::waitKey(1);
+	//::cv::namedWindow("thresholded", 0);
+	//::cv::imshow("thresholded", thresholded_binary);
+	//::cv::waitKey(1);
 
 	if (nonzero.size()>1080)
 	{

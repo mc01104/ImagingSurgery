@@ -88,7 +88,7 @@ using namespace cv;
 using namespace RecursiveFilter;
 
 //#define __DESKTOP_DEVELOPMENT__
-#define	__BENCHTOP__
+//#define	__BENCHTOP__
 
 
 // VTK global variables (only way to get a thread running ...)
@@ -386,7 +386,9 @@ void Camera_processing::processInput(char key)
 	case 't':
 		m_use_automatic_transition = !m_use_automatic_transition;
 		if (m_use_automatic_transition)
-			::std::cout << "m_use_automatic_transition" << ::std::endl;
+			::std::cout << "automatic transition is activated" << ::std::endl;
+		else
+			::std::cout << "automatic transition is deactivated" << ::std::endl;
 		break;
 	case 'r':
 		if (m_record) m_newdir = true;
@@ -401,6 +403,8 @@ void Camera_processing::processInput(char key)
 		m_use_online_model = !m_use_online_model;
 		if (m_use_online_model)
 			::std::cout << "use online model" << ::std::endl;
+		else
+			::std::cout << "online model is off" << ::std::endl;
 		break;
 	case 'f':
 		m_estimateFreq = !m_estimateFreq;
@@ -1601,10 +1605,10 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
 		m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #else
-		//if (!this->m_use_online_model)
-		//	m_linedetected = m_linedetector.processImage(img, line, centroid, false);
-		//else
-		m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
+		if (!this->m_use_online_model)
+			m_linedetected = m_linedetector.processImage(img, line, centroid, false, 30, LineDetector::MODE::CIRCUM);
+		else
+			m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #endif
 	}
 
@@ -1712,7 +1716,7 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	// check for valve
 	::cv::Vec2f centroid2;
 	::cv::Vec4f line2;
-	if (m_linedetector.processImage(img, line2, centroid2, false))
+	if (m_linedetector.processImage(img, line2, centroid2, false), 20, LineDetector::MODE::TRANSITION)
 		this->detected_valve.push_back(true);
 
 
