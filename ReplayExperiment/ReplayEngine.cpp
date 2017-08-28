@@ -81,7 +81,7 @@ public:
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(20), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(20)
+	filter(5), theta_filter_complex(20), new_version(true)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -173,11 +173,25 @@ void ReplayEngine::simulate(void* tData)
 
 		tDataSim->robot_mutex.lock();
 
+	if (tDataSim->new_version)
+	{
 		tDataSim->setJoints(tmpData.data());
 		solved = tDataSim->updateRobot(tmpData.data(), frames);
+	}
+	else
+	{
+		tDataSim->setJoints(tmpData.data());
+		solved = tDataSim->updateRobot(tmpData.data(), frames);
+	}
+	
 		tDataSim->setFrames(frames);
 		tDataSim->robot_rotation = tDataSim->kinematics->GetInnerTubeRotation();
+
+	if (tDataSim->new_version)
+		tDataSim->updateRobotPositionModel(&tmpData.data()[9]);
+	else
 		tDataSim->updateRobotPositionModel(&tmpData.data()[8]);
+
 		tDataSim->robot_mutex.unlock();
 
 		tDataSim->img_mutex.lock();

@@ -89,6 +89,8 @@ class ReplayEngine
 
 		int		counter;
 
+		bool	new_version;
+
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION} status;
 

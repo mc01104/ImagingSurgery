@@ -32,6 +32,21 @@
 	return result;
 }
 
+::std::vector<::std::string> splitString(const ::std::string& inputStr)
+{
+	::std::istringstream ss(inputStr);
+
+	::std::vector<::std::string> result;
+	while(!ss.eof())
+	{
+		::std::string tmp;
+		ss >> tmp;
+		result.push_back(tmp);
+	}
+
+	return result;
+}
+
 double Norm2(const ::std::vector< double>& doubleVector)
 {
 	double tmp = 0;
@@ -227,4 +242,17 @@ void appendRowEigen(::Eigen::MatrixXd& in_matrix, const ::Eigen::VectorXd& vecto
 void popFirstRowEigen(::Eigen::MatrixXd& in_matrix)
 {
 	removeRowEigen(in_matrix, 0);
+}
+
+::std::map<::std::string, double>  createMapFromKeyValuePairs(const ::std::string& msgToParse)
+{
+	::std::vector<::std::string> strVector = splitString(msgToParse);
+
+	assert(strVector.size() % 2 == 0);
+
+	::std::map<::std::string, double> result;
+	for (int i = 0; i < strVector.size(); ++i)
+		result[strVector[i].c_str()] = (double) atof(strVector[++i].c_str());
+
+	return result;
 }

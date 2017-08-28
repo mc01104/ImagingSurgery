@@ -2,6 +2,7 @@
 #include "time.h"
 #include <string>
 #include <vector>
+#include <map>
 #include <deque>
 #include <iostream>
 #include <Eigen/Dense>
@@ -15,6 +16,8 @@
 
 	::std::vector< double> DoubleVectorFromString(const ::std::string& inputString);
 
+
+	::std::vector<::std::string> splitString(const ::std::string& inputStr);
 
 	template <class T>
 	::std::vector<T> operator-(const ::std::vector<T>& lhs, const ::std::vector<T>& rhs)
@@ -204,3 +207,27 @@ void removeRowEigen(::Eigen::MatrixXd& in_matrix, unsigned int rowToRemove);
 void appendRowEigen(::Eigen::MatrixXd& in_matrix, const ::Eigen::VectorXd& vector_to_add);
 
 void popFirstRowEigen(::Eigen::MatrixXd& in_matrix);
+
+template <typename K, typename V>
+::std::ostream& operator <<(::std::ostream& lhs, const ::std::map<K, V>& rhs)
+{
+	::std::map<K, V>::const_iterator it = rhs.begin();
+	for (it; it != rhs.end(); ++it)
+		lhs << it->first << " " << it->second << " ";
+
+	lhs << ::std::endl;
+
+	return lhs;
+};
+
+::std::map<::std::string, double>  createMapFromKeyValuePairs(const ::std::string& msgToParse);
+
+template <typename T>
+::std::string num2str(T& inputVariable)
+{
+	::std::ostringstream convert;   
+
+	convert << inputVariable;   
+
+	return convert.str();
+}
