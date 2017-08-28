@@ -646,7 +646,7 @@ void Camera_processing::computeForce(void)
 
 void Camera_processing::recordImages(void)
 {
-	Mat frame;
+	Mat frame, rotatedFrame;
 	ArgbFrame::time_type timestamp = 0;
 	std::vector<double> robot_joint;
 
@@ -657,7 +657,9 @@ void Camera_processing::recordImages(void)
 	auto start_record = std::chrono::high_resolution_clock::now();
 
 	::std::ofstream bundle;
+	::cv::VideoWriter video;
 
+    Mat rot_mat;
 	while(m_running)
 	{
 		ImgBuf element;
@@ -669,6 +671,8 @@ void Camera_processing::recordImages(void)
 			if(m_newdir) 
 			{
 				createSaveDir();
+				if (video.isOpened())
+					video.release();
 
 				if (bundle.is_open())
 				{
@@ -676,6 +680,7 @@ void Camera_processing::recordImages(void)
 					bundle.close();
 				}
 				bundle.open(m_imgDir + "data.txt");
+				video.open(m_imgDir + "video.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
 
 				start_record = std::chrono::high_resolution_clock::now();
 				m_newdir = false;
@@ -740,10 +745,20 @@ void Camera_processing::recordImages(void)
 					bundle.flush();
 				}
 
+
+				if (video.isOpened())
+				{
+					rot_mat = getRotationMatrix2D( ::cv::Point(frame.rows/2, frame.cols/2), rotation - robot_rotation*180.0/3.141592, 1.0 );
+					::cv::warpAffine( frame, rotatedFrame, rot_mat, rotatedFrame.size() );
+					video.write(rotatedFrame);
+				}
+
 			}
 			catch (runtime_error& ex) 
 			{
 				::std::cout << "Exception in image recording:" <<  ex.what() << ::std::endl;
+				video.release();
+				bundle.close();
 			}
 		}
 	}
