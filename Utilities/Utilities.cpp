@@ -63,7 +63,7 @@ std::vector<std::string> splitString(const std::string &s, char delim)
 		ss >> tmp;
 		result.push_back(tmp);
 	}
-
+	result.pop_back(); // HACKY
 	return result;
 }
 
@@ -267,7 +267,10 @@ void popFirstRowEigen(::Eigen::MatrixXd& in_matrix)
 ::std::map<::std::string, double>  createMapFromKeyValuePairs(const ::std::string& msgToParse)
 {
 	::std::vector<::std::string> strVector = splitString(msgToParse);
-
+	::std::cout << "size" << ::std::endl;
+	::std::cout << strVector.size() << ::std::endl;
+	::std::cout << msgToParse << ::std::endl;
+	::std::cout << ::std::endl;
 	assert(strVector.size() % 2 == 0);
 
 	::std::map<::std::string, double> result;
