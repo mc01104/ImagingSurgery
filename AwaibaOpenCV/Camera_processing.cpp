@@ -719,7 +719,7 @@ void Camera_processing::recordImages(void)
 					for (int i = 0; i < 3; ++i)
 						joints_file << m_model_robot_position[i] << ", ";
 
-					joints_file << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio;
+					joints_file << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio << ", " << m_breathing;
 					joints_file << '\n';
 					joints_file.close();
 				}
