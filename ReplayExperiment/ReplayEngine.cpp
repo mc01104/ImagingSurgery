@@ -81,7 +81,7 @@ public:
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(20), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(20)
+	filter(5), theta_filter_complex(20), new_version(true)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -169,15 +169,29 @@ void ReplayEngine::simulate(void* tData)
 
 	for(it; it != dataStr.end(); ++it)
 	{
-		tmpData = DoubleVectorFromString(*it);
+		tmpData = DoubleVectorFromString(*it, ',');
 
 		tDataSim->robot_mutex.lock();
 
+	if (tDataSim->new_version)
+	{
+		tDataSim->setJoints(&tmpData.data()[1]);
+		solved = tDataSim->updateRobot(&tmpData.data()[1], frames);
+	}
+	else
+	{
 		tDataSim->setJoints(tmpData.data());
 		solved = tDataSim->updateRobot(tmpData.data(), frames);
+	}
+	
 		tDataSim->setFrames(frames);
 		tDataSim->robot_rotation = tDataSim->kinematics->GetInnerTubeRotation();
+
+	if (tDataSim->new_version)
+		tDataSim->updateRobotPositionModel(&tmpData.data()[9]);
+	else
 		tDataSim->updateRobotPositionModel(&tmpData.data()[8]);
+
 		tDataSim->robot_mutex.unlock();
 
 		tDataSim->img_mutex.lock();
@@ -708,7 +722,7 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 
 	::cv::Vec4f line1;
 	::cv::Vec2f centroid4;
-	if (this->m_dummyLine.processImage(img, line1, centroid4))
+	if (this->m_dummyLine.processImage(img, line1, centroid4, false, 30, LineDetector::MODE::TRANSITION))
 		::std::cout << "valve detected" << ::std::endl;
 
 

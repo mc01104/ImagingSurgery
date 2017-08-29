@@ -16,37 +16,13 @@
 void testVectorOperations();
 void testBuildingModel();
 void testJointConversion();
+void testMapFunctions();
+
+#define __NEW_VERSION__
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//// ------- LINE DETECTION ----------- ///////
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-23_bypass_cardioscopy/Videos_2017-05-23/2017-05-23_13-34-09";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-23_bypass_cardioscopy/Videos_2017-05-23/2017-05-23_13-38-09";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-23_bypass_cardioscopy/Videos_2017-05-23/2017-05-23_13-21-08";
-
-	//// ------- WALL SEGMENTATION ----------- ///////
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-10-53";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-15-59";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-22-27";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-24-28";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-29-14";
-
-	//spurious detection -> going right
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-32-10";
-
-	// check transition
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-32-10";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_14-34-52";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-48-07";
-	
-	// apex-to-valve
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_12-43-50";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_14-40-02";
-	
-	// circum
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-57-11";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-50-58";
-	
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-02-29";	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;
@@ -56,12 +32,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	engine.setClassifier(contact_classifier);
 	engine.setStatus(ReplayEngine::WALL_DETECTION);
 	engine.run();
-	//testVectorOperations();
 
-	//testBuildingModel();
-	//testJointConversion();
-
-
+	//testMapFunctions();
 	return 0;
 }
 
@@ -137,4 +109,16 @@ void testBuildingModel()
 	}
 
 	circleStream.close();
+}
+
+void testMapFunctions()
+{
+	::std::string testStr = "george 1 tom 2 john 3";
+	::std::map<::std::string, double> mapV = createMapFromKeyValuePairs(testStr);
+
+	::std::cout << "test map creation" << ::std::endl;
+	::std::cout << mapV["george"] << " " << mapV["tom"] << " " << mapV["john"] << ::std::endl;
+
+	::std::cout << "check stream operation" << ::std::endl;
+	::std::cout << mapV << ::std::endl;
 }

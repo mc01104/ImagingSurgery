@@ -210,6 +210,7 @@ private:
 
 	void		updateHeartFrequency();
 	void		parseNetworkMessage(::std::vector<double>& msg);
+	void		parseNetworkMessage(const ::std::string& msg);
 	vtkSmartPointer<vtkSphereSource> sphereSource;
 	vtkSmartPointer<vtkRegularPolygonSource> circleSource;
 	vtkSmartPointer<vtkPolyDataMapper> mapperCircle;

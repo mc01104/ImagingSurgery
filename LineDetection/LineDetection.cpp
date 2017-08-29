@@ -53,12 +53,12 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
 		case MODE::TRANSITION:
 			if (this->detectLine(img_crop,line, centroid))
 				lineDetected = true;
-			::std::cout << "in transition mode" << ::std::endl;
+			//::std::cout << "in transition mode" << ::std::endl;
 			break;
 		case MODE::CIRCUM:
 		    if (this->detectLineAllChannels(img_crop,line, centroid))
 				lineDetected = true;
-			::std::cout << "in circumnavigation mode" << ::std::endl;
+			//::std::cout << "in circumnavigation mode" << ::std::endl;
 			break;
 	}
 

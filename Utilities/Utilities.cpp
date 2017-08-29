@@ -1,5 +1,6 @@
 #include "Utilities.h"
 #include <iostream>
+#include <iterator>
 #include <fstream>
 #include <sstream>
 
@@ -25,6 +26,40 @@
 	while(!ss.eof())
 	{
 		double tmp;
+		ss >> tmp;
+		result.push_back(tmp);
+	}
+
+	return result;
+}
+
+::std::vector< double> DoubleVectorFromString(const ::std::string& inputString, char delim)
+{
+	::std::vector<::std::string> strs = splitString(inputString, delim);
+	
+	::std::vector<double> result;
+
+	for (int i = 0; i < strs.size(); ++i)
+		result.push_back(atof(strs[i].c_str()));
+
+	return result;
+}
+
+std::vector<std::string> splitString(const std::string &s, char delim) 
+{
+    std::vector<std::string> elems;
+    splitString(s, delim, std::back_inserter(elems));
+    return elems;
+}
+
+::std::vector<::std::string> splitString(const ::std::string& inputStr)
+{
+	::std::istringstream ss(inputStr);
+
+	::std::vector<::std::string> result;
+	while(!ss.eof())
+	{
+		::std::string tmp;
 		ss >> tmp;
 		result.push_back(tmp);
 	}
@@ -227,4 +262,17 @@ void appendRowEigen(::Eigen::MatrixXd& in_matrix, const ::Eigen::VectorXd& vecto
 void popFirstRowEigen(::Eigen::MatrixXd& in_matrix)
 {
 	removeRowEigen(in_matrix, 0);
+}
+
+::std::map<::std::string, double>  createMapFromKeyValuePairs(const ::std::string& msgToParse)
+{
+	::std::vector<::std::string> strVector = splitString(msgToParse);
+
+	assert(strVector.size() % 2 == 0);
+
+	::std::map<::std::string, double> result;
+	for (int i = 0; i < strVector.size(); ++i)
+		result[strVector[i].c_str()] = (double) atof(strVector[++i].c_str());
+
+	return result;
 }
