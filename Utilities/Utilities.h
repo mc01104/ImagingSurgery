@@ -16,6 +16,7 @@
 
 	::std::vector< double> DoubleVectorFromString(const ::std::string& inputString);
 
+	::std::vector< double> DoubleVectorFromString(const ::std::string& inputString, char delim);
 
 	::std::vector<::std::string> splitString(const ::std::string& inputStr);
 
@@ -230,4 +231,17 @@ template <typename T>
 	convert << inputVariable;   
 
 	return convert.str();
+}
+
+std::vector<std::string> splitString(const std::string &s, char delim);
+
+template<typename Out>
+void splitString(const std::string &s, char delim, Out result) 
+{
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) 
+        *(result++) = item;
+
 }

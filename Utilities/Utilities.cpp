@@ -1,5 +1,6 @@
 #include "Utilities.h"
 #include <iostream>
+#include <iterator>
 #include <fstream>
 #include <sstream>
 
@@ -30,6 +31,25 @@
 	}
 
 	return result;
+}
+
+::std::vector< double> DoubleVectorFromString(const ::std::string& inputString, char delim)
+{
+	::std::vector<::std::string> strs = splitString(inputString, delim);
+	
+	::std::vector<double> result;
+
+	for (int i = 0; i < strs.size(); ++i)
+		result.push_back(atof(strs[i].c_str()));
+
+	return result;
+}
+
+std::vector<std::string> splitString(const std::string &s, char delim) 
+{
+    std::vector<std::string> elems;
+    splitString(s, delim, std::back_inserter(elems));
+    return elems;
 }
 
 ::std::vector<::std::string> splitString(const ::std::string& inputStr)

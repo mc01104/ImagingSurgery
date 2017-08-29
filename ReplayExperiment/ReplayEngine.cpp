@@ -169,14 +169,14 @@ void ReplayEngine::simulate(void* tData)
 
 	for(it; it != dataStr.end(); ++it)
 	{
-		tmpData = DoubleVectorFromString(*it);
+		tmpData = DoubleVectorFromString(*it, ',');
 
 		tDataSim->robot_mutex.lock();
 
 	if (tDataSim->new_version)
 	{
-		tDataSim->setJoints(tmpData.data());
-		solved = tDataSim->updateRobot(tmpData.data(), frames);
+		tDataSim->setJoints(&tmpData.data()[1]);
+		solved = tDataSim->updateRobot(&tmpData.data()[1], frames);
 	}
 	else
 	{
@@ -722,7 +722,7 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 
 	::cv::Vec4f line1;
 	::cv::Vec2f centroid4;
-	if (this->m_dummyLine.processImage(img, line1, centroid4))
+	if (this->m_dummyLine.processImage(img, line1, centroid4, false, 30, LineDetector::MODE::TRANSITION))
 		::std::cout << "valve detected" << ::std::endl;
 
 

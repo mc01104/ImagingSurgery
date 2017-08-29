@@ -22,18 +22,18 @@ void testMapFunctions();
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//::std::string img_path = "Z:\Public\Data\Cardioscopy_project\2017-08-24_bypass_cardioscopy\Videos_2017-08-24\2017-08-24_13-09-08";	
-	//::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-02-29";	
+	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
-	//BagOfFeatures contact_classifier;
-	//contact_classifier.load(path_to_classifier);
+	BagOfFeatures contact_classifier;
+	contact_classifier.load(path_to_classifier);
 
-	//ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
-	//engine.setClassifier(contact_classifier);
-	//engine.setStatus(ReplayEngine::WALL_DETECTION);
-	//engine.run();
+	ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
+	engine.setClassifier(contact_classifier);
+	engine.setStatus(ReplayEngine::WALL_DETECTION);
+	engine.run();
 
-	testMapFunctions();
+	//testMapFunctions();
 	return 0;
 }
 
