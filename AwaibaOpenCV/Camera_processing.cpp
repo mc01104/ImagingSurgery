@@ -869,9 +869,8 @@ bool Camera_processing::networkKinematics(void)
 
 		// Convert the received data to a vector of doubles
 		::std::string conf_str(recvbuf);
-		//::std::cout << conf_str << ::std::endl;
-		//::std::vector<double> configuration = DoubleVectorFromString(conf_str);
-		this->parseNetworkMessage(conf_str);
+		::std::vector<double> configuration = DoubleVectorFromString(conf_str);
+		this->parseNetworkMessage(configuration);
 
 		// Convert the received the configuration to comply with the definition of the mechanics based kinematics implementation
 		double rotation[3] = {0};
@@ -916,21 +915,12 @@ bool Camera_processing::networkKinematics(void)
 
 		char s_force[5]; 
 		sprintf(s_force,"%.2f",force);
-		::std::map<::std::string, double> outgoing_msgs;
-		
-		outgoing_msgs["CR"] = m_contactAvgOverHeartCycle;
-		outgoing_msgs["lineDetected"] = m_linedetected;
-		outgoing_msgs["contact"] = m_contact_response;
 
-		outgoing_msgs["centroidLine_x"] = m_centroid[0];
-		outgoing_msgs["centroidLine_y"] = m_centroid[1];
-		outgoing_msgs["tangentLine_x"] = m_tangent[0];
-		outgoing_msgs["tangentLine_y"] = m_tangent[1];
+		/// create network message for circumnavigation
+		::ostringstream ss;
+		ss << force << " " << m_linedetected << " " << m_contact_response << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
 
-		outgoing_msgs["wallDetected"] = m_wall_detected;
-		outgoing_msgs["centroidWall_x"] = m_centroid_apex_to_valve[0];
-		outgoing_msgs["centroidWall_y"] = m_centroid_apex_to_valve[1];
-
+		ss << m_apex_to_valve << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
 		
 		if (m_circumnavigation)
 		{
@@ -938,22 +928,18 @@ bool Camera_processing::networkKinematics(void)
 			this->detected_valve.clear();
 		}
 
-		outgoing_msgs["switchToCircum"] = m_state_transition;
-		outgoing_msgs["storeApex"] = m_apex_initialized;
+		ss << m_state_transition << " ";
 
 		if (m_apex_initialized)
-			for (int i = 0; i < 5; ++i)
-				outgoing_msgs["apex_" + num2str(i)] = apex_coordinates[i];
+			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4] << " ";
+		else
+			ss << "0";
+		ss << ::std::endl;
 
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
-
-		::std::ostringstream ss;
-		ss << outgoing_msgs << ::std::endl;
-		//::std::cout << "outgoingGG" << ::std::endl;
-		//::std::cout << ss.str().c_str() <<::std::endl;
-		if (m_contactMeasured) 
+		if (newMeasurement) 
 			iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
 		else 
 			iResult = send( ConnectSocket, "NOF", 5, 0 );
@@ -1016,71 +1002,6 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 		int num_of_points = msg.data()[30];
 		for (int i = 0; i < 3 * num_of_points; ++i)
 			pointsOnValve.push_back(msg[31+i]);
-	}
-	this->mutex_robotshape.unlock();
-
-}
-
-void Camera_processing::parseNetworkMessage(const ::std::string& msg)
-{
-	::std::map<::std::string, double> incoming_msgs = createMapFromKeyValuePairs(msg);
-	// first get the configuration
-	this->mutex_robotjoints.lock();
-	for (int i = 0; i < 5; ++i)
-		this->m_configuration[i] = incoming_msgs["joint_" + num2str(i)];
-	this->mutex_robotjoints.unlock(); 
-
-	this->mutex_teleop.lock();
-	this->m_teleop = incoming_msgs["teleopON"];
-	this->mutex_teleop.unlock();
-
-	this->m_input_frequency = incoming_msgs["heartFreauency"];
-
-	if (this->m_input_frequency < 0)
-		this->m_input_frequency= 80;
-
-	// new flag for circumnavigation
-	m_circumnavigation = incoming_msgs["circumActive"];
-	m_apex_to_valve = incoming_msgs["apexToValveActive"];
-
-	this->m_FramesPerHeartCycle = incoming_msgs["periodsForCRComputation"]* 60 * m_cameraFrameRate/m_input_frequency;
-
-	for (int i = 0; i < 3; ++i)
-		this->m_model_robot_position[i] = incoming_msgs["x_" + num2str(i)];
-	
-	this->m_contact_gain = incoming_msgs["CRPGain"];
-	this->m_contact_D_gain = incoming_msgs["CRPDGain"];
-	this->m_contact_I_gain = incoming_msgs["CRPIGain"];
-	this->m_is_control_active = incoming_msgs["CRActive"];
-	this->m_contact_desired_ratio = incoming_msgs["CRSetPoint"];
-	this->m_breathing = incoming_msgs["BreathingRate"];
-
-
-	// need to add plane stuff
-	this->mutex_robotshape.lock();
-
-	for (int i = 0; i < 3; ++i)
-		this->m_target[i] = incoming_msgs["xdes_" + num2str(i)];
-
-	m_input_plane_received = incoming_msgs["planeChanged"];
-	if (m_input_plane_received)
-	{
-		for (int i = 0; i < 3; ++i)
-		{
-			m_normal[i] = incoming_msgs["planeNormal_" + num2str(i)];
-			m_center[i] = incoming_msgs["valveCenter_" + num2str(i)];
-		}
-
-		m_radius = incoming_msgs["valveRadius"];
-
-		pointsOnValve.clear();
-		int num_of_points = incoming_msgs["pointsForPlaneEstimation"];
-		for (int i = 0; i < num_of_points; ++i)
-		{
-			pointsOnValve.push_back(incoming_msgs["x_plane" + num2str(i) + "_" + "1"]);
-			pointsOnValve.push_back(incoming_msgs["x_plane" + num2str(i) + "_" + "2"]);
-			pointsOnValve.push_back(incoming_msgs["x_plane" + num2str(i) + "_" + "3"]);
-		}
 	}
 	this->mutex_robotshape.unlock();
 
