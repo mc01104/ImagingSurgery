@@ -183,7 +183,14 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_contact_desired_ratio = 0;
 	m_is_control_active = 0;
 	m_breathing = 0;
+	m_centroid[0] = 0;
+	m_centroid[1] = 0;
 
+	m_tangent[0] = 0;
+	m_tangent[1] = 0;
+
+	m_centroid_apex_to_valve[0] = 0;
+	m_centroid_apex_to_valve[1] = 0;
 	ParseOptions op = ParseOptions("./camera_info.csv");
 
 	if (op.getStatus())
@@ -854,7 +861,7 @@ bool Camera_processing::networkKinematics(void)
 
 	m_network = true;
 
-	::std::ostringstream ss;
+	
 	do {
 		
 		//Receive data through the network
@@ -862,7 +869,7 @@ bool Camera_processing::networkKinematics(void)
 
 		// Convert the received data to a vector of doubles
 		::std::string conf_str(recvbuf);
-		::std::cout << conf_str << ::std::endl;
+		//::std::cout << conf_str << ::std::endl;
 		//::std::vector<double> configuration = DoubleVectorFromString(conf_str);
 		this->parseNetworkMessage(conf_str);
 
@@ -911,7 +918,7 @@ bool Camera_processing::networkKinematics(void)
 		sprintf(s_force,"%.2f",force);
 		::std::map<::std::string, double> outgoing_msgs;
 		
-		outgoing_msgs["CR"] = force;
+		outgoing_msgs["CR"] = m_contactAvgOverHeartCycle;
 		outgoing_msgs["lineDetected"] = m_linedetected;
 		outgoing_msgs["contact"] = m_contact_response;
 
@@ -941,9 +948,12 @@ bool Camera_processing::networkKinematics(void)
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
-		ss << "";
+
+		::std::ostringstream ss;
 		ss << outgoing_msgs << ::std::endl;
-		if (false) 
+		//::std::cout << "outgoingGG" << ::std::endl;
+		//::std::cout << ss.str().c_str() <<::std::endl;
+		if (m_contactMeasured) 
 			iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
 		else 
 			iResult = send( ConnectSocket, "NOF", 5, 0 );
