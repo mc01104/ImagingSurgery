@@ -138,7 +138,7 @@ bool LineDetector::detectLine(const ::cv::Mat img, ::cv::Vec4f &line, ::cv::Vec2
     ::cv::findNonZero(thresholded_binary, nonzero);
 
 	//::cv::namedWindow("thresholded", 0);
-	//::cv::imshow("thresholded", thresholded_binary);
+	::cv::imshow("thresholded", thresholded_binary);
 	//::cv::waitKey(1);
 
 	if (nonzero.size()>1080)

@@ -22,7 +22,7 @@ void testMapFunctions();
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-02-29";	
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_14-00-09";	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;
@@ -30,7 +30,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
 	engine.setClassifier(contact_classifier);
-	engine.setStatus(ReplayEngine::WALL_DETECTION);
+	engine.setStatus(ReplayEngine::LINE_DETECTION);
 	engine.run();
 
 	//testMapFunctions();

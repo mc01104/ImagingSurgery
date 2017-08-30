@@ -97,4 +97,6 @@ class ModelBasedLineEstimation
 
 		void computePredictionCovariance();
 
+		void rejectSmallAreaImageRegions(const ::cv::Mat& img, ::cv::Mat& output);
+
 };

@@ -789,7 +789,7 @@ bool Camera_processing::networkKinematics(void)
                     *ptr = NULL,
                     hints;
     char *sendbuf = "this is a test";
-    
+    char recvbuf[DEFAULT_BUFLEN];
     int iResult;
     int recvbuflen = DEFAULT_BUFLEN;
 
@@ -856,7 +856,7 @@ bool Camera_processing::networkKinematics(void)
 
 	::std::ostringstream ss;
 	do {
-		char recvbuf[DEFAULT_BUFLEN];
+		
 		//Receive data through the network
         iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
 
@@ -941,7 +941,7 @@ bool Camera_processing::networkKinematics(void)
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
-		ss.clear();
+		ss << "";
 		ss << outgoing_msgs << ::std::endl;
 		if (false) 
 			iResult = send( ConnectSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );

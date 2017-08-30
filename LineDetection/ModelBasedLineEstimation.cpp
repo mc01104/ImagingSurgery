@@ -87,6 +87,7 @@ ModelBasedLineEstimation::update(const ::cv::Mat& img)
 
 	this->computePointsForFitting();
 
+
 	if (false)//this->valveModel.isInitialized())
 		this->rejectOutliers();
 	else
@@ -112,23 +113,35 @@ ModelBasedLineEstimation::computePointsForFitting()
     ::cv::Mat thresholded_binary(this->current_img.size(), CV_8UC1);
 
 	this->thresholdImageAllChannels(this->current_img, thresholded);
-    thresholded.convertTo(thresholded_binary,CV_8UC1);
+
+	//::cv::Mat output_CC;
+	//this->rejectSmallAreaImageRegions(thresholded, output_CC);
+	
+	thresholded.convertTo(thresholded_binary,CV_8UC1);
 	
     ::cv::findNonZero(thresholded_binary, this->pointsToFit);
 
 	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
 
+	//::cv::imshow("unrotated", this->current_img);
 	::cv::imshow("thresholded", output);
 	::cv::waitKey(1);
 }
 
+void 
+ModelBasedLineEstimation::rejectSmallAreaImageRegions(const ::cv::Mat& img, ::cv::Mat& output)
+{
+	int numCC = cv::connectedComponents(img, output);
+	::cv::imshow("connected components", output);
+}
 
 bool
 ModelBasedLineEstimation::fitLine()
 {
 	//::cv::namedWindow("fit-line", 0);
-	if (this->highProbPointsToFit.size() > 1380)
+	//::std::cout << "num of points:" << this->highProbPointsToFit.size() << ::std::endl;
+	if (this->highProbPointsToFit.size() > 4000)
 	{
         ::cv::fitLine(this->highProbPointsToFit, this->fittedLine, CV_DIST_L2, 0, 0.01, 0.01);
 
@@ -141,7 +154,7 @@ ModelBasedLineEstimation::fitLine()
         ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*(-100),fittedLine[3]+fittedLine[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 		::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
 
-		//::cv::imshow("fit-line", this->current_img);
+		::cv::imshow("fit-line", this->current_img);
 		return true;
 	}
 

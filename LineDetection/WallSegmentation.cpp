@@ -14,7 +14,7 @@ bool WallSegmentation::processImage(::cv::Mat img, int& x, int& y, bool display,
 {
 
     int64 t0 = cv::getTickCount();
-
+	int numOfPoints = (int) 3.14 * radius*radius *0.05;
     ::cv::Mat thresholded_mask, intermediate_img;
 
     // Blur  the image to remove small artifacts (color defects from camera, bood flow ..)
@@ -30,7 +30,7 @@ bool WallSegmentation::processImage(::cv::Mat img, int& x, int& y, bool display,
 
 	int num_of_points = ::cv::countNonZero(thresholded_mask);
 
-    if (::cv::countNonZero(thresholded_mask)>1000)
+    if (::cv::countNonZero(thresholded_mask)>numOfPoints)
     {
         ::cv::Moments M = ::cv::moments(thresholded_mask,true);
         x = int(M.m10/M.m00);

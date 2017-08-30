@@ -79,9 +79,9 @@ public:
 
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
-	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(20), theta_filter(1, &angularDistanceMinusPItoPI),
+	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(20), new_version(true)
+	filter(5), theta_filter_complex(1), new_version(true)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -90,7 +90,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 0;
+	this->offset = 500;
 
 	for (int i = this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -648,22 +648,27 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		bool predictedLineDetected = false;
 		::Eigen::Vector2d centroidEig, tangentEig, velCommand, centroidEig2, tangentEig2;
 		::cv::Vec4f line, line2;
-		if (response == 1)
+		if (true)
 		{
+			//::std::cout << "contact" << ::std::endl;
 
-			::cv::Vec2f centroid, centroid2;
-			this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
-			predictedLineDetected = this->modelBasedLine.getPredictedTangent(line2);
-			centroidEig2(0) = line2[2];
-			centroidEig2(1) = line2[3];
+		::cv::Vec2f centroid, centroid2;
+		this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
+		//this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 0, LineDetector::MODE::TRANSITION);
+		//predictedLineDetected = this->modelBasedLine.getPredictedTangent(line2);
+		centroidEig2(0) = line2[2];
+		centroidEig2(1) = line2[3];
 
-			tangentEig2(0) = line2[1];
-			tangentEig2(1) = line2[0];
+		tangentEig2(0) = line2[1];
+		tangentEig2(1) = line2[0];
 
-			if (this->lineDetected)
-				this->processDetectedLine(line, img, centroid, centroidEig, tangentEig);
+		if (this->lineDetected)
+			this->processDetectedLine(line, img, centroid, centroidEig, tangentEig);
 
 		}
+		//else
+		//	::std::cout << "no contact" << ::std::endl;
+
 
 
 		this->applyVisualServoingController(centroidEig, tangentEig, velCommand);
