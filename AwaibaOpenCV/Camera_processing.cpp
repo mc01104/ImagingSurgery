@@ -88,7 +88,7 @@ using namespace cv;
 using namespace RecursiveFilter;
 
 //#define __DESKTOP_DEVELOPMENT__
-//#define	__BENCHTOP__
+#define	__BENCHTOP__
 
 
 // VTK global variables (only way to get a thread running ...)
@@ -687,7 +687,7 @@ void Camera_processing::recordImages(void)
 					bundle.close();
 				}
 				bundle.open(m_imgDir + "data.txt");
-				video.open(m_imgDir + "video.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
+				video.open(m_imgDir + "video.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 46, ::cv::Size(250, 250));
 
 				start_record = std::chrono::high_resolution_clock::now();
 				m_newdir = false;
@@ -1196,6 +1196,10 @@ void Camera_processing::robotDisplay(void)
 					this->circleSourceOnLine->SetCenter(this->m_modelBasedLine.getModel().getCenter());
 					this->circleSourceOnLine->SetRadius(this->m_modelBasedLine.getModel().getRadius());
 					this->circleSourceOnLine->SetNormal(this->m_modelBasedLine.getModel().getNormal());
+					::std::cout << "radius:" << this->m_modelBasedLine.getModel().getRadius() << ::std::endl;
+					::std::cout << "normal:";
+					PrintCArray(this->m_modelBasedLine.getModel().getNormal(), 3);
+
 				}
 			}
 			catch (runtime_error& ex) 
@@ -1624,7 +1628,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	{
 
 #ifdef __BENCHTOP__
-		m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
+		//m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
 		m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #else
 		if (!this->m_use_online_model)

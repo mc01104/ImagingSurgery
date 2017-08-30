@@ -141,7 +141,7 @@ ModelBasedLineEstimation::fitLine()
 {
 	//::cv::namedWindow("fit-line", 0);
 	//::std::cout << "num of points:" << this->highProbPointsToFit.size() << ::std::endl;
-	if (this->highProbPointsToFit.size() > 4000)
+	if (this->highProbPointsToFit.size() > 40)
 	{
         ::cv::fitLine(this->highProbPointsToFit, this->fittedLine, CV_DIST_L2, 0, 0.01, 0.01);
 
