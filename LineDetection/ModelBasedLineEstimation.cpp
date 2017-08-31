@@ -447,9 +447,17 @@ ModelBasedLineEstimation::getPredictedTangent(::cv::Vec4f& line)
 
 	::Eigen::Vector3d tangent = ::Eigen::Map<::Eigen::Vector3d> (p1, 3) - ::Eigen::Map<::Eigen::Vector3d> (p2, 3);
 	tangent.normalize();
-	line[0] = tangent[0];
-	line[1] = tangent[1];
+	//line[0] = tangent[0];
+	//line[1] = tangent[1];
 
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+	::Eigen::Vector2d tangentEig = rot.block(0, 0, 2, 2)* tangent;
+
+	//::Eigen::Matrix3d rot1 = RotateZ(this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
+	//tangentEig = rot1.block(0, 0, 2, 2)* tangentEig;
+
+	line[0] = tangentEig[0];
+	line[1] = tangentEig[1];
 	return this->valveModel.isInitialized();
 }
 

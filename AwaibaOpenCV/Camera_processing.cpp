@@ -1684,6 +1684,14 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
 	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
 
+	::cv::Vec4f line_pred;
+
+	if (m_modelBasedLine.getPredictedTangent(line_pred))
+	{
+		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+line_pred[0]*100, centroidEig(1)+line_pred[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+line_pred[0]*(-100), centroidEig(1)+line_pred[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+	}
+		
 	// only for visualization -> needs to be in old frame
 	::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
     ::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
