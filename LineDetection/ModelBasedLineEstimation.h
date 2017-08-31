@@ -53,6 +53,7 @@ class ModelBasedLineEstimation
 		bool stepBenchtop(double robot_position[3], double robot_desired_velocity[3], const ::cv::Mat& img, double innerTubeRotation, 
 			::cv::Vec4f& line, ::cv::Vec2f& centroid, bool update = true);
 
+		void resetModel();
 
 		ValveModel getModel() {return this->valveModel; };
 

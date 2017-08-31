@@ -324,9 +324,10 @@ ModelBasedLineEstimation::rejectOutliers()
 {
 	double distance = 0;
 	::Eigen::VectorXd point_on_line(2), tangent(2), tmp_point(2);
-	point_on_line[0] = this->predictedLine[2];
-	point_on_line[1] = this->predictedLine[3];
-
+	//point_on_line[0] = this->predictedLine[2];
+	//point_on_line[1] = this->predictedLine[3];
+	point_on_line[0] = centroid[0];
+	point_on_line[1] = centroid[1];
 	tangent[0] = this->predictedLine[0];
 	tangent[1] = this->predictedLine[1];
 
@@ -376,15 +377,23 @@ ModelBasedLineEstimation::convertLineCentroidTo3DWorkspace(double tmp_point[3])
 
 void ModelBasedLineEstimation::computePredictedTangent()
 {
-	::Eigen::Vector3d tangent, point_on_circle;
-	this->valveModel.getTangentEstimate(this->robot_predicted_position[0], this->robot_predicted_position[1], this->robot_predicted_position[2], tangent, point_on_circle);
+	//::Eigen::Vector3d tangent, point_on_circle;
+	//this->valveModel.getTangentEstimate(this->robot_predicted_position[0], this->robot_predicted_position[1], this->robot_predicted_position[2], tangent, point_on_circle);
 
-	//::Eigen::MatrixXd proj;
-	//this->valveModel.getProjectionMatrixToPlane(proj);
-
+	////::Eigen::MatrixXd proj;
+	////this->valveModel.getProjectionMatrixToPlane(proj);
+	::cv::Vec4f line;
+	if (this->getPredictedTangent(line))
+	{
+		this->predictedLine[0] = line[0];
+		this->predictedLine[1] = line[1];
+	}
+	else
+	{
+		this->predictedLine[0] = 1;
+		this->predictedLine[1] = 0;
+	}
 	//tangent = proj * tangent;
-	this->predictedLine[0] = tangent[0];
-	this->predictedLine[1] = tangent[1];
 }
 
 
@@ -404,7 +413,7 @@ void
 ModelBasedLineEstimation::computePredictionCovariance()
 {
 	//TO BE IMPLEMENTED
-	pred_line_covariance = 3;
+	pred_line_covariance = 50;
 }
 
 
@@ -502,7 +511,7 @@ ModelBasedLineEstimation::updateBenchtop(const ::cv::Mat& img)
 
 	this->computePointsForFittingBenchtop();
 
-	if (false)//this->valveModel.isInitialized())
+	if (this->valveModel.isInitialized())
 		this->rejectOutliers();
 	else
 	{
@@ -542,4 +551,10 @@ void ModelBasedLineEstimation::thresholdImageSynthetic(const ::cv::Mat& img,::cv
 	::cv::Mat img_grey;
 	::cv::cvtColor(img, img_grey, ::cv::ColorConversionCodes::COLOR_RGB2GRAY); 
 	::cv::threshold(img_grey, thresholded, 50, 255, ::cv::ThresholdTypes::THRESH_BINARY_INV);
+}
+
+
+void ModelBasedLineEstimation::resetModel()
+{
+	this->valveModel.resetModel();
 }

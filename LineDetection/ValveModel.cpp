@@ -89,6 +89,9 @@ ValveModel::resetModel()
 	v1 << 0, 0, 0;
 	v2 << 0, 0, 0;
 	column_sums << 0, 0, 0;
+	this->points = ::Eigen::MatrixXd();
+	this->pointsCentered = ::Eigen::MatrixXd();
+	this->projectionMatrix.setIdentity();
 	initialized = false;
 }
 

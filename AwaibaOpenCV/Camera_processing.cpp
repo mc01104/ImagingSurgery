@@ -413,6 +413,9 @@ void Camera_processing::processInput(char key)
 		else
 			::std::cout << "online model is off" << ::std::endl;
 		break;
+	case 'i':
+		m_modelBasedLine.resetModel();
+		break;
 	case 'f':
 		m_estimateFreq = !m_estimateFreq;
 		if (m_estimateFreq)
