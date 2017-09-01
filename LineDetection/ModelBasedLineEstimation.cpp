@@ -141,7 +141,7 @@ ModelBasedLineEstimation::fitLine()
 {
 	//::cv::namedWindow("fit-line", 0);
 	//::std::cout << "num of points:" << this->highProbPointsToFit.size() << ::std::endl;
-	if (this->highProbPointsToFit.size() > 40)
+	if (this->highProbPointsToFit.size() > 0)
 	{
         ::cv::fitLine(this->highProbPointsToFit, this->fittedLine, CV_DIST_L2, 0, 0.01, 0.01);
 
@@ -154,7 +154,7 @@ ModelBasedLineEstimation::fitLine()
         ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*(-100),fittedLine[3]+fittedLine[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 		::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
 
-		::cv::imshow("fit-line", this->current_img);
+		//::cv::imshow("fit-line", this->current_img);
 		return true;
 	}
 
@@ -338,7 +338,7 @@ ModelBasedLineEstimation::rejectOutliers()
 	{
 		distancePointToLine(tmp_point, point_on_line, tangent, distance);
 		
-		if (distance > 2 * this->pred_line_covariance)
+		if (distance > 2 * this->line_covariance)
 			continue;
 		
 		this->highProbPointsToFit.push_back(this->pointsToFit[i]);
@@ -462,8 +462,8 @@ ModelBasedLineEstimation::getPredictedTangent(::cv::Vec4f& line)
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	::Eigen::Vector2d tangentEig = rot.block(0, 0, 2, 2)* tangent;
 
-	//::Eigen::Matrix3d rot1 = RotateZ(this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
-	//tangentEig = rot1.block(0, 0, 2, 2)* tangentEig;
+	::Eigen::Matrix3d rot1 = RotateZ(this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
+	tangentEig = rot1.block(0, 0, 2, 2)* tangentEig;
 
 	line[0] = tangentEig[0];
 	line[1] = tangentEig[1];
