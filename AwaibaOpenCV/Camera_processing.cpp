@@ -1691,13 +1691,13 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	if (m_modelBasedLine.getPredictedTangent(line_pred))
 	{
-		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+line_pred[0]*100, centroidEig(1)+line_pred[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+line_pred[0]*(-100), centroidEig(1)+line_pred[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+line_pred[0]*100, centroidEig(1)+line_pred[1]*100), ::cv::Scalar(0, 255, 255), 2, CV_AA);
+		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+line_pred[0]*(-100), centroidEig(1)+line_pred[1]*(-100)), ::cv::Scalar(0, 255, 255), 2, CV_AA);
 	}
 		
 	// only for visualization -> needs to be in old frame
-	::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 255), 2, CV_AA);
-    ::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 255), 2, CV_AA);
+	::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+    ::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 	::cv::circle(frame_rotated2, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
 	::cv::imshow("test", frame_rotated2);
 	::cv::waitKey(1);
