@@ -39,7 +39,7 @@ ValveModel::updateModel(double x, double y, double z)
 		appendRowEigen(this->points, tmpX);
 
 
-	if (this->points.rows() < 6)
+	if (this->points.rows() < 5)
 		return false;
 
 	this->column_means = this->points.colwise().mean();

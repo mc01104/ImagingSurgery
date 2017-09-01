@@ -1200,8 +1200,8 @@ void Camera_processing::robotDisplay(void)
 					this->circleSourceOnLine->SetRadius(this->m_modelBasedLine.getModel().getRadius());
 					this->circleSourceOnLine->SetNormal(this->m_modelBasedLine.getModel().getNormal());
 					::std::cout << "radius:" << this->m_modelBasedLine.getModel().getRadius() << ::std::endl;
-					::std::cout << "normal:";
-					PrintCArray(this->m_modelBasedLine.getModel().getNormal(), 3);
+					//::std::cout << "normal:";
+					//PrintCArray(this->m_modelBasedLine.getModel().getNormal(), 3);
 
 				}
 			}

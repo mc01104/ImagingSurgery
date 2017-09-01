@@ -17,8 +17,11 @@ ModelBasedLineEstimation::ModelBasedLineEstimation():
 	for(int i = 0; i < 3; ++i)
 		robot_position[i] = robot_velocity[i] = robot_predicted_position[i] = 0;
 
-	channel_pixel_position_unrotated[0] = 64;
-	channel_pixel_position_unrotated[1] = 150;    
+	//channel_pixel_position_unrotated[0] = 64;
+	//channel_pixel_position_unrotated[1] = 150;    
+	channel_pixel_position_unrotated[0] = 80;
+	channel_pixel_position_unrotated[1] = 135;    
+
 
 }
 
@@ -221,6 +224,7 @@ ModelBasedLineEstimation::computeResidualVariance()
 	double min = res_centered.minCoeff();
 	double max = res_centered.maxCoeff();
 	this->line_covariance = ::std::sqrt(res_centered.array().pow(2).sum()/res.size());
+	//::std::cout << "covariance" << line_covariance << ::std::endl;
 }
 
 
@@ -338,11 +342,14 @@ ModelBasedLineEstimation::rejectOutliers()
 	{
 		distancePointToLine(tmp_point, point_on_line, tangent, distance);
 		
-		if (distance > 2 * this->pred_line_covariance)
+		if (distance > 500)
 			continue;
 		
 		this->highProbPointsToFit.push_back(this->pointsToFit[i]);
+		//::std::cout << "point " << i << ", distance:" << distance << ", covariance:" << this->line_covariance << ::std::endl;
 	}
+	//::std::cout << distance << ::std::endl;
+	//::std::cout << "num of points:" << this->highProbPointsToFit.size() << ::std::endl;
 }
 
 
@@ -459,12 +466,13 @@ ModelBasedLineEstimation::getPredictedTangent(::cv::Vec4f& line)
 	//line[0] = tangent[0];
 	//line[1] = tangent[1];
 
-	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
-	::Eigen::Vector2d tangentEig = rot.block(0, 0, 2, 2)* tangent;
+	::Eigen::Matrix3d rot = RotateZ( -0 * M_PI/180.0);
+	::Eigen::Vector2d tangentEig = rot.block(0, 0, 2, 2).transpose() * tangent;
 
-	//::Eigen::Matrix3d rot1 = RotateZ(this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
-	//tangentEig = rot1.block(0, 0, 2, 2)* tangentEig;
-
+	::Eigen::Matrix3d rot1 = RotateZ(this->init_image_rotation * M_PI/180.0 - this->inner_tube_rotation);
+	tangentEig = rot1.block(0, 0, 2, 2)* tangentEig;
+	rot = RotateZ( -90 * M_PI/180.0);
+	tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
 	line[0] = tangentEig[0];
 	line[1] = tangentEig[1];
 	return this->valveModel.isInitialized();
@@ -512,7 +520,10 @@ ModelBasedLineEstimation::updateBenchtop(const ::cv::Mat& img)
 	this->computePointsForFittingBenchtop();
 
 	if (this->valveModel.isInitialized())
+	{
+		//::std::cout << "rejecting outliers" << ::std::endl;
 		this->rejectOutliers();
+	}
 	else
 	{
 		this->highProbPointsToFit.resize(this->pointsToFit.size());
