@@ -202,7 +202,9 @@ private:
 	void initializeApex();
 
 	void computeCircumnavigationParameters(const ::cv::Mat& img);
+	void computeCircumnavigationParametersDebug(const ::cv::Mat& img);
 	void computeApexToValveParameters(const ::cv::Mat& img);
+	void computeApexToValveParametersDebug(const ::cv::Mat& img);
 	// camera management functions
 	void changeExposure(float delta);
 
