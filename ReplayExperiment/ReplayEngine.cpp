@@ -81,7 +81,7 @@ public:
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(1), new_version(true)
+	filter(5), theta_filter_complex(15), new_version(true)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -214,7 +214,7 @@ void ReplayEngine::simulate(void* tData)
 		tDataSim->counter++;
 		::cv::imshow("Display", tmpImage);
 		//video.write(tmpImage);
-		::cv::waitKey(1);  
+		::cv::waitKey();  
 
 	}
 
@@ -584,6 +584,7 @@ void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img ,
 	::Eigen::Matrix3d rot1 = RotateZ(this->imageInitRotation * M_PI/180.0 - this->robot_rotation);
 	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
 	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
+	::std::cout << (centroidEig - image_center).transpose() * tangentEig << ::std::endl;;
 
 }
 
@@ -648,13 +649,13 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		bool predictedLineDetected = false;
 		::Eigen::Vector2d centroidEig, tangentEig, velCommand, centroidEig2, tangentEig2;
 		::cv::Vec4f line, line2;
-		if (true)
+		if (response == 1)
 		{
 			//::std::cout << "contact" << ::std::endl;
 
 		::cv::Vec2f centroid, centroid2;
 		this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
-		//this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 0, LineDetector::MODE::TRANSITION);
+		//this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 10, LineDetector::MODE::TRANSITION);
 		//predictedLineDetected = this->modelBasedLine.getPredictedTangent(line2);
 		centroidEig2(0) = line2[2];
 		centroidEig2(1) = line2[3];
@@ -727,7 +728,7 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 
 	::cv::Vec4f line1;
 	::cv::Vec2f centroid4;
-	if (this->m_dummyLine.processImage(img, line1, centroid4, false, 30, LineDetector::MODE::TRANSITION))
+	if (this->m_dummyLine.processImage(img, line1, centroid4, false, 20, LineDetector::MODE::TRANSITION))
 		::std::cout << "valve detected" << ::std::endl;
 
 

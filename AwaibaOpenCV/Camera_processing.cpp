@@ -1668,7 +1668,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
 	centroidEig(1) = r * sin(theta);
-	//computePerpendicularVector(centroidEig, tangentEig);
+	computePerpendicularVector(centroidEig, tangentEig);
 
 	centroidEig += image_center;
 	// -----------------------------//
