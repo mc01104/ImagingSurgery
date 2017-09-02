@@ -1757,7 +1757,7 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 		this->detected_valve.push_back(true);
 
 
-	if (this->detected_valve.size() > 10 && this->m_use_automatic_transition)
+	if (this->detected_valve.size() > 30 && this->m_use_automatic_transition)
 		this->m_state_transition = true;
 
 	int x, y;
