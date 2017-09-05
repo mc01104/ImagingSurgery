@@ -260,6 +260,7 @@ private:
 	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
 	bool			m_use_automatic_transition;
 	bool			m_use_online_model;
+	bool			m_show_line;
 
 	double			m_contact_gain;
 	double			m_contact_D_gain;

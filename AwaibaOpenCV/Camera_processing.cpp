@@ -173,6 +173,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_circumnavigation = false;
 	m_apex_to_valve = false;
 	m_use_online_model = false;
+	m_show_line = false;
 	// Parse options in camera.csv file
 	// TODO: handle errors better and do not fallback to default config
 	
@@ -264,6 +265,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		Sleep(1000);
 		m_Manager.ConfigureSensor(sensor1);
 		m_sensor = sensor1;
+		m_sensor.DoLineCorrectionChange = true;
 
 		m_pipeConfig.BadPixelReplacement.Enable = true;
 		m_pipeConfig.BadPixelReplacement.Threshold = 50;
@@ -395,6 +397,13 @@ void Camera_processing::processInput(char key)
 			::std::cout << "automatic transition is activated" << ::std::endl;
 		else
 			::std::cout << "automatic transition is deactivated" << ::std::endl;
+		break;
+	case 's':
+		m_show_line = !m_show_line;
+		if (m_show_line)
+			::std::cout << "predicted tangent is activated" << ::std::endl;
+		else
+			::std::cout << "predicted tangent is deactivated" << ::std::endl;
 		break;
 	case 'r':
 		if (m_record) m_newdir = true;
@@ -1192,14 +1201,13 @@ void Camera_processing::robotDisplay(void)
 				this->m_input_plane_received = planeReceived;
 				this->mutex_robotshape.unlock();
 
-				if (this->m_use_online_model)
+				if (this->m_use_online_model && this->m_modelBasedLine.getModel().isInitialized())
 				{
 					this->circleSourceOnLine->SetCenter(this->m_modelBasedLine.getModel().getCenter());
 					this->circleSourceOnLine->SetRadius(this->m_modelBasedLine.getModel().getRadius());
 					this->circleSourceOnLine->SetNormal(this->m_modelBasedLine.getModel().getNormal());
+					
 					::std::cout << "radius:" << this->m_modelBasedLine.getModel().getRadius() << ::std::endl;
-					//::std::cout << "normal:";
-					//PrintCArray(this->m_modelBasedLine.getModel().getNormal(), 3);
 
 				}
 			}
@@ -1692,7 +1700,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	::cv::Vec4f line_pred;
 
-	if (m_modelBasedLine.getPredictedTangent(line_pred))
+	if (m_use_online_model && m_modelBasedLine.getPredictedTangent(line_pred) && m_show_line)
 	{
 		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+line_pred[0]*100, centroidEig(1)+line_pred[1]*100), ::cv::Scalar(0, 255, 255), 2, CV_AA);
 		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+line_pred[0]*(-100), centroidEig(1)+line_pred[1]*(-100)), ::cv::Scalar(0, 255, 255), 2, CV_AA);
