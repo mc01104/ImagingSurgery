@@ -22,10 +22,30 @@ void testMapFunctions();
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_14-00-09";	
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_12-58-07";	
-	//::std::string img_path = "F:/exvivo_0901/2017-09-01_14-32-06";	
 
+	//// ------- WALL SEGMENTATION ----------- ///////
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-10-53";	// OK
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-15-59";	// OK
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-22-27";	// OK
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-24-28";	// OK
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-29-14";	// OK
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-32-10";	// OK
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_12-43-50";	// no tissue detection
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_14-40-02";	// OK
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-06-34";	// OK with mask
+	//// --------------------------------------////////
+
+
+	//// ------- CIRCUM ----------- ///////
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-57-11";	// OK 
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-50-58";		// loses it when it goes to the margin
+
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_14-00-09";	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_12-58-07";	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-49-13";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-15-33";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-17-56";
+	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;

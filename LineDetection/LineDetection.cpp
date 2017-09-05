@@ -53,7 +53,6 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
 		case MODE::TRANSITION:
 			if (this->detectLine(img_crop,line, centroid))
 				lineDetected = true;
-			//::std::cout << "in transition mode" << ::std::endl;
 			break;
 		case MODE::CIRCUM:
 		    if (this->detectLineAllChannels(img_crop,line, centroid))
@@ -62,8 +61,11 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
 			break;
 	}
 
-	centroid[0] += crop;
-	centroid[1] += crop;
+	if (lineDetected)
+	{
+		centroid[0] += crop;
+		centroid[1] += crop;
+	}
 
     return lineDetected;
 
@@ -132,16 +134,25 @@ bool LineDetector::detectLine(const ::cv::Mat img, ::cv::Vec4f &line, ::cv::Vec2
     ::cv::Mat thresholded_binary(img.size(),CV_8UC1);
 
 	this->thresholdImage(img,thresholded);
-    thresholded.convertTo(thresholded_binary,CV_8UC1);
-	
+ 
+	::cv::Mat masked_img;
+    ::cv::Mat ow_mask = ::cv::Mat::zeros(img.rows,img.cols, CV_8UC1);
+    ::cv::circle(ow_mask,::cv::Point(img.rows/2,img.cols/2),img.rows/2,255,-1);
+	thresholded.copyTo(masked_img,ow_mask);
+
+	masked_img.convertTo(thresholded_binary,CV_8UC1);
     ::std::vector< ::cv::Point> nonzero;
-    ::cv::findNonZero(thresholded_binary, nonzero);
+
+
+
+	
+	::cv::findNonZero(thresholded_binary, nonzero);
 
 	//::cv::namedWindow("thresholded", 0);
 	::cv::imshow("thresholded", thresholded_binary);
 	//::cv::waitKey(1);
 
-	if (nonzero.size()>1080)
+	if (nonzero.size()>400)
 	{
         ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 
@@ -251,29 +262,17 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
     ::std::vector< ::cv::Point> nonzero;
     ::cv::findNonZero(thresholded_binary, nonzero);
 
-	::cv::namedWindow("thresholded", 0);
+	//::cv::namedWindow("thresholded", 0);
 	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
 
 	::std::vector<::cv::Vec2f> lines_hough;
-	if (nonzero.size()>80)
+	if (nonzero.size()>3000)
 	{
         ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
-		//::cv::HoughLines(thresholded_binary, lines_hough, 5, 3.1462/180, 10000);
+
 		this->computeCentroid(nonzero, centroid);
 
-		//for( size_t i = 0; i < lines_hough.size(); i++ )
-		//{
-		//	float rho = lines_hough[i][0];
-		//	float theta = lines_hough[i][1];
-		//	double a = cos(theta), b = sin(theta);
-		//	double x0 = a*rho, y0 = b*rho;
-		//	::cv::Point pt1(cvRound(x0 + 1000*(-b)),
-		//			  cvRound(y0 + 1000*(a)));
-		//	::cv::Point pt2(cvRound(x0 - 1000*(-b)),
-		//			  cvRound(y0 - 1000*(a)));
-		//	::cv::line( output, pt1, pt2, ::cv::Scalar(0,0,255), 3, 8 );
-		//}
 		::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(255, 255, 255), 2, CV_AA);
 		::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(255, 255, 255), 2, CV_AA);
 

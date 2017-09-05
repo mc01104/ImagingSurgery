@@ -131,7 +131,7 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(1, NULL), m_theta_filter(1, NULL), m_wall_detector()
+	, m_radius_filter(10), m_theta_filter(10), m_wall_detector()
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -168,7 +168,6 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 	::std::string svm_base_folder = "./SVM_params/";
 	m_linedetected = false;
-	m_theta_filter.setDistance(angularDistanceMinusPItoPI);
 
 	// circumnavigation
 	m_circumnavigation = false;
@@ -583,11 +582,12 @@ void Camera_processing::displayImages(void)
 		teleop = m_teleop;
 		mutex_teleop.unlock();
 
-		if (true)
+		if (display)
 		{
 			if (m_circumnavigation)
-				this->computeCircumnavigationParametersDebug(frame);
-				//this->computeCircumnavigationParameters(frame);
+				this->computeCircumnavigationParameters(frame);
+				//this->computeCircumnavigationParametersDebug(frame);
+
 			else if (m_apex_to_valve)
 				this->computeApexToValveParameters(frame);
 			else 
@@ -608,9 +608,6 @@ void Camera_processing::displayImages(void)
 			
 			if (teleop) // draw a green circle on frame when teleoperating
 				cv::circle( frame_rotated, Point( 220, 10 ), 5, Scalar( 0, 255, 0 ),  -1);
-
-			//if (m_circumnavigation && m_linedetected)
-			//	::cv::line( frame_rotated, ::cv::Point(m_centroidImageFrame[0],m_centroidImageFrame[1]), ::cv::Point(m_centroidImageFrame[1]+m_tangentImageFrame[0]*100,m_centroidImageFrame[3]+m_tangentImageFrame[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 
 			cv::imshow( "Display", frame_rotated );
 			key = waitKey(1);
@@ -1617,48 +1614,6 @@ void Camera_processing::initializeArrow()
 
 void Camera_processing::computeCircumnavigationParametersDebug(const ::cv::Mat& img)
 {
-	//::cv::Vec4f line;
-	//::cv::Vec2f centroid; 
-
-	//centroid[0] = 125; centroid[1] = 125;
-	//line[0] = 0;
-	//line[1] = 1;
-
-	//::Eigen::Vector2d centroidEig, image_center, tangentEig;
-	//centroidEig(0) = centroid[0];
-	//centroidEig(1) = centroid[1];
-
-	//tangentEig(0) = line[0];
-	//tangentEig(1) = line[1];
-
-	//image_center(0) = image_center(1) = 125;
-	// 
-	//::Eigen::Matrix3d rot1 = RotateZ(rotation * M_PI/180.0 - robot_rotation);
-	//centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
-	//tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
-
-	//Mat frame_rotated2 = Mat(250,250,CV_8UC3);
-	//Point center = Point(img.cols/2, img.rows/2 );
- //   Mat rot_mat = getRotationMatrix2D(center,  rotation - robot_rotation * 180.0/3.141592, 1.0 );
-	//warpAffine(img, frame_rotated2, rot_mat, frame_rotated2.size() );
-
-	//::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
- //   ::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-	//::cv::circle(frame_rotated2, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
-	//::cv::imshow("test", frame_rotated2);
-	//::cv::waitKey(1);
-	//// only for visualization -> needs to be in old frame
-
-	//// last transformation to align image frame with robot frame for convenience
-	//::Eigen::Vector2d displacement(0, img.rows);
-	//::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
-
-	//centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
-	//tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
-
-	//memcpy(m_centroid, centroidEig.data(), 2 * sizeof(double));
-	//memcpy(m_tangent, tangentEig.data(), 2 * sizeof(double));
-
 	m_centroid[0] = 125;
 	m_centroid[1] = 80;
 
@@ -1668,10 +1623,6 @@ void Camera_processing::computeCircumnavigationParametersDebug(const ::cv::Mat& 
 
 void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
-
-
-	// initialize line detection window
-	//::cv::namedWindow("test", 0);
 
 	// detect the line on the unrotated frame (edges at the image corners due to rotation mess up the line detection)
 	::cv::Vec4f line;
@@ -1687,7 +1638,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #else
 		if (!this->m_use_online_model)
-			m_linedetected = m_linedetector.processImage(img, line, centroid, false, 30, LineDetector::MODE::CIRCUM);
+			m_linedetected = m_linedetector.processImage(img, line, centroid, false, 15, LineDetector::MODE::CIRCUM);
 		else
 			m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #endif
@@ -1815,7 +1766,7 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 		this->detected_valve.push_back(true);
 
 
-	if (this->detected_valve.size() > 30 && this->m_use_automatic_transition)
+	if (this->detected_valve.size() > 15 && this->m_use_automatic_transition)
 		this->m_state_transition = true;
 
 	int x, y;
@@ -1844,8 +1795,6 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 
 	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
-	//centroidEig(0) = 26;
-	//centroidEig(1) = 106;
 	memcpy(m_centroid_apex_to_valve, centroidEig.data(), 2 * sizeof(double));
 
 	int contact_frames = ::std::count(this->m_contactBufferFiltered .rbegin(), this->m_contactBufferFiltered.rbegin() + 20, 1);

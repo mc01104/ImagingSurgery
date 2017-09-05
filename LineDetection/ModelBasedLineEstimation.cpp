@@ -17,8 +17,6 @@ ModelBasedLineEstimation::ModelBasedLineEstimation():
 	for(int i = 0; i < 3; ++i)
 		robot_position[i] = robot_velocity[i] = robot_predicted_position[i] = 0;
 
-	//channel_pixel_position_unrotated[0] = 64;
-	//channel_pixel_position_unrotated[1] = 150;    
 	channel_pixel_position_unrotated[0] = 80;
 	channel_pixel_position_unrotated[1] = 135;    
 
@@ -89,6 +87,7 @@ ModelBasedLineEstimation::update(const ::cv::Mat& img)
 	img.copyTo(this->current_img);
 
 	this->computePointsForFitting();
+	//this->computePointsForFittingNew();
 
 
 	if (false)//this->valveModel.isInitialized())
@@ -128,6 +127,7 @@ ModelBasedLineEstimation::computePointsForFitting()
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
 
 	//::cv::imshow("unrotated", this->current_img);
+
 	::cv::imshow("thresholded", output);
 	::cv::waitKey(1);
 }
@@ -144,7 +144,7 @@ ModelBasedLineEstimation::fitLine()
 {
 	//::cv::namedWindow("fit-line", 0);
 	//::std::cout << "num of points:" << this->highProbPointsToFit.size() << ::std::endl;
-	if (this->highProbPointsToFit.size() > 0)
+	if (this->highProbPointsToFit.size() > 3000)
 	{
         ::cv::fitLine(this->highProbPointsToFit, this->fittedLine, CV_DIST_L2, 0, 0.01, 0.01);
 
@@ -377,7 +377,7 @@ ModelBasedLineEstimation::convertLineCentroidTo3DWorkspace(double tmp_point[3])
 
 	::Eigen::MatrixXd proj;
 	this->getModel().getProjectionMatrixToPlane(proj);
-	DP = proj * DP;
+	DP = proj.block(0, 0, 2, 2) * DP;
 	//this->projected_robot_position[0] += DP[0];
 	//this->projected_robot_position[1] += DP[1];
 
@@ -569,4 +569,93 @@ void ModelBasedLineEstimation::thresholdImageSynthetic(const ::cv::Mat& img,::cv
 void ModelBasedLineEstimation::resetModel()
 {
 	this->valveModel.resetModel();
+}
+
+
+void ModelBasedLineEstimation::computePointsForFittingNew()
+{
+	int radius = 125;
+	int numOfPoints = (int) 3.14 * radius*radius *0.04;
+    ::cv::Mat thresholded_mask, intermediate_img;
+
+    // Blur  the image to remove small artifacts (color defects from camera, bood flow ..)
+    ::cv::Mat img_blur;
+    ::cv::GaussianBlur(this->current_img,img_blur,::cv::Size(15,15),0);
+
+    // Mask the optical window using provided center and radius
+    ::cv::Mat ow_mask = ::cv::Mat::zeros(this->current_img.rows,this->current_img.cols, CV_8UC1);
+    ::cv::circle(ow_mask,::cv::Point(this->current_img.rows/2,this->current_img.cols/2),radius,255,-1);
+
+    img_blur.copyTo(intermediate_img,ow_mask);
+    this->thresholdImage(intermediate_img,thresholded_mask);
+
+	::cv::Mat thresholded_binary(thresholded_mask.size(),CV_8UC1);
+    thresholded_mask.convertTo(thresholded_binary,CV_8UC1);
+	
+    ::cv::findNonZero(thresholded_binary, this->pointsToFit);
+
+	::cv::Mat	 output;
+	::cv::cvtColor(thresholded_binary, output, CV_GRAY2BGR);
+
+	::cv::imshow("thresholded", output);
+	::cv::waitKey(1);
+}
+
+
+bool ModelBasedLineEstimation::thresholdImage(const cv::Mat &img, ::cv::Mat &output)
+{
+
+    output = ::cv::Mat::zeros(img.rows,img.cols, CV_8UC1);
+
+    ::cv::Mat S, A, V;
+    convertImage(img,S,A, V);
+
+    // Apply thresholds
+    const int thresh_S = 64;
+	//const int thresh_V = 200; -> worked first sucess
+	const int thresh_V = 250;
+    const int min_a = 130, max_a = 145;
+
+    ::cv::Mat mask_s;
+    ::cv::threshold(S,mask_s,thresh_S,255,::cv::THRESH_BINARY_INV);
+
+	double min, max;
+	::cv::minMaxLoc(A, &min, &max);
+	//::std::cout << "min:" << min << " max:" << max << ::std::endl;
+
+	::cv::Mat mask_v;
+	::cv::threshold(V, mask_v, thresh_V, 255, ::cv::THRESH_BINARY_INV);
+
+    ::cv::Mat mask_a;
+    ::cv::inRange(A,min_a,max_a,mask_a);
+
+	::cv::bitwise_and(mask_s, mask_v, output); 
+    ::cv::bitwise_and(output,mask_a,output);
+
+    // Apply morphological opening to remove small things
+    ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(9,9));
+    ::cv::morphologyEx(output,output,::cv::MORPH_OPEN,kernel);
+
+    return true;
+}
+
+bool ModelBasedLineEstimation::convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv::Mat& V)
+{	
+    ::cv::Mat hsv, lab;
+
+    ::std::vector< ::cv::Mat> hsv_split;
+    ::std::vector< ::cv::Mat> lab_split;
+
+    ::cv::cvtColor(img,hsv, CV_BGR2HSV);
+    ::cv::cvtColor(img,lab, CV_BGR2Lab);
+
+    ::cv::split(hsv,hsv_split);
+    ::cv::split(lab,lab_split);
+
+
+    S = hsv_split[1];
+	V = hsv_split[2];
+    A = lab_split[1];
+
+    return true;
 }

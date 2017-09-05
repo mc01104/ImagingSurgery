@@ -79,7 +79,11 @@ class ModelBasedLineEstimation
 		void computeClosestCirclePoint();
 
 		void computePointsForFitting();
+		void computePointsForFittingNew();
 		void computePointsForFittingBenchtop();
+		bool thresholdImage(const cv::Mat &img, ::cv::Mat &output);	
+
+		bool convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv::Mat& V);
 
 		bool fitLine();
 
