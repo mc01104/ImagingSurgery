@@ -265,7 +265,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		Sleep(1000);
 		m_Manager.ConfigureSensor(sensor1);
 		m_sensor = sensor1;
-		m_sensor.DoLineCorrectionChange = true;
+		//m_sensor.DoLineCorrectionChange = true;
 
 		m_pipeConfig.BadPixelReplacement.Enable = true;
 		m_pipeConfig.BadPixelReplacement.Threshold = 50;
@@ -930,8 +930,9 @@ bool Camera_processing::networkKinematics(void)
 		::ostringstream ss;
 		ss << force << " " << m_linedetected << " " << m_contact_response << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
 
-		ss << m_apex_to_valve << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
-		
+		ss << m_wall_detected << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
+		//::std::cout << " centroid" << ::std::endl;
+		//::std::cout << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << ::std::endl;
 		if (m_circumnavigation)
 		{
 			m_state_transition = false;
@@ -1775,9 +1776,12 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 
 
 	if (this->detected_valve.size() > 15 && this->m_use_automatic_transition)
+	{
+		::std::cout << "transition" << ::std::endl;
 		this->m_state_transition = true;
+	}
 
-	int x, y;
+	int x = 0, y = 0;
 	this->m_wall_detected = this->m_wall_detector.processImage(img, x, y, true);
 
 	// adjust for the cropping
