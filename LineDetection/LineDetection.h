@@ -37,6 +37,7 @@ class LineDetector
 		void thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thresholded);
 		bool convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv::Mat& V);
 
+		void thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out);
 };
 
 

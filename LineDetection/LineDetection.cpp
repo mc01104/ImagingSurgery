@@ -256,7 +256,8 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	
     ::cv::Mat thresholded_binary(img.size(),CV_8UC1);
 
-	this->thresholdImageAllChannels(img,thresholded);
+	//this->thresholdImageAllChannels(img,thresholded);
+	this->thresholdImageWire(img,thresholded);
     thresholded.convertTo(thresholded_binary,CV_8UC1);
 	
     ::std::vector< ::cv::Point> nonzero;
@@ -267,7 +268,7 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
 
 	::std::vector<::cv::Vec2f> lines_hough;
-	if (nonzero.size()>3000)
+	if (nonzero.size()>0)
 	{
         ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 
@@ -393,4 +394,29 @@ bool LineDetector::convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv
     A = lab_split[1];
 
     return true;
+}
+
+
+void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
+{
+	::cv::Mat hsv;
+	::std::vector<::cv::Mat> hsv_split;
+
+	::cv::cvtColor(img, hsv, CV_BGR2HSV);
+	::cv::split(hsv, hsv_split);
+
+    ::cv::Mat mask_h, mask_s, mask_v;
+	const int min_h = 50, max_h = 70;
+	const int min_s = 100, max_s = 255;
+    ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
+    ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
+    ::cv::inRange(hsv_split[2] ,min_s,max_s,mask_v);
+
+	::cv::bitwise_and(mask_s, mask_h, out); 
+	::cv::bitwise_and(out, mask_v, out);
+
+    // Apply morphological opening to remove small things
+    ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(9,9));
+    ::cv::morphologyEx(out,out,::cv::MORPH_OPEN,kernel);
+
 }
