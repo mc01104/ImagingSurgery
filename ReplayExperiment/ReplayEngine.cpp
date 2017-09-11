@@ -217,7 +217,7 @@ void ReplayEngine::simulate(void* tData)
 		tDataSim->counter++;
 		::cv::imshow("Display", tmpImage);
 		//video.write(tmpImage);
-		::cv::waitKey(1);  
+		::cv::waitKey();  
 
 	}
 
@@ -657,8 +657,8 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			//::std::cout << "contact" << ::std::endl;
 
 		::cv::Vec2f centroid, centroid2;
-		this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
-		//this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 15, LineDetector::MODE::CIRCUM);
+		//this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
+		this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 5, LineDetector::MODE::CIRCUM);
 		//predictedLineDetected = this->modelBasedLine.getPredictedTangent(line2);
 		centroidEig2(0) = line2[2];
 		centroidEig2(1) = line2[3];
@@ -744,11 +744,12 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
 
-	int x, y;
+	int x=0, y=0;
 	this->wallDetected = this->wallDetector.processImage(img, x, y, true, center.x, center.y, 125);
 
-	this->applyVisualServoingController(x, y,velCommand);
+	this->applyVisualServoingController(x, y,velCommand, BOTTOM);
 
+	//::std::cout << "servoing commands:" << velCommand.transpose() << ::std::endl;
 	this->robot_mutex.lock();
 	memcpy(this->velocityCommand, velCommand.data(), 3 * sizeof(double));
 	this->robot_mutex.unlock();
@@ -759,27 +760,89 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 
 }
 
-void ReplayEngine::applyVisualServoingController(int x, int y, ::Eigen::Vector3d& commandedVelocity)
+void ReplayEngine::applyVisualServoingController(int x, int y, ::Eigen::Vector3d& commandedVelocity, ReplayEngine::WALL_TO_FOLLOW wall)
 {
-	if (!this->wallDetected)
-	{
-		commandedVelocity.setZero();
-		return;
-	}
+	//if (!this->wallDetected)
+	//{
+	//	commandedVelocity.setZero();
+	//	return;
+	//}
 
-	double scaling_factor = 26;
-	double Kp = 2.0/scaling_factor;
-	::Eigen::Vector2d error, imageCenter;
-	if (x >= 100)
-		commandedVelocity[1] = Kp * (x - 100);
-	else if (x <= 20)
-		commandedVelocity[1] = -Kp * (x - 20);
+	switch (wall)
+	{
+		case LEFT:
+			followLeft(x, y, commandedVelocity);
+			break;
+		case TOP:
+			followTop(x, y, commandedVelocity);
+			break;
+		case BOTTOM:
+			followBottom(x, y, commandedVelocity);
+			break;
+
+	}
+	::std::cout << "x:" << x << "   y:" << y << ::std::endl;
+	::std::cout << "commanded velocities:" << commandedVelocity.transpose() << ::std::endl;
+}
+
+void ReplayEngine::followLeft(int x, int y, ::Eigen::Vector3d& commandedVelocity)
+{
+	//if (!this->m_wall_detected)
+	//	this->m_centroid_apex[1] = 0;
+
+	// left bias
+	commandedVelocity[1] = -1;
 
 	// forward velocity
-	commandedVelocity[2] = 2.0;    // mm/sec
+	commandedVelocity[2] = 1;    // mm/sec
+	double centerGain = 2.0;
+	double scalingFactor = 26.7;
+	// check controller
+	if (y >= 80)
+		commandedVelocity[1] += centerGain/scalingFactor * (y - 80);
+	else if (y <= 20)
+		commandedVelocity[1] += centerGain/scalingFactor * (y - 20);
 
 }
 
+void ReplayEngine::followBottom(int x, int y, ::Eigen::Vector3d& commandedVelocity)
+{
+	//if (!this->m_wall_detected)
+	//	this->m_centroid_apex[1] = 0;
+
+	// bottom bias
+	commandedVelocity[0] = -1;
+
+	// forward velocity
+	commandedVelocity[2] = 1;    // mm/sec
+	double centerGain = 2.0;
+	double scalingFactor = 26.7;
+	// check controller
+	if (x >= 80)
+		commandedVelocity[0] += centerGain/scalingFactor * (x - 80);
+	else if (x <= 20)
+		commandedVelocity[0] += centerGain/scalingFactor * (x - 20);
+
+}
+
+void ReplayEngine::followTop(int x, int y, ::Eigen::Vector3d& commandedVelocity)
+{
+	//if (!this->m_wall_detected)
+	//	this->m_centroid_apex[1] = 0;
+
+	// bottom bias
+	commandedVelocity[0] = 1;
+
+	// forward velocity
+	commandedVelocity[2] = 1;    // mm/sec
+	double centerGain = 2.0;
+	double scalingFactor = 26.7;
+	// check controller
+	if (x <= 250 - 80)
+		commandedVelocity[0] += centerGain/scalingFactor * (x - 250 + 80);
+	else if (x >= 250 - 20)
+		commandedVelocity[0] += centerGain/scalingFactor * (x -250 + 20);
+}
 
 bool 
 ReplayEngine::checkTransition()

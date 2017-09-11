@@ -93,6 +93,7 @@ class ReplayEngine
 
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION} status;
+		enum WALL_TO_FOLLOW {LEFT, TOP, BOTTOM};
 
 public:	
 
@@ -156,7 +157,7 @@ public:
 		void applyVisualServoingController(const ::Eigen::Vector2d& centroid, const ::Eigen::Vector2d& tangent, ::Eigen::Vector2d& commandedVelocity);
 
 		// this simulates the wall-following controller
-		void applyVisualServoingController(int x, int y, ::Eigen::Vector3d& commandedVelocity);
+		void applyVisualServoingController(int x, int y, ::Eigen::Vector3d& commandedVelocity, ReplayEngine::WALL_TO_FOLLOW wall = WALL_TO_FOLLOW::LEFT);
 
 		void detectLine(::cv::Mat& imag);
 
@@ -173,5 +174,9 @@ public:
 		void updateRobotPositionModel(double fourier[3]);
 
 		void checkTangentDirection(::Eigen::Vector2d& tangentEig);
+
+		void followLeft(int x, int y, ::Eigen::Vector3d& commandedVelocity);
+		void followTop(int x, int y, ::Eigen::Vector3d& commandedVelocity);
+		void followBottom(int x, int y, ::Eigen::Vector3d& commandedVelocity);
 
 };

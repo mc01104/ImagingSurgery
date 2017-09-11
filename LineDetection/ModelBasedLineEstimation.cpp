@@ -659,3 +659,31 @@ bool ModelBasedLineEstimation::convertImage(const cv::Mat &img, cv::Mat& S, cv::
 
     return true;
 }
+
+
+void ModelBasedLineEstimation::computePointsForFittingWire(const ::cv::Mat& img, ::cv::Mat& out)
+{
+	::cv::Mat hsv;
+	::std::vector<::cv::Mat> hsv_split;
+
+	::cv::cvtColor(img, hsv, CV_BGR2HSV);
+	::cv::split(hsv, hsv_split);
+
+    ::cv::Mat mask_h, mask_s, mask_v;
+	const int min_h =70, max_h = 100;
+	const int min_s = 50, max_s = 100;
+    ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
+    ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
+    //::cv::inRange(hsv_split[2] ,min_s,max_s,mask_v);
+
+	::cv::bitwise_and(mask_s, mask_h, out); 
+	//::cv::bitwise_and(out, mask_h, out);
+	::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
+	::cv::circle(channel_mask, ::cv::Point(48, 113), 40,  0, -1);
+	::cv::circle(channel_mask, ::cv::Point(48, 153), 40,  0, -1);
+	::cv::bitwise_and(out, channel_mask, out); 
+
+    // Apply morphological opening to remove small things
+    ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(5,5));
+    ::cv::morphologyEx(out,out,::cv::MORPH_OPEN,kernel);
+}

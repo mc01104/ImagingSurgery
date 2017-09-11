@@ -81,6 +81,9 @@ class ModelBasedLineEstimation
 		void computePointsForFitting();
 		void computePointsForFittingNew();
 		void computePointsForFittingBenchtop();
+
+		void computePointsForFittingWire(const ::cv::Mat& img, ::cv::Mat& out);
+
 		bool thresholdImage(const cv::Mat &img, ::cv::Mat &output);	
 
 		bool convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv::Mat& V);
