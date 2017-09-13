@@ -605,7 +605,7 @@ void Camera_processing::displayImages(void)
 
 		if (display)
 		{
-			this->computeCircumnavigationParameters(frame);
+			//this->computeCircumnavigationParameters(frame);
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 				//this->computeCircumnavigationParametersDebug(frame);
