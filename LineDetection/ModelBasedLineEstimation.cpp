@@ -17,8 +17,19 @@ ModelBasedLineEstimation::ModelBasedLineEstimation():
 	for(int i = 0; i < 3; ++i)
 		robot_position[i] = robot_velocity[i] = robot_predicted_position[i] = 0;
 
-	channel_pixel_position_unrotated[0] = 80;
-	channel_pixel_position_unrotated[1] = 135;    
+	// mask the working channel
+	// scope 1
+	channel_pixel_position_unrotated[0] = 149;
+	channel_pixel_position_unrotated[1] = 29;
+	// scope 2
+	channel_pixel_position_unrotated[0] = 149;
+	channel_pixel_position_unrotated[1] = 215;
+	// scope 3
+	channel_pixel_position_unrotated[0] = 115;
+	channel_pixel_position_unrotated[1] = 47;
+	// scope 4
+	channel_pixel_position_unrotated[0] = 116;
+	channel_pixel_position_unrotated[1] = 43;
 
 
 }
@@ -86,7 +97,8 @@ ModelBasedLineEstimation::update(const ::cv::Mat& img)
 {
 	img.copyTo(this->current_img);
 
-	this->computePointsForFitting();
+	//this->computePointsForFitting();
+	this->computePointsForFittingWire();
 	//this->computePointsForFittingNew();
 
 
@@ -116,17 +128,12 @@ ModelBasedLineEstimation::computePointsForFitting()
 
 	this->thresholdImageAllChannels(this->current_img, thresholded);
 
-	//::cv::Mat output_CC;
-	//this->rejectSmallAreaImageRegions(thresholded, output_CC);
-	
 	thresholded.convertTo(thresholded_binary,CV_8UC1);
 	
     ::cv::findNonZero(thresholded_binary, this->pointsToFit);
 
 	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
-
-	//::cv::imshow("unrotated", this->current_img);
 
 	::cv::imshow("thresholded", output);
 	::cv::waitKey(1);
@@ -142,9 +149,8 @@ ModelBasedLineEstimation::rejectSmallAreaImageRegions(const ::cv::Mat& img, ::cv
 bool
 ModelBasedLineEstimation::fitLine()
 {
-	//::cv::namedWindow("fit-line", 0);
-	//::std::cout << "num of points:" << this->highProbPointsToFit.size() << ::std::endl;
-	if (this->highProbPointsToFit.size() > 3000)
+
+	if (this->highProbPointsToFit.size() > 50)
 	{
         ::cv::fitLine(this->highProbPointsToFit, this->fittedLine, CV_DIST_L2, 0, 0.01, 0.01);
 
@@ -157,13 +163,6 @@ ModelBasedLineEstimation::fitLine()
         ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*(-100),fittedLine[3]+fittedLine[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 		::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
 
-		//if (getModel().isInitialized())
-		//{
-  //      ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+this->predictedLine[0]*100,fittedLine[3]+predictedLine[1]*100), ::cv::Scalar(0, 255, 255), 2, CV_AA);
-  //      ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+predictedLine[0]*(-100),fittedLine[3]+predictedLine[1]*(-100)), ::cv::Scalar(0, 255, 255), 2, CV_AA);
-		//::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
-		//}
-		//::cv::imshow("fit-line", this->current_img);
 		return true;
 	}
 
@@ -661,29 +660,49 @@ bool ModelBasedLineEstimation::convertImage(const cv::Mat &img, cv::Mat& S, cv::
 }
 
 
-void ModelBasedLineEstimation::computePointsForFittingWire(const ::cv::Mat& img, ::cv::Mat& out)
+void ModelBasedLineEstimation::computePointsForFittingWire()
 {
-	::cv::Mat hsv;
+	::cv::Mat hsv, out;
 	::std::vector<::cv::Mat> hsv_split;
 
-	::cv::cvtColor(img, hsv, CV_BGR2HSV);
+	::cv::cvtColor(this->current_img, hsv, CV_BGR2HSV);
 	::cv::split(hsv, hsv_split);
 
     ::cv::Mat mask_h, mask_s, mask_v;
-	const int min_h =70, max_h = 100;
-	const int min_s = 50, max_s = 100;
+	const int min_h = 30, max_h = 110;
+	const int min_s = 1, max_s = 255;
     ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
     ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
     //::cv::inRange(hsv_split[2] ,min_s,max_s,mask_v);
 
 	::cv::bitwise_and(mask_s, mask_h, out); 
 	//::cv::bitwise_and(out, mask_h, out);
-	::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
-	::cv::circle(channel_mask, ::cv::Point(48, 113), 40,  0, -1);
-	::cv::circle(channel_mask, ::cv::Point(48, 153), 40,  0, -1);
+	::cv::Mat channel_mask = ::cv::Mat::ones(this->current_img.rows, this->current_img.cols, CV_8UC1)*255;
+
+	//// mask the working channel
+	//// scope 1
+	//::cv::circle(channel_mask, ::cv::Point(29, 149), 40,  0, -1);
+	//// scope 2
+	//::cv::circle(channel_mask, ::cv::Point(215, 149), 40,  0, -1);
+	//// scope 3
+	//::cv::circle(channel_mask, ::cv::Point(47, 115), 40,  0, -1);
+	//// scope 4
+	//::cv::circle(channel_mask, ::cv::Point(43, 116), 46,  0, -1);
+
 	::cv::bitwise_and(out, channel_mask, out); 
 
     // Apply morphological opening to remove small things
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(5,5));
     ::cv::morphologyEx(out,out,::cv::MORPH_OPEN,kernel);
+
+	cv::Mat thresholded_binary;
+    out.convertTo(thresholded_binary,CV_8UC1);
+	
+    ::cv::findNonZero(thresholded_binary, this->pointsToFit);
+
+	::cv::Mat	 output;
+	::cv::cvtColor(out, output, CV_GRAY2BGR);
+
+	::cv::imshow("thresholded", output);
+	::cv::waitKey(1);
 }

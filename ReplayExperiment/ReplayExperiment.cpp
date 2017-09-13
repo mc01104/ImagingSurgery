@@ -48,8 +48,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-17-56";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/sink_line_detection/2017-09-09_17-25-47";
 	
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-07_bypass_cardioscopy/Videos_2017-09-07/2017-09-07_12-52-16";
-
+	// test green line exvivo
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-58-17";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-54-17";
+	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;
@@ -57,7 +59,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
 	engine.setClassifier(contact_classifier);
-	engine.setStatus(ReplayEngine::WALL_DETECTION); 
+	engine.setStatus(ReplayEngine::LINE_DETECTION); 
 	engine.run();
 
 	//testMapFunctions();

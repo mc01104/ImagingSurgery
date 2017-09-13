@@ -165,6 +165,8 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 	inner_tube_rotation = 0;
 
+	m_use_original_line_transition = true;
+	m_use_green_line_transition = true;
 
 	::std::string svm_base_folder = "./SVM_params/";
 	m_linedetected = false;
@@ -232,7 +234,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	InitForceEstimator(svm_base_folder + "output_", 3.0, m_KFParams[0], m_KFParams[1]);
 	::std::cout << "Force estimator initialized" << ::std::endl;
 //#endif
-
+	m_modelBasedLine.setInitImageRotation(this->rotation);
 	m_estimateFreq = false;
 	m_measured_period = 0.0;
 	robot_rotation = 0.0;
@@ -413,6 +415,8 @@ void Camera_processing::processInput(char key)
 		m_sendContact = !m_sendContact;
 		if (m_sendContact)
 			::std::cout << "contact mode is on"  << ::std::endl;
+		else
+			::std::cout << "contact-ratio mode is on" << ::std::endl;
 		break;
 	case 'm':
 		m_use_online_model = !m_use_online_model;
@@ -443,6 +447,14 @@ void Camera_processing::processInput(char key)
 		break;
 	case '3':
 		changeExposure(0.0f);
+		break;
+	case '4':
+		m_use_green_line_transition = !m_use_green_line_transition;
+		checkTransitionState();
+		break;
+	case '5':
+		m_use_original_line_transition = !m_use_original_line_transition;
+		checkTransitionState();
 		break;
 	}
 }
@@ -1686,6 +1698,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	centroidEig += image_center;
 	// -----------------------------//
 
+
 	// find closest point from center to line -> we will bring that point to the center of the images
 	double lambda = (image_center - centroidEig).transpose() * tangentEig;
 	centroidEig += lambda * tangentEig;
@@ -1772,9 +1785,11 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	// check for valve
 	::cv::Vec2f centroid2;
 	::cv::Vec4f line2;
-	if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::TRANSITION))
-		this->detected_valve.push_back(true);
 
+	if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::TRANSITION) && m_use_original_line_transition)
+		this->detected_valve.push_back(true);
+	else if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::CIRCUM) && m_use_green_line_transition)
+		this->detected_valve.push_back(true);
 
 	if (this->detected_valve.size() > 15 && this->m_use_automatic_transition)
 	{
@@ -1812,4 +1827,15 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 
 	int contact_frames = ::std::count(this->m_contactBufferFiltered .rbegin(), this->m_contactBufferFiltered.rbegin() + 20, 1);
 
+}
+
+
+void	Camera_processing::checkTransitionState()
+{
+	if (m_use_green_line_transition && m_use_original_line_transition)
+		::std::cout << " using both line detection methods for transition" << ::std::endl;
+	else if (m_use_green_line_transition)
+		::std::cout << " using green line detection for transition" <<::std::endl;
+	else if (m_use_original_line_transition)
+		::std::cout << " using original line detection for transition" << ::std::endl;
 }

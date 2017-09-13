@@ -79,9 +79,9 @@ public:
 
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
-	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(5), theta_filter(1, &angularDistanceMinusPItoPI),
+	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(1), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(10), new_version(true)
+	filter(5), theta_filter_complex(1), new_version(true)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -147,7 +147,7 @@ void ReplayEngine::run()
 
 void ReplayEngine::simulate(void* tData)
 {
-	//::cv::VideoWriter video("line_detection_3.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
+	::cv::VideoWriter video("green_wire_50pts_online_model.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 46, ::cv::Size(250, 250));
 
 	ReplayEngine* tDataSim = reinterpret_cast<ReplayEngine*> (tData);
 
@@ -216,13 +216,13 @@ void ReplayEngine::simulate(void* tData)
 
 		tDataSim->counter++;
 		::cv::imshow("Display", tmpImage);
-		//video.write(tmpImage);
-		::cv::waitKey();  
+		video.write(tmpImage);
+		::cv::waitKey(1);  
 
 	}
 
 	::std::cout << "Exiting Simulation Thread" << ::std::endl;
-	//video.release();
+	video.release();
 }
 
 void ReplayEngine::displayRobot(void* tData)
@@ -657,8 +657,8 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			//::std::cout << "contact" << ::std::endl;
 
 		::cv::Vec2f centroid, centroid2;
-		//this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
-		this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 5, LineDetector::MODE::CIRCUM);
+		this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
+		//this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 5, LineDetector::MODE::CIRCUM);
 		//predictedLineDetected = this->modelBasedLine.getPredictedTangent(line2);
 		centroidEig2(0) = line2[2];
 		centroidEig2(1) = line2[3];

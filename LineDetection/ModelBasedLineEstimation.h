@@ -62,6 +62,8 @@ class ModelBasedLineEstimation
 		bool	getTangent(double p1[3], double p2[3]);
 		bool	getPredictedTangent(::cv::Vec4f& line);
 
+		void	setInitImageRotation(double rotation) {this->init_image_rotation = rotation;};
+
 	protected:
 		void predict(double robot_position[3], double robot_desired_velocity[3]);
 
@@ -82,7 +84,7 @@ class ModelBasedLineEstimation
 		void computePointsForFittingNew();
 		void computePointsForFittingBenchtop();
 
-		void computePointsForFittingWire(const ::cv::Mat& img, ::cv::Mat& out);
+		void computePointsForFittingWire();
 
 		bool thresholdImage(const cv::Mat &img, ::cv::Mat &output);	
 
@@ -106,5 +108,7 @@ class ModelBasedLineEstimation
 		void computePredictionCovariance();
 
 		void rejectSmallAreaImageRegions(const ::cv::Mat& img, ::cv::Mat& output);
+
+
 
 };

@@ -247,7 +247,8 @@ private:
 	ModelBasedLineEstimation	m_modelBasedLine;
 	RecursiveFilter::MovingAverageFilter	m_radius_filter;
 	RecursiveFilter::AngularMovingAverageFilter m_theta_filter;
-
+	bool	m_use_original_line_transition;
+	bool	m_use_green_line_transition;
 	double		apex_coordinates[5];
 	bool		m_apex_initialized;
 
@@ -287,7 +288,7 @@ public:
 	void InitForceEstimator(::std::string svm_base_path, float force_gain=3.0, float processNoiseCov=0.5, float measureCov = 0.5);
 	void UpdateForceEstimator(const ::cv::Mat& img);
 	float PredictForce();
-
+	void	checkTransitionState();
 	void initializeArrow();
 };
 
