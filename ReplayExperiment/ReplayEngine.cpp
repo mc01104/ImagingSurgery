@@ -90,7 +90,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 0;
+	this->offset = 500;
 
 	for (int i = this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -147,7 +147,7 @@ void ReplayEngine::run()
 
 void ReplayEngine::simulate(void* tData)
 {
-	::cv::VideoWriter video("green_wire_50pts_online_model.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 46, ::cv::Size(250, 250));
+	::cv::VideoWriter video("leak_detection.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 30, ::cv::Size(250, 250));
 
 	ReplayEngine* tDataSim = reinterpret_cast<ReplayEngine*> (tData);
 
@@ -211,6 +211,9 @@ void ReplayEngine::simulate(void* tData)
 				tDataSim->detectWall(tmpImage);
 				if(tDataSim->checkTransition())
 					tDataSim->setStatus(LINE_DETECTION);
+				break;
+			case LEAK_DETECTION:
+				tDataSim->detectLeak(tmpImage);
 				break;
 		}
 
@@ -949,4 +952,23 @@ void ReplayEngine::checkTangentDirection(::Eigen::Vector2d& tangentEig)
 		tangentEig[0] *= -1;
 		tangentEig[1] *= -1;
 	}
+}
+
+
+void ReplayEngine::detectLeak(::cv::Mat& img)
+{
+	float response = 0;
+	this->bof.predict(img, response);
+
+	int x = 0, y = 0;
+	::cv::Vec4f line;
+	::cv::Vec2f centroid;
+	if (this->lineDetector.processImage(img, line,centroid, false, 10, LineDetector::MODE::TRANSITION))
+	{
+		::std::cout << "contact" << ::std::endl;
+		this->m_leakDetector.processImage(img, x, y);
+	}
+	else
+		::std::cout << "free" << ::std::endl;
+
 }

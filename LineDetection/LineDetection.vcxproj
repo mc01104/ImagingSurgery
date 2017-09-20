@@ -150,6 +150,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="LeakDetection.h" />
     <ClInclude Include="LineDetection.h" />
     <ClInclude Include="ModelBasedLineEstimation.h" />
     <ClInclude Include="stdafx.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="WallSegmentation.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="LeakDetection.cpp" />
     <ClCompile Include="LineDetection.cpp" />
     <ClCompile Include="ModelBasedLineEstimation.cpp" />
     <ClCompile Include="stdafx.cpp">

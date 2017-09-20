@@ -11,6 +11,7 @@
 #include "ModelBasedLineEstimation.h"
 #include "WallSegmentation.h"
 #include "FilterLibrary.h"
+#include "LeakDetection.h"
 
 #include "Classifier.h"
 
@@ -58,6 +59,7 @@ class ReplayEngine
 
 		ModelBasedLineEstimation	modelBasedLine;
 		LineDetector			m_dummyLine;
+		LeakDetector			m_leakDetector;
 
 		::Eigen::Vector2d	m_valve_tangent_prev;
 		::Eigen::Vector2d	m_velocity_prev;
@@ -92,7 +94,7 @@ class ReplayEngine
 		bool	new_version;
 
 public:
-		enum STATUS {LINE_DETECTION, WALL_DETECTION} status;
+		enum STATUS {LINE_DETECTION, WALL_DETECTION, LEAK_DETECTION} status;
 		enum WALL_TO_FOLLOW {LEFT, TOP, BOTTOM};
 
 public:	
@@ -164,6 +166,8 @@ public:
 		void detectWall(::cv::Mat& img, int& x, int& y);
 
 		void detectWall(::cv::Mat& img);
+
+		void detectLeak(::cv::Mat& img);
 
 		bool checkTransition();
 

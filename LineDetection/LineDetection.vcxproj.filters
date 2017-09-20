@@ -36,6 +36,9 @@
     <ClInclude Include="ModelBasedLineEstimation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LeakDetection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -51,6 +54,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ModelBasedLineEstimation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LeakDetection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
