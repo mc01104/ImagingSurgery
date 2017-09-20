@@ -483,8 +483,6 @@ void Camera_processing::acquireImages(void )
 	ArgbFrame argbFrame1(m_Manager.GetFrameDimensions());
 	RawFrame rawFrame1(m_Manager.GetFrameDimensions());
 
-	//Mat bufImg = Mat(250,250,CV_8UC3);
-
 	unsigned char rData [250*250];
 	unsigned char gData [250*250];
 	unsigned char bData [250*250];
@@ -494,6 +492,7 @@ void Camera_processing::acquireImages(void )
 	Mat B = Mat(250, 250, CV_8U);
 	
 	::std::vector<Mat> array_to_merge;
+
 	array_to_merge.push_back(B);
 	array_to_merge.push_back(G);
 	array_to_merge.push_back(R);
@@ -514,10 +513,10 @@ void Camera_processing::acquireImages(void )
 			{
 
 				//Get the pixels from the rawFrame to show to the user
-				for (int i=0; i<250*250;i++)
+				for (int i = 0; i < 250*250; ++i)
 				{
-					rData[i] = ((argbFrame1.Begin()._Ptr[i] & 0x00FF0000)>>16);
-					gData[i] = ((argbFrame1.Begin()._Ptr[i] & 0x0000FF00)>>8);
+					rData[i] = ((argbFrame1.Begin()._Ptr[i] & 0x00FF0000) >> 16);
+					gData[i] = ((argbFrame1.Begin()._Ptr[i] & 0x0000FF00) >> 8);
 					bData[i] = ((argbFrame1.Begin()._Ptr[i] & 0x000000FF));
 				}
 				array_to_merge[0] *= g_b;			
@@ -605,24 +604,29 @@ void Camera_processing::displayImages(void)
 
 		if (display)
 		{
-			//this->computeCircumnavigationParameters(frame);
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
-				//this->computeCircumnavigationParametersDebug(frame);
-
 			else if (m_apex_to_valve)
 				this->computeApexToValveParameters(frame);
-			else 
+			else // maybe put initialization code here
 			{
 				m_theta_filter.resetFilter();							// this is not the proper place
 				m_radius_filter.resetFilter();
+				m_state_transition = false;
+				this->detected_valve.clear();
+				m_linedetected = false;
+				m_wall_detected = false;
 			}
 
 			display = false;
+
 			double rot = robot_rotation;
-			if (!m_rotateImage) rot = 0.0;
+			
+			if (!m_rotateImage) 
+				rot = 0.0;
 
 			rot_mat = getRotationMatrix2D( center, rotation - rot*180.0/3.141592, 1.0 );
+
 			warpAffine( frame, frame_rotated, rot_mat, frame_rotated.size() );
 
 			if (rec) // draw a red circle on frame when recording
@@ -790,6 +794,8 @@ void Camera_processing::recordImages(void)
 				video.release();
 				bundle.close();
 			}
+			bundle.close();
+			video.release();
 		}
 	}
 
@@ -944,8 +950,7 @@ bool Camera_processing::networkKinematics(void)
 		ss << force << " " << m_linedetected << " " << m_contact_response << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
 
 		ss << m_wall_detected << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
-		//::std::cout << " centroid" << ::std::endl;
-		//::std::cout << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << ::std::endl;
+
 		if (m_circumnavigation)
 		{
 			m_state_transition = false;
@@ -1387,6 +1392,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 #endif
 
 	float response = 0.0;
+
 #ifdef __BENCHTOP__
 	if (m_bow.predictBOW(img,response)) 
 #else
@@ -1394,8 +1400,10 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 #endif
 	{
 
-		if (classes[(int) response] == "Free") response = 0.0;
-		else response = 1.0;
+		if (classes[(int) response] == "Free") 
+			response = 0.0;
+		else 
+			response = 1.0;
 
 		m_contactBuffer.push_back(response);
 		
@@ -1414,26 +1422,25 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 		else if (m_contactBufferFiltered.size() > m_FramesPerHeartCycle) 
 		{
 			
-			float sum = std::accumulate(m_contactBufferFiltered.rbegin(),m_contactBufferFiltered.rbegin() + this->m_FramesPerHeartCycle,0.0);
+			float sum = std::accumulate(m_contactBufferFiltered.rbegin(), m_contactBufferFiltered.rbegin() + this->m_FramesPerHeartCycle, 0.0);
 
 			m_mutex_force.lock();
+
 			m_contactAvgOverHeartCycle = sum/m_FramesPerHeartCycle;
 			m_contact_response = response;
-			if (m_sendContact) m_contactAvgOverHeartCycle = response;
+
+			if (m_sendContact) 
+				m_contactAvgOverHeartCycle = response;
+
 			m_contactMeasured = true;
+
 			m_mutex_force.unlock();
 
 		}
 
-		//if (m_circumnavigation)
-		//	this->computeCircumnavigationParameters(img);
-		//else 
-		//{
-		//	m_theta_filter.resetFilter();							// this is not the proper place
-		//	m_radius_filter.resetFilter();
-		//}
 	}
-	else ::std::cout << "Problem with BOW" << ::std::endl;
+	else 
+		::std::cout << "Problem with BOW" << ::std::endl;
 }
 
 float Camera_processing::PredictForce()
@@ -1805,7 +1812,6 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	centroidEig(0) = x;
 	centroidEig(1) = y;
 
-
 	::Eigen::Vector2d image_center((int) img.rows/2, (int) img.rows/2);
 
 	// apply rotation to compensate image initial rotation + robot's 3 tube rotation
@@ -1816,7 +1822,6 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 
 	::Eigen::Matrix3d rot1 = RotateZ(rotation * M_PI/180.0 - robot_rotation);
 	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
-
 
 	// last transformation to align image frame with robot frame for convenience
 	::Eigen::Vector2d displacement(0, img.rows);

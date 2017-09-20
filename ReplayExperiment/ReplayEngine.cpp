@@ -963,7 +963,7 @@ void ReplayEngine::detectLeak(::cv::Mat& img)
 	int x = 0, y = 0;
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
-	if (this->lineDetector.processImage(img, line,centroid, false, 10, LineDetector::MODE::TRANSITION))
+	if (this->lineDetector.processImage(img, line,centroid, false, 10, LineDetector::MODE::TRANSITION)) // this is often more reliably detecting the valve than the classifier
 	{
 		::std::cout << "contact" << ::std::endl;
 		this->m_leakDetector.processImage(img, x, y);
