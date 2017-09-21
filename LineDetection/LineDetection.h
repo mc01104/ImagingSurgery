@@ -22,7 +22,7 @@ class LineDetector
         bool processImage(::cv::Mat img, bool display=false, int crop = 12);
 		bool processImage(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, bool display=false, int crop = 30,  LineDetector::MODE mode = LineDetector::MODE::CIRCUM);
 		bool processImageSynthetic(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &centroid, bool display=false, int crop = 20);
-
+		bool processImageDemo(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, bool display=false, int crop = 30,  LineDetector::MODE mode = LineDetector::MODE::CIRCUM);
 	private:
         bool RGBtoOpponent(const ::cv::Mat &img, ::cv::Mat &O1, ::cv::Mat &O2, ::cv::Mat &O3);
         bool detectLine(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid = ::cv::Vec2f());
@@ -38,6 +38,8 @@ class LineDetector
 		bool convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv::Mat& V);
 
 		void thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out);
+		void thresholdImageDemo(const ::cv::Mat& img, ::cv::Mat& out);
+		bool detectLineDemo(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid = ::cv::Vec2f());
 };
 
 

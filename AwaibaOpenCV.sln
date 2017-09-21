@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2012 for Windows Desktop
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AwaibaOpenCV", "AwaibaOpenCV\AwaibaOpenCV.vcxproj", "{DBB2D73A-1DCB-41D5-B2C4-D2C0FA24EEFE}"
 	ProjectSection(ProjectDependencies) = postProject
 		{10C29E02-D69A-4095-BD25-C6908AB4EDE9} = {10C29E02-D69A-4095-BD25-C6908AB4EDE9}

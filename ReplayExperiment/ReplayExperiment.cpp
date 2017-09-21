@@ -17,57 +17,59 @@ void testVectorOperations();
 void testBuildingModel();
 void testJointConversion();
 void testMapFunctions();
+void testBenchtopDetection();
 
 #define __NEW_VERSION__
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 
-	//// ------- WALL SEGMENTATION ----------- ///////
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-10-53";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-15-59";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-22-27";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-24-28";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-29-14";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-32-10";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_12-43-50";	// no tissue detection
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_14-40-02";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-06-34";	// OK with mask
-	//// --------------------------------------////////
+	////// ------- WALL SEGMENTATION ----------- ///////
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-10-53";	// OK
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-15-59";	// OK
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-22-27";	// OK
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-24-28";	// OK
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-29-14";	// OK
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-32-10";	// OK
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_12-43-50";	// no tissue detection
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_14-40-02";	// OK
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-06-34";	// OK with mask
+	////// --------------------------------------////////
 
 
-	//// ------- CIRCUM ----------- ///////
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-57-11";	// OK 
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-50-58";		// loses it when it goes to the margin
+	////// ------- CIRCUM ----------- ///////
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-57-11";	// OK 
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-50-58";		// loses it when it goes to the margin
 
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_14-00-09";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_12-58-07";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-49-13";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-15-33";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-07_bypass_cardioscopy/Videos_2017-09-07/2017-09-07_15-54-40";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-17-56";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/sink_line_detection/2017-09-09_17-25-47";
-	
-	// test green line exvivo
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-58-17";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-54-17";
-	
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_14-00-09";	
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_12-58-07";	
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-49-13";
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-15-33";
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-07_bypass_cardioscopy/Videos_2017-09-07/2017-09-07_15-54-40";
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-17-56";
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/sink_line_detection/2017-09-09_17-25-47";
+	//
+	//// test green line exvivo
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-58-17";
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-54-17";
+	//
 
-	// test leak detection
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-14_bypass_cardioscopy/2017-09-14_15-16-00";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-44-19";
-	
-	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
+	//// test leak detection
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-14_bypass_cardioscopy/2017-09-14_15-16-00";
+	////::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-44-19";
+	//
+	//::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
-	BagOfFeatures contact_classifier;
-	contact_classifier.load(path_to_classifier);
+	//BagOfFeatures contact_classifier;
+	//contact_classifier.load(path_to_classifier);
 
-	ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
-	engine.setClassifier(contact_classifier);
-	engine.setStatus(ReplayEngine::LEAK_DETECTION); 
-	engine.run();
+	//ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
+	//engine.setClassifier(contact_classifier);
+	//engine.setStatus(ReplayEngine::LEAK_DETECTION); 
+	//engine.run();
 
 	//testMapFunctions();
+	testBenchtopDetection();
 	return 0;
 }
 
@@ -155,4 +157,30 @@ void testMapFunctions()
 
 	::std::cout << "check stream operation" << ::std::endl;
 	::std::cout << mapV << ::std::endl;
+}
+
+void testBenchtopDetection()
+{
+	LineDetector lineDetector;
+
+	::std::string imageName = "green_circle.png";
+
+    ::cv::Mat image;
+    image = ::cv::imread(imageName.c_str(), ::cv::IMREAD_COLOR); // Read the file
+
+    if( image.empty() )                      
+    {
+        cout <<  "Could not open or find the image" << std::endl ;
+        return;
+    }
+
+	::cv::Vec4f line;
+	::cv::Vec2f centroid;
+	lineDetector.processImageDemo(image, line, centroid, false, 10, LineDetector::MODE::CIRCUM);
+
+	::cv::line(image, ::cv::Point(centroid[0] - 100 * line[0], centroid[1] - 100 * line[1]), ::cv::Point(centroid[0] + 100 * line[0], centroid[1] + 100 * line[1]), ::cvScalar(0, 0, 255), 2);
+    ::cv::imshow( "Display window", image );   
+	::cv::waitKey();
+
+
 }
