@@ -35,7 +35,7 @@ LeakDetector::processImage(const ::cv::Mat& img, int x, int y)
 	int ind = 0;
 	for (int i = 1; i < num ; ++i)
 	{
-		if (g.at<int>(i, ::cv::CC_STAT_AREA) > 2000 && g.at<int>(i, ::cv::CC_STAT_AREA) < 10000)
+		if (g.at<int>(i, ::cv::CC_STAT_AREA) > 2000 && g.at<int>(i, ::cv::CC_STAT_AREA) < 20000)
 		{
 
 			centers.push_back(::cv::Point(centroids.at<double>(i, 0), centroids.at<double>(i, 1)));
@@ -49,15 +49,16 @@ LeakDetector::processImage(const ::cv::Mat& img, int x, int y)
 		}
 		//::std::cout << "centroid: " << i << " has area:" << g.at<int>(i, ::cv::CC_STAT_AREA) << ::std::endl;
 	}
-	::std::cout << ::std::endl;
+	
 
 	//x = centers[0].x;
 	//y = centers[0].y;
 	//for (int i = 0; i < centers.size(); ++i)
 	//	::cv::circle(img, ::cv::Point(centers[i].x, centers[i].y), 5, ::cv::Scalar(0,255,0), -1);
+	//::std::cout << centers.size() << ::std::endl;
 	if(centers.size() > 0)
 		::cv::circle(img, ::cv::Point(centers[ind].x, centers[ind].y), 5, ::cv::Scalar(0,255,0), -1);
-	::cv::imshow("unrotated", this->currentImage);
+	//::cv::imshow("unrotated", this->currentImage);
 	::cv::imshow("leak_detection", this->thresholdedImage);
 }
 
@@ -109,9 +110,10 @@ LeakDetector::thresholdImageHSV()
 	//::cv::circle(channel_mask, ::cv::Point(47, 115), 40,  0, -1);
 	// scope 4
 	//::cv::circle(channel_mask, ::cv::Point(43, 116), 50,  0, -1);
-	::cv::circle(channel_mask, ::cv::Point(60, 115), 30,  0, -1);
-	::cv::circle(channel_mask, ::cv::Point(40, 115), 30,  0, -1);
-	::cv::circle(channel_mask, ::cv::Point(20, 115), 30,  0, -1);
+	//::cv::circle(channel_mask, ::cv::Point(60, 115), 30,  0, -1);
+	//::cv::circle(channel_mask, ::cv::Point(46, 115), 30,  0, -1);
+	::cv::circle(channel_mask, ::cv::Point(116, 46), 30,  0, -1);
+	//::cv::circle(channel_mask, ::cv::Point(20, 115), 30,  0, -1);
 	
 
 	::cv::bitwise_and(this->thresholdedImage, channel_mask, this->thresholdedImage); 

@@ -18,6 +18,7 @@ void testBuildingModel();
 void testJointConversion();
 void testMapFunctions();
 void testBenchtopDetection();
+bool testLeakDetection();
 
 #define __NEW_VERSION__
 
@@ -69,7 +70,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	//engine.run();
 
 	//testMapFunctions();
-	testBenchtopDetection();
+	//testBenchtopDetection();
+	testLeakDetection();
 	return 0;
 }
 
@@ -183,4 +185,77 @@ void testBenchtopDetection()
 	::cv::waitKey();
 
 
+}
+
+bool testLeakDetection()
+{
+	LeakDetector leakDetector;
+	LineDetector lineDetector;
+	BagOfFeatures bof;
+	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
+	bof.load(path_to_classifier);
+
+	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-09-08_Bypass_cardioscopy/awaiba_videos_0908/2016-09-08_12-58-08.avi";
+	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-09-08_Bypass_cardioscopy/awaiba_videos_0908/2016-09-08_13-05-08.avi";
+	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-10-06_bypass_cardioscopy/Videos_2016-10-06/2016-10-06_13-21-56.avi";
+	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-10-06_bypass_cardioscopy/Videos_2016-10-06/2016-10-06_13-32-37.avi";
+	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-10-06_bypass_cardioscopy/Videos_2016-10-06/2016-10-06_13-41-27.avi";
+	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-10-06_bypass_cardioscopy/Videos_2016-10-06/2016-10-06_13-45-18.avi";
+	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-11-10_bypass_cardioscopy/Videos_2016-11-10/2016-11-10_10-35-56.avi";
+	::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-11-10_bypass_cardioscopy/Videos_2016-11-10/2016-11-10_10-58-44.avi";
+	
+	
+	::std::vector<::std::string> result;
+	result = splitString(pathToVideo, '/');
+	result = splitString(result.back(), '.');
+	::std::string output_filename = result[0] + "_leaks_detected.avi";
+
+	::cv::VideoWriter video(output_filename, ::cv::VideoWriter::fourcc('M','P','E','G'), 30, ::cv::Size(250, 250));
+	
+	::cv::VideoCapture cap(pathToVideo);
+
+  // Check if camera opened successfully
+  if(!cap.isOpened())
+  {
+    ::std::cout << "Error opening video stream or file" << endl;
+    return false;
+  }
+
+  ::cv::Mat img;     
+  ::cv::Vec4f line;
+  ::cv::Vec2f centroid;
+
+  while(1)
+  {
+ 
+    // Capture frame-by-frame
+    cap >> img;
+  
+    // If the frame is empty, break immediately
+    if (img.empty())
+      break;
+ 
+	int x = 0, y = 0;
+	float response = 0;
+	bof.predict(img, response);
+	// if valve is detected -> apply leak detection
+	if (lineDetector.processImage(img, line,centroid, false, 5, LineDetector::MODE::TRANSITION)) // this is often more reliably detecting the valve than the classifier
+		leakDetector.processImage(img, x, y);
+	
+    ::cv::imshow( "Frame", img );
+	video.write(img);
+
+	// Press  ESC on keyboard to exit
+    char c=(char) ::cv::waitKey(25);
+    if(c==27)
+      break;
+  }
+  
+  // When everything done, release the video capture object
+  cap.release();
+  video.release();
+  // Closes all the frames
+  ::cv::destroyAllWindows();
+     
+  return true;
 }
