@@ -407,13 +407,13 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
 
 bool 
-LineDetector::processImageDemo(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, bool display, int crop,  LineDetector::MODE mode)
+LineDetector::processImageDemo(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, bool display, int crop,  LineDetector::MODE mode, ::cv::Mat& thres)
 {
     ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
 
 	bool lineDetected = false;
 
-	lineDetected = this->detectLineDemo(img, line, centroid);
+	lineDetected = this->detectLineDemo(img, line, centroid, thres);
 
 	if (lineDetected)
 	{
@@ -425,7 +425,7 @@ LineDetector::processImageDemo(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centro
 
 }
 
-bool LineDetector::detectLineDemo(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid)
+bool LineDetector::detectLineDemo(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid, ::cv::Mat& thres)
 {
     ::cv::Mat thresholded;
 	
@@ -439,6 +439,7 @@ bool LineDetector::detectLineDemo(const ::cv::Mat img, cv::Vec4f &line, ::cv::Ve
 
 	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
+	output.copyTo(thres);
 
 	::std::vector<::cv::Vec2f> lines_hough;
 	if (nonzero.size() > 50)
@@ -475,8 +476,10 @@ LineDetector::thresholdImageDemo(const ::cv::Mat& img, ::cv::Mat& out)
 	::cv::split(hsv, hsv_split);
 
     ::cv::Mat mask_h, mask_s, mask_v;
-	const int min_h = 80, max_h = 98;
-	const int min_s = 48, max_s = 80;
+	//const int min_h = 80, max_h = 98;
+	const int min_h = 70, max_h = 98;
+	//const int min_s = 48, max_s = 80;
+	const int min_s = 70, max_s = 150;
     ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
     ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
     //::cv::inRange(hsv_split[2] ,min_s,max_s,mask_v);
@@ -488,7 +491,10 @@ LineDetector::thresholdImageDemo(const ::cv::Mat& img, ::cv::Mat& out)
 	// mask the working channel
 	// scope 1
 	::cv::circle(channel_mask, ::cv::Point(25, 149), 50,  0, -1);
-	//::cv::circle(channel_mask, ::cv::Point(149, 45), 50,  0, -1); (this was just for testing)
+	//::cv::circle(channel_mask, ::cv::Point(149, 45), 50,  0, -1); // (this was just for testing)
+	//::cv::circle(channel_mask, ::cv::Point(46, 132), 50,  0, -1); // (this was just for testing)
+	//::cv::circle(channel_mask, ::cv::Point(30, 132), 50,  0, -1); // (this was just for testing)
+
 	//// scope 2
 	//::cv::circle(channel_mask, ::cv::Point(215, 149), 40,  0, -1);
 	//// scope 3

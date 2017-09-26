@@ -19,6 +19,7 @@ void testJointConversion();
 void testMapFunctions();
 void testBenchtopDetection();
 bool testLeakDetection();
+void testMultipleWires();
 
 #define __NEW_VERSION__
 
@@ -71,7 +72,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//testMapFunctions();
 	//testBenchtopDetection();
-	testLeakDetection();
+	//testLeakDetection();
+	testMultipleWires();
 	return 0;
 }
 
@@ -258,4 +260,46 @@ bool testLeakDetection()
   ::cv::destroyAllWindows();
      
   return true;
+}
+
+
+void	testMultipleWires()
+{
+	LineDetector lineDetector;
+
+
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-25_16-36-09";
+
+	::std::vector<::std::string> imList;
+	int count = getImList(imList, checkPath(img_path + "/" ));
+
+	::std::cout << "Loaded: " << count << " images" << ::std::endl;
+	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
+
+	::cv::Vec4f line;
+	::cv::Vec2f centroid;
+	::cv::Mat img, thres;
+	::cv::Mat img_double;
+	
+	::cv::VideoWriter video(GetDateString() + ".avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 30, ::cv::Size(2 * 250, 250));
+	bool lineDetected = false;
+	for (auto& t : imList)
+	{
+		thres = ::cv::Mat::zeros(250, 250, CV_8UC1);
+		img = ::cv::imread(checkPath(img_path + "/" + t));
+		lineDetected = lineDetector.processImageDemo(img, line, centroid, false, 5, ::LineDetector::CIRCUM, thres);
+
+		if (lineDetected)
+			::cv::line(img, ::cv::Point(centroid[0] - line[0] * 100, centroid[1] - line[1] * 100), ::cv::Point(centroid[0] + line[0] * 100, centroid[1] + line[1] * 100),
+				::cv::Scalar(0, 0, 255), 2);
+
+		::cv::hconcat(img, thres, img_double);
+		::cv::imshow("img", img_double); 
+		video.write(img_double);
+		::cv::waitKey(1);
+	}
+
+	video.release();
+
+
 }
