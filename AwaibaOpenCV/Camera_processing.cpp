@@ -964,7 +964,8 @@ bool Camera_processing::networkKinematics(void)
 		else
 			ss << "0";
 		ss << ::std::endl;
-
+		//::std::cout << "msg:" << ::std::endl;
+		//::std::cout << ss.str().c_str() << ::std::endl;
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
@@ -1794,10 +1795,15 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	::cv::Vec4f line2;
 
 	if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::TRANSITION) && m_use_original_line_transition)
+	{
 		this->detected_valve.push_back(true);
+		::std::cout <<"in 1" <<::std::endl;
+	}
 	else if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::CIRCUM) && m_use_green_line_transition)
+	{
 		this->detected_valve.push_back(true);
-
+				::std::cout <<"in 2" <<::std::endl;
+	}
 	if (this->detected_valve.size() > 15 && this->m_use_automatic_transition)
 	{
 		::std::cout << "transition" << ::std::endl;

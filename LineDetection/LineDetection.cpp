@@ -148,7 +148,13 @@ bool LineDetector::detectLine(const ::cv::Mat img, ::cv::Vec4f &line, ::cv::Vec2
 	{
         /*::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);*/
 		::cv::HoughLinesP(thresholded_binary, lines, 1, 1 * pi/180.0, 70, 25, 3);
-		this->averageTangentPCA(lines, line);
+		if (lines.size() > 0)
+		{
+			this->averageTangentPCA(lines, line);
+		}
+		else 
+			return false;
+		//this->averageTangentPCA(lines, line);
 		this->computeCentroid(nonzero, centroid);
 
 		return true;
@@ -268,12 +274,15 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 70, 25, 3);
 
 		if (lines_hough.size() > 0)
+		{
 			this->averageTangentPCA(lines_hough, line);
-
+		}
+		else 
+			return false;
 		this->computeCentroid(nonzero, centroid);
 
-		::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(255, 255, 255), 2, CV_AA);
-		::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(255, 255, 255), 2, CV_AA);
+	///*	::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(255, 255, 255), 2, CV_AA);
+	//	::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(255, 255, 255), 2, CV_AA);*\
 
 		::cv::imshow("thresholded", output);
 		::cv::waitKey(1);
@@ -394,7 +403,7 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 	::cv::split(hsv, hsv_split);
 
     ::cv::Mat mask_h, mask_s, mask_v;
-	const int min_h = 30, max_h = 110;
+	const int min_h = 20, max_h = 120;
 	const int min_s = 1, max_s = 255;
     ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
     ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
@@ -407,16 +416,16 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
 	// mask the working channel
 	// mask the working channel
-	// scope 1
-	::cv::circle(channel_mask, ::cv::Point(29, 149), 40,  0, -1);
+	//// scope 1
+	//::cv::circle(channel_mask, ::cv::Point(29, 149), 40,  0, -1);
 	//// scope 2
 	//::cv::circle(channel_mask, ::cv::Point(215, 149), 40,  0, -1);
 	//// scope 3
 	//::cv::circle(channel_mask, ::cv::Point(47, 115), 40,  0, -1);
-	//// scope 4
+	// scope 4
 	//::cv::circle(channel_mask, ::cv::Point(43, 116), 46,  0, -1);
 
-	::cv::bitwise_and(out, channel_mask, out); 
+	//::cv::bitwise_and(out, channel_mask, out); 
 
     // Apply morphological opening to remove small things
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(5,5));

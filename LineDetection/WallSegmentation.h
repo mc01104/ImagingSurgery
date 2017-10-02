@@ -17,7 +17,7 @@ class WallSegmentation
 
         ~WallSegmentation();
 
-        bool processImage(::cv::Mat img, int& x, int& y, bool display=false, int cx = 108, int cy = 108, int radius = 135);
+        bool processImage(::cv::Mat img, int& x, int& y, bool display=false, int cx = 125, int cy = 125, int radius = 125);
 
 	private:
 

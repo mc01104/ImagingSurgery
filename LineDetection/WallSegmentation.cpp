@@ -13,7 +13,7 @@ WallSegmentation::~WallSegmentation()
 bool WallSegmentation::processImage(::cv::Mat img, int& x, int& y, bool display, int cx, int cy, int radius)
 {
  
-	int numOfPoints = (int) 3.14 * radius*radius *0.04;
+	int numOfPoints = (int) 3.14 * radius*radius *0.07;
 
     // Blur  the image to remove small artifacts (color defects from camera, blood flow ..)
     ::cv::Mat img_blur;
