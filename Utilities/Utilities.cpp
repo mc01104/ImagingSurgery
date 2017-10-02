@@ -3,6 +3,7 @@
 #include <iterator>
 #include <fstream>
 #include <sstream>
+#include <cmath>
 
 ::std::vector<::std::string> ReadLinesFromFile(const ::std::string& pathToFile)
 {
@@ -278,4 +279,93 @@ void popFirstRowEigen(::Eigen::MatrixXd& in_matrix)
 		result[strVector[i].c_str()] = (double) atof(strVector[++i].c_str());
 
 	return result;
+}
+
+
+::std::random_device rd;
+
+::std::mt19937 mt(rd());
+
+void ransac(const ::std::vector<::Eigen::Vector2d>& points, int max_iter, double& alpha, double& beta, double& radius, double& angle)
+{
+	int num_of_points = points.size();
+
+	::std::uniform_int_distribution<int> dist(0, num_of_points - 1);
+
+	// best params
+	double dist_threshold = 10;
+	double inlierRatio = 0.20;   // 0.2
+
+	int inlierNum = 0;
+	int bestInNum = 0;										// Best fitting line with largest number of inliers
+
+	::Eigen::Vector2d line, normal_vector, tangent;
+	::Eigen::VectorXd lineEig(4), cpoint(2);
+	double distance = 0;
+	::std::vector<int> inlierId;
+
+	alpha = 0;
+	beta = 0;
+	radius = 0;
+	angle = 0;
+	int ind_a = 0, ind_b = 0;
+	for (int i = 0; i < max_iter; ++i)
+	{
+		//inlierId.clear();
+		inlierNum = 0;
+		// select two points
+		ind_a = dist(mt);
+		ind_b = dist(mt);
+		
+		line(0) = points[ind_b](0) - points[ind_a](0);
+		line(1) = points[ind_b](1) - points[ind_a](1);
+		line.normalize();
+		
+		lineEig(0) = line(0);
+		lineEig(1) = line(1);
+		lineEig(2) = points[ind_b](0);
+		lineEig(3) = points[ind_b](1);
+		normal_vector(0) = -lineEig(1);
+		normal_vector(1) = lineEig(0);
+
+		for (int j = 0; j < points.size(); ++j)
+		{
+			distancePointToLine(points[j], lineEig, normal_vector, distance);
+
+			if (distance < dist_threshold)
+				inlierNum++;
+				//inlierId.push_back(j);
+		}
+		//inlierNum = inlierId.size();
+		
+		if (inlierNum > (int)(inlierRatio * num_of_points) && inlierNum > bestInNum)
+		{
+			bestInNum = inlierNum;
+			alpha = (points[ind_b](1) - points[ind_a](1))/(points[ind_b](0) - points[ind_a](0));
+			beta = points[ind_b](0) - alpha * points[ind_a](0);
+			nearestPointToLine(::Eigen::Vector2d(0, 0), lineEig.segment(2, 2), line.segment(0, 2), cpoint);
+			cartesian2DPointToPolar(cpoint, radius, angle);
+			computePerpendicularVector(cpoint, tangent);
+			radius = tangent(0);
+			angle = tangent(1);
+		}
+	}
+
+
+}
+
+
+void distancePointToLine(const ::Eigen::Vector2d& point, ::Eigen::VectorXd& line ,double& distance)
+{
+
+	::Eigen::Vector2d point_on_line(line[3], line[3]);
+	::Eigen::Vector2d tangent(line[0], line[1]);
+	distancePointToLine(point, point_on_line , tangent, distance);
+}
+
+void distancePointToLine(const ::Eigen::Vector2d& point, ::Eigen::VectorXd& line, ::Eigen::Vector2d& vertical , double& distance)
+{
+	
+	distance = ::std::abs(vertical.transpose() * (point - line.segment(2, 2)));
+
 }

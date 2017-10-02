@@ -35,7 +35,7 @@ LeakDetector::processImage(const ::cv::Mat& img, int x, int y)
 	int ind = 0;
 	for (int i = 1; i < num ; ++i)
 	{
-		if (g.at<int>(i, ::cv::CC_STAT_AREA) > 2000 && g.at<int>(i, ::cv::CC_STAT_AREA) < 20000)
+		if (g.at<int>(i, ::cv::CC_STAT_AREA) > 200 && g.at<int>(i, ::cv::CC_STAT_AREA) < 200000)
 		{
 
 			centers.push_back(::cv::Point(centroids.at<double>(i, 0), centroids.at<double>(i, 1)));

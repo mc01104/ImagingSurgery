@@ -1,7 +1,10 @@
 #include "stdafx.h"
 #include "LineDetection.h"
-
+#include <Eigen/Dense>
+#include "Utilities.h"
 #define SCOPE_2
+
+const double pi = 3.1415926535897;
 
 LineDetector::LineDetector()
 {
@@ -131,14 +134,26 @@ bool LineDetector::detectLine(const ::cv::Mat img, ::cv::Vec4f &line, ::cv::Vec2
 
 	::cv::imshow("thresholded", thresholded_binary);
 
-	if (nonzero.size() > 400)
-	{
-        ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
+	//if (nonzero.size() > 400)
+	//{
+ //       ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 
+	//	this->computeCentroid(nonzero, centroid);
+
+	//	return true;
+	//}
+	::std::vector<::cv::Vec4i> lines;
+
+	if (nonzero.size() > 50)
+	{
+        /*::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);*/
+		::cv::HoughLinesP(thresholded_binary, lines, 1, 1 * pi/180.0, 70, 25, 3);
+		this->averageTangentPCA(lines, line);
 		this->computeCentroid(nonzero, centroid);
 
 		return true;
 	}
+
 
 	return false;
 }
@@ -246,10 +261,14 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
 
-	::std::vector<::cv::Vec2f> lines_hough;
+	::std::vector<::cv::Vec4i> lines_hough;
 	if (nonzero.size() > 50)
 	{
-        ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
+        //::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
+		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 70, 25, 3);
+
+		if (lines_hough.size() > 0)
+			this->averageTangentPCA(lines_hough, line);
 
 		this->computeCentroid(nonzero, centroid);
 
@@ -388,8 +407,8 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
 	// mask the working channel
 	// mask the working channel
-	//// scope 1
-	//::cv::circle(channel_mask, ::cv::Point(29, 149), 40,  0, -1);
+	// scope 1
+	::cv::circle(channel_mask, ::cv::Point(29, 149), 40,  0, -1);
 	//// scope 2
 	//::cv::circle(channel_mask, ::cv::Point(215, 149), 40,  0, -1);
 	//// scope 3
@@ -407,12 +426,12 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
 
 bool 
-LineDetector::processImageDemo(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, bool display, int crop,  LineDetector::MODE mode, ::cv::Mat& thres)
+LineDetector::processImageDemo(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, bool display, int crop,  LineDetector::MODE mode, ::cv::Mat& thres, LineDetector::ALGORITHM linemode)
 {
     ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
 
 	bool lineDetected = false;
-
+	
 	lineDetected = this->detectLineDemo(img, line, centroid, thres);
 
 	if (lineDetected)
@@ -444,12 +463,10 @@ bool LineDetector::detectLineDemo(const ::cv::Mat img, cv::Vec4f &line, ::cv::Ve
 	::std::vector<::cv::Vec2f> lines_hough;
 	if (nonzero.size() > 50)
 	{
-        ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
+	        ::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
+
 
 		this->computeCentroid(nonzero, centroid);
-
-		::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(255, 255, 255), 2, CV_AA);
-		::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(255, 255, 255), 2, CV_AA);
 
 		::cv::imshow("thresholded", output);
 		::cv::waitKey(1);
@@ -507,5 +524,248 @@ LineDetector::thresholdImageDemo(const ::cv::Mat& img, ::cv::Mat& out)
     // Apply morphological opening to remove small things
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(5,5));
     ::cv::morphologyEx(out,out,::cv::MORPH_OPEN,kernel);
+
+}
+
+
+bool 
+LineDetector::detectLineDemoHough(const ::cv::Mat img, ::std::vector<::cv::Vec2f>& lines, ::cv::Vec2f& centroid, ::cv::Mat& thres)
+{
+    ::cv::Mat thresholded;
+	
+    ::cv::Mat thresholded_binary(img.size(), CV_8UC1);
+
+	this->thresholdImageDemo(img, thresholded);
+    thresholded.convertTo(thresholded_binary, CV_8UC1);
+	
+    ::std::vector< ::cv::Point> nonzero;
+    ::cv::findNonZero(thresholded_binary, nonzero);
+
+	::cv::Mat	 output;
+	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
+	output.copyTo(thres);
+
+	if (nonzero.size() > 50)
+	{
+		//::cv::HoughLines(thresholded_binary, lines, 1, 1 * pi/180.0, 150);
+		::cv::HoughLinesP(thresholded_binary, lines, 1, 1 * pi/180.0, 150, 15, 10);
+		this->computeCentroid(nonzero, centroid);
+
+		::cv::imshow("thresholded", output);
+		::cv::waitKey(1);
+
+		return true;
+
+	}
+	else 
+	{
+		::cv::imshow("thresholded", thresholded_binary);
+		::cv::waitKey(1);
+
+		return false;
+	}
+}
+
+bool 
+LineDetector::processImageDemoHough(::cv::Mat img, ::std::vector<::cv::Vec2f>& lines, ::cv::Vec2f& centroid, ::cv::Mat& thres)
+{
+	int crop = 5;
+    ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
+
+	bool lineDetected = false;
+	
+	lineDetected = this->detectLineDemoHough(img, lines, centroid, thres);
+
+	if (lineDetected)
+	{
+		centroid[0] += crop;
+		centroid[1] += crop;
+	}
+
+    return lineDetected;
+
+}
+
+bool 
+LineDetector::detectLineDemoHoughProbabilistic(const ::cv::Mat img, ::std::vector<::cv::Vec4i>& lines, ::cv::Vec2f& centroid, ::cv::Mat& thres)
+{
+    ::cv::Mat thresholded;
+	
+    ::cv::Mat thresholded_binary(img.size(), CV_8UC1);
+
+	this->thresholdImageDemo(img, thresholded);
+    thresholded.convertTo(thresholded_binary, CV_8UC1);
+	
+    ::std::vector< ::cv::Point> nonzero;
+    ::cv::findNonZero(thresholded_binary, nonzero);
+
+	::cv::Mat	 output;
+	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
+	output.copyTo(thres);
+
+	if (nonzero.size() > 50)
+	{
+		//::cv::HoughLines(thresholded_binary, lines, 1, 1 * pi/180.0, 150);
+		::cv::HoughLinesP(thresholded_binary, lines, 1, 1 * pi/180.0, 70, 25, 3);
+		this->computeCentroid(nonzero, centroid);
+
+		::cv::imshow("thresholded", output);
+		::cv::waitKey(1);
+
+		return true;
+
+	}
+	else 
+	{
+		::cv::imshow("thresholded", thresholded_binary);
+		::cv::waitKey(1);
+
+		return false;
+	}
+}
+
+bool 
+LineDetector::processImageDemoHoughProbabilistic(::cv::Mat img, ::std::vector<::cv::Vec4i>& lines, ::cv::Vec2f& centroid, ::cv::Mat& thres, ::cv::Vec4f& line)
+{
+	int crop = 5;
+    ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
+
+	bool lineDetected = false;
+	
+	lineDetected = this->detectLineDemoHoughProbabilistic(img, lines, centroid, thres);
+	//this->averageTangent(lines, line);
+	if (lines.size() > 0)
+		this->averageTangentPCA(lines, line);
+
+	if (lineDetected)
+	{
+		centroid[0] += crop;
+		centroid[1] += crop;
+	}
+
+    return lineDetected;
+
+}
+
+
+bool 
+LineDetector::processImageDemoRANSAC(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, ::cv::Mat& thres)
+{
+	int crop = 5;
+    ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
+
+	bool lineDetected = false;
+	
+	lineDetected = this->detectLineDemoRANSAC(img, line, centroid, thres);
+
+	if (lineDetected)
+	{
+		centroid[0] += crop;
+		centroid[1] += crop;
+	}
+
+    return lineDetected;
+}
+
+bool 
+LineDetector::detectLineDemoRANSAC(const ::cv::Mat img, ::cv::Vec4f& line, ::cv::Vec2f& centroid, ::cv::Mat& thres)
+{
+    ::cv::Mat thresholded;
+	
+    ::cv::Mat thresholded_binary(img.size(), CV_8UC1);
+
+	this->thresholdImageDemo(img, thresholded);
+    thresholded.convertTo(thresholded_binary, CV_8UC1);
+	
+    ::std::vector< ::cv::Point> nonzero;
+    ::cv::findNonZero(thresholded_binary, nonzero);
+
+	::cv::Mat	 output;
+	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
+
+	output.copyTo(thres);
+
+	::std::vector<::Eigen::Vector2d> tmp;
+	::Eigen::Vector2d tmp_vector;
+
+	// more efficient way to do that or even eliminate it
+	for (int i = 0; i < nonzero.size(); ++i)
+	{
+		tmp_vector(0) = nonzero[i].x;
+		tmp_vector(1) = nonzero[i].y;
+		tmp.push_back(tmp_vector);
+	}
+
+	double radius = 0, angle = 0;
+	double alpha = 0, beta = 0;
+	if (nonzero.size() > 50)
+	{
+		//::cv::HoughLines(thresholded_binary, lines, 1, 1 * pi/180.0, 150);
+		ransac(tmp, 2000, alpha, beta, radius, angle);
+		this->computeCentroid(nonzero, centroid);
+
+		::cv::imshow("thresholded", output);
+		::cv::waitKey(1);
+		line[0] = radius;
+
+		line[1] = angle;
+		line[2] = centroid[0];
+		line[3] = centroid[1];
+		return true;
+
+	}
+	else 
+	{
+		::cv::imshow("thresholded", thresholded_binary);
+		::cv::waitKey(1);
+
+		return false;
+	}
+}
+
+
+void 
+LineDetector::averageTangent(::std::vector<::cv::Vec4i>& lines, ::cv::Vec4f& line)
+{
+	double sum_x = 0, sum_y = 0;
+	double x = 0, y = 0, norm = 1;
+	for (int i = 0; i < lines.size(); ++i)
+	{
+		// compute each line direction
+		x = lines[i][2] - lines[i][0];
+		y = lines[i][3] - lines[i][1];
+		
+		norm = ::std::sqrt(x*x + y*y);
+		x /= norm; y /= norm;
+		sum_x += x; sum_y += y;
+	}
+
+	line[0] = sum_x/lines.size();
+	line[1] = sum_y/lines.size();
+}
+
+void 
+LineDetector::averageTangentPCA(::std::vector<::cv::Vec4i>& lines, ::cv::Vec4f& line)
+{
+	::Eigen::MatrixXd data;
+	::Eigen::Vector2d tmp;
+	for (int i = 0; i < lines.size(); ++i)
+	{
+		tmp(0) = lines[i][2] - lines[i][0];
+		tmp(1) = lines[i][3] - lines[i][1];
+		tmp.normalize();
+
+		appendRowEigen(data, tmp);
+
+		tmp(0) *= -1;
+		tmp(1) *= -1;
+
+		appendRowEigen(data, tmp);
+	}
+
+	::Eigen::JacobiSVD<::Eigen::MatrixXd> svd(data.transpose() * data, ::Eigen::ComputeThinU | ::Eigen::ComputeThinV);
+
+	line(0) = svd.matrixU()(0, 0);
+	line(1) = svd.matrixU()(1, 0);
 
 }

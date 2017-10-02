@@ -9,7 +9,7 @@
 #include "FileUtils.h"
 #include "classifier.h"
 #include "ValveModel.h"
-
+#include "Utilities.h"
 #include "CTRFactory.h"
 #include "CTR.h"
 
@@ -22,6 +22,13 @@ bool testLeakDetection();
 void testMultipleWires();
 
 #define __NEW_VERSION__
+
+enum LINE_MODE
+{
+	LSQ,
+	HOUGH,
+	RANSAC
+};
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -74,6 +81,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testBenchtopDetection();
 	//testLeakDetection();
 	testMultipleWires();
+
+	//double a = 2.336;
+	//::std::cout << std::setprecision(50) << a << ::std::endl;
+	//::std::cout << std::setprecision(50) <<::std::pow(a, 4) << ::std::endl;
 	return 0;
 }
 
@@ -204,7 +215,8 @@ bool testLeakDetection()
 	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-10-06_bypass_cardioscopy/Videos_2016-10-06/2016-10-06_13-41-27.avi";
 	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-10-06_bypass_cardioscopy/Videos_2016-10-06/2016-10-06_13-45-18.avi";
 	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-11-10_bypass_cardioscopy/Videos_2016-11-10/2016-11-10_10-35-56.avi";
-	::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-11-10_bypass_cardioscopy/Videos_2016-11-10/2016-11-10_10-58-44.avi";
+	//::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/2016-11-10_bypass_cardioscopy/Videos_2016-11-10/2016-11-10_10-58-44.avi";
+	::std::string pathToVideo = "Z:/Public/Data/Cardioscopy_project/test_leak_detection/2017-09-14_13-26-03.mp4";
 	
 	
 	::std::vector<::std::string> result;
@@ -241,9 +253,11 @@ bool testLeakDetection()
 	float response = 0;
 	bof.predict(img, response);
 	// if valve is detected -> apply leak detection
-	if (lineDetector.processImage(img, line,centroid, false, 5, LineDetector::MODE::TRANSITION)) // this is often more reliably detecting the valve than the classifier
+	//if (lineDetector.processImage(img, line,centroid, false, 5, LineDetector::MODE::TRANSITION)) // this is often more reliably detecting the valve than the classifier
+	//	leakDetector.processImage(img, x, y);
+	if (response == 1)
 		leakDetector.processImage(img, x, y);
-	
+
     ::cv::imshow( "Frame", img );
 	video.write(img);
 
@@ -267,31 +281,67 @@ void	testMultipleWires()
 {
 	LineDetector lineDetector;
 
+	LINE_MODE mode = HOUGH;
 
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-25_16-36-09";
-
+	// load images
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-25_16-36-09";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/test_green_wire_detection/2017-09-27_15-43-21";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/test_green_wire_detection/2017-09-28_15-22-42";
+	
 	::std::vector<::std::string> imList;
 	int count = getImList(imList, checkPath(img_path + "/" ));
-
 	::std::cout << "Loaded: " << count << " images" << ::std::endl;
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
+
 	::cv::Mat img, thres;
 	::cv::Mat img_double;
+
+	// Hough Transform outputs vector of lines (multiple detection
+	::std::vector<::cv::Vec4i> lines;
 	
+	thres = ::cv::Mat::zeros(250, 250, CV_8UC1);
+
 	::cv::VideoWriter video(GetDateString() + ".avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 30, ::cv::Size(2 * 250, 250));
 	bool lineDetected = false;
 	for (auto& t : imList)
 	{
-		thres = ::cv::Mat::zeros(250, 250, CV_8UC1);
+		lines.clear();
+		
 		img = ::cv::imread(checkPath(img_path + "/" + t));
-		lineDetected = lineDetector.processImageDemo(img, line, centroid, false, 5, ::LineDetector::CIRCUM, thres);
-
+		
+		switch(mode)
+		{
+			case LSQ:
+				lineDetected = lineDetector.processImageDemo(img, line, centroid, false, 5, ::LineDetector::MODE::CIRCUM, thres);
+				break;
+			case HOUGH:
+				lineDetected = lineDetector.processImageDemoHoughProbabilistic(img, lines, centroid, thres, line);
+				break;
+			case RANSAC:
+				lineDetected = lineDetector.processImageDemoRANSAC(img, line, centroid, thres);
+				break;
+		}
 		if (lineDetected)
+		{
+			if (mode == HOUGH)
+			{
+				for( size_t i = 0; i < lines.size(); i++ )
+				{
+					::cv::Vec4i l = lines[i];
+					::cv::line( img, ::cv::Point(l[0], l[1]),::cv::Point(l[2], l[3]), ::cv::Scalar(255,0,0), 3, CV_AA);
+				}
+
+			}
+			
 			::cv::line(img, ::cv::Point(centroid[0] - line[0] * 100, centroid[1] - line[1] * 100), ::cv::Point(centroid[0] + line[0] * 100, centroid[1] + line[1] * 100),
-				::cv::Scalar(0, 0, 255), 2);
+											::cv::Scalar(0, 0, 255), 2);
+
+		}
+
+		//::std::cout << "alpha:"  << line[0] << ", beta:" << line[1] << ::std::endl;
 
 		::cv::hconcat(img, thres, img_double);
 		::cv::imshow("img", img_double); 
@@ -300,6 +350,5 @@ void	testMultipleWires()
 	}
 
 	video.release();
-
 
 }

@@ -1667,7 +1667,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #else
 		if (!this->m_use_online_model)
-			m_linedetected = m_linedetector.processImage(img, line, centroid, false, 15, LineDetector::MODE::CIRCUM);
+			m_linedetected = m_linedetector.processImage(img, line, centroid, false, 5, LineDetector::MODE::CIRCUM);
 		else
 			m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #endif
