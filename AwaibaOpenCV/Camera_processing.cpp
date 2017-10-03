@@ -1807,12 +1807,12 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::TRANSITION) && m_use_original_line_transition)
 	{
 		this->detected_valve.push_back(true);
-		::std::cout <<"in 1" <<::std::endl;
+		//::std::cout <<"in 1" <<::std::endl;
 	}
 	else if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::CIRCUM) && m_use_green_line_transition)
 	{
 		this->detected_valve.push_back(true);
-				::std::cout <<"in 2" <<::std::endl;
+				//::std::cout <<"in 2" <<::std::endl;
 	}
 	if (this->detected_valve.size() > 15 && this->m_use_automatic_transition)
 	{
@@ -1867,6 +1867,7 @@ void	Camera_processing::checkTransitionState()
 void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroidEig, const ::Eigen::Vector2d& tangentEig)
 {
 	// compute the two orthogonal velocity components
+
 	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
 	double lambda_centering = (centroidEig.transpose() * orig_vel);
 	::Eigen::Vector2d centering_vel = lambda_centering * centroidEig;
@@ -1878,19 +1879,19 @@ void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, const ::Ei
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	centering_vel = rot.block(0, 0, 2, 2) * centering_vel;
 	tangent_vel = rot.block(0, 0, 2, 2) * tangent_vel;
-
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(centering_vel[0], centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(tangent_vel[0], tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
+	::std::cout << centering_vel.norm() << ",   " << tangent_vel.norm() << ::std::endl;
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + centering_vel[0], img.rows/2 + centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + tangent_vel[0], img.rows/2 +tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
 }
 
 
 void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img)
 {
 	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
-
+	::std::cout << "apex-to-valve commanded velocity:" << orig_vel.transpose() << ::std::endl;
 	// change velocities back to image frame
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	orig_vel = rot.block(0, 0, 2, 2) * orig_vel;
-
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(orig_vel[0], orig_vel[1]), ::cv::Scalar(0, 255, 255), 2);
+	::std::cout << "apex-to-valve commanded velocity (rot):" << orig_vel.transpose() << ::std::endl;
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + orig_vel[0], img.rows/2 + orig_vel[1]), ::cv::Scalar(0, 255, 255), 2);
 }
