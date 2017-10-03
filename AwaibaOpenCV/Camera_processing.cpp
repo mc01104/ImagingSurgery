@@ -1871,11 +1871,14 @@ void	Camera_processing::checkTransitionState()
 }
 
 
-void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroidEig, const ::Eigen::Vector2d& tangentEig)
+void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, double centroid[2], double tangent[2])
 {
 	// compute the two orthogonal velocity components
 
 	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
+	::Eigen::Vector2d centroidEig = ::Eigen::Map<::Eigen::Vector2d> (centroid, 2);
+	::Eigen::Vector2d tangentEig = ::Eigen::Map<::Eigen::Vector2d> (tangent, 2);
+
 	double lambda_centering = (centroidEig.transpose() * orig_vel);
 	::Eigen::Vector2d centering_vel = lambda_centering * centroidEig;
 

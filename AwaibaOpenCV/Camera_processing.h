@@ -208,7 +208,7 @@ private:
 	void computeCircumnavigationParametersDebug(const ::cv::Mat& img);
 	void computeApexToValveParameters(const ::cv::Mat& img);
 	void computeApexToValveParametersDebug(const ::cv::Mat& img);
-	void plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroidEig, const ::Eigen::Vector2d& tangentEig);
+	void plotCommandedVelocities(const ::cv::Mat& img, double centroid[2], double tangent[2]);
 	void plotCommandedVelocities(const ::cv::Mat& img);
 	// camera management functions
 	void changeExposure(float delta);
