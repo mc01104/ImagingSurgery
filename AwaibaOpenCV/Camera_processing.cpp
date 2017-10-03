@@ -1657,11 +1657,13 @@ void Camera_processing::initializeArrow()
 
 void Camera_processing::computeCircumnavigationParametersDebug(const ::cv::Mat& img)
 {
-	m_centroid[0] = 125;
-	m_centroid[1] = 80;
+	m_centroid[0] = 110;
+	m_centroid[1] = 125;
 
-	m_tangent[0] = 1;
-	m_tangent[1] = 0;
+	m_tangent[0] = 0;
+	m_tangent[1] = 1;
+
+	m_linedetected = true;
 }
 
 void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
@@ -1874,24 +1876,31 @@ void	Camera_processing::checkTransitionState()
 void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, double centroid[2], double tangent[2])
 {
 	// compute the two orthogonal velocity components
-
+	//::std::cout << m_commanded_vel[0] << ", " << m_commanded_vel[1] << ::std::endl;
+	::Eigen::Vector2d im_center(125, 125);
 	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
 	::Eigen::Vector2d centroidEig = ::Eigen::Map<::Eigen::Vector2d> (centroid, 2);
 	::Eigen::Vector2d tangentEig = ::Eigen::Map<::Eigen::Vector2d> (tangent, 2);
 
+	centroidEig = centroidEig - im_center;
+	centroidEig.normalize();
 	double lambda_centering = (centroidEig.transpose() * orig_vel);
-	::Eigen::Vector2d centering_vel = lambda_centering * centroidEig;
+	double plotting_scale = 50;
+	::Eigen::Vector2d centering_vel = plotting_scale * lambda_centering * centroidEig;
 
-	double lambda_tangent = (centroidEig.transpose() * orig_vel);
-	::Eigen::Vector2d tangent_vel = lambda_tangent * tangentEig;
+	double lambda_tangent = (tangentEig.transpose() * orig_vel);
+	::Eigen::Vector2d tangent_vel = plotting_scale * lambda_tangent * tangentEig;
 
 	// change velocities back to image frame
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	centering_vel = rot.block(0, 0, 2, 2) * centering_vel;
 	tangent_vel = rot.block(0, 0, 2, 2) * tangent_vel;
-	::std::cout << centering_vel.norm() << ",   " << tangent_vel.norm() << ::std::endl;
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + centering_vel[0], img.rows/2 + centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + tangent_vel[0], img.rows/2 +tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
+
+	//::std::cout << "centroid:" << centroidEig.transpose() << ::std::endl;
+	//::std::cout << "tangent: " << tangentEig.transpose() << ::std::endl;
+	//::std::cout << "centering norm: " << centering_vel.norm() << ",   " << "tangent norm:" << tangent_vel.norm() << ::std::endl;
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + centering_vel[0], img.cols/2 + centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + tangent_vel[0], img.cols/2 +tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
 }
 
 
