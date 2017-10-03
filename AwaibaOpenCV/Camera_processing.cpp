@@ -610,7 +610,10 @@ void Camera_processing::displayImages(void)
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
+			{
 				this->computeApexToValveParameters(frame);
+				//this->plotCommandedVelocities(frame);
+			}
 			else // maybe put initialization code here
 			{
 				m_theta_filter.resetFilter();							// this is not the proper place
@@ -637,6 +640,10 @@ void Camera_processing::displayImages(void)
 			
 			if (teleop) // draw a green circle on frame when teleoperating
 				cv::circle( frame_rotated, Point( 220, 10 ), 5, Scalar( 0, 255, 0 ),  -1);
+			if (m_apex_to_valve)
+				this->plotCommandedVelocities(frame_rotated);
+			if (m_circumnavigation)
+				this->plotCommandedVelocities(frame_rotated, m_centroid, m_tangent);
 
 			cv::imshow( "Display", frame_rotated );
 			key = waitKey(1);
@@ -1752,7 +1759,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
 	tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
 
-	plotCommandedVelocities(img, centroidEig, tangentEig);
+	//plotCommandedVelocities(img, centroidEig, tangentEig);
 
 	memcpy(m_centroid, centroidEig.data(), 2 * sizeof(double));
 	memcpy(m_tangent, tangentEig.data(), 2 * sizeof(double));
@@ -1846,7 +1853,7 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
 	memcpy(m_centroid_apex_to_valve, centroidEig.data(), 2 * sizeof(double));
 
-	plotCommandedVelocities(img);
+	//plotCommandedVelocities(frame_rotated2);
 
 	int contact_frames = ::std::count(this->m_contactBufferFiltered .rbegin(), this->m_contactBufferFiltered.rbegin() + 20, 1);
 
@@ -1888,10 +1895,11 @@ void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, const ::Ei
 void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img)
 {
 	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
-	::std::cout << "apex-to-valve commanded velocity:" << orig_vel.transpose() << ::std::endl;
 	// change velocities back to image frame
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	orig_vel = rot.block(0, 0, 2, 2) * orig_vel;
-	::std::cout << "apex-to-valve commanded velocity (rot):" << orig_vel.transpose() << ::std::endl;
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + orig_vel[0], img.rows/2 + orig_vel[1]), ::cv::Scalar(0, 255, 255), 2);
+
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + orig_vel(0), img.cols/2 + orig_vel(1)), ::cv::Scalar(0, 255, 255), 2);
+
+	
 }
