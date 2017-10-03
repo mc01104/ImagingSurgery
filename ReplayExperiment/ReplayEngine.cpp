@@ -688,6 +688,9 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		warpAffine(img, img, rot_mat, img.size() );
 
 		if (this->lineDetected)
+			this->plotCommandedVelocities(img, centroidEig, tangentEig);
+
+		if (this->lineDetected)
 		{
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
@@ -971,4 +974,23 @@ void ReplayEngine::detectLeak(::cv::Mat& img)
 	else
 		::std::cout << "free" << ::std::endl;
 
+}
+
+
+void ReplayEngine::plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroid, const ::Eigen::Vector2d& tangent)
+{
+	// compute the two orthogonal velocity components
+	double lambda_centering = (centroid.transpose() * m_velocity_prev);
+	::Eigen::Vector2d centering_vel = lambda_centering * centroid;
+
+	double lambda_tangent = (centroid.transpose() * m_velocity_prev);
+	::Eigen::Vector2d tangent_vel = lambda_tangent * tangent;
+
+	// change velocities back to image frame
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+	centering_vel = rot.block(0, 0, 2, 2) * centering_vel;
+	tangent_vel = rot.block(0, 0, 2, 2) * tangent_vel;
+
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(centering_vel[0], centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(tangent_vel[0], tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
 }

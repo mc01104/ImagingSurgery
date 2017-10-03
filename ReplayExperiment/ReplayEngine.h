@@ -183,4 +183,5 @@ public:
 		void followTop(int x, int y, ::Eigen::Vector3d& commandedVelocity);
 		void followBottom(int x, int y, ::Eigen::Vector3d& commandedVelocity);
 
+		void plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroidEig, const ::Eigen::Vector2d& tangentEig);
 };

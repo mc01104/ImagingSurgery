@@ -191,6 +191,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_tangent[0] = 0;
 	m_tangent[1] = 0;
 
+	m_commanded_vel[0] = 0;
+	m_commanded_vel[1] = 0;
+
 	m_centroid_apex_to_valve[0] = 0;
 	m_centroid_apex_to_valve[1] = 0;
 	ParseOptions op = ParseOptions("./camera_info.csv");
@@ -1021,17 +1024,20 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->m_contact_desired_ratio = msg.data()[20];
 	this->m_breathing = msg.data()[21];
 
-	m_input_plane_received = msg.data()[22];
+	this->m_commanded_vel[0] = msg.data()[22];
+	this->m_commanded_vel[1] = msg.data()[23];
+
+	m_input_plane_received = msg.data()[24];
 	if (m_input_plane_received)
 	{
-		memcpy(m_normal, &msg.data()[23], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[26], 3 * sizeof(double));
-		m_radius = msg.data()[29];
+		memcpy(m_normal, &msg.data()[25], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[28], 3 * sizeof(double));
+		m_radius = msg.data()[31];
 
 		pointsOnValve.clear();
-		int num_of_points = msg.data()[30];
+		int num_of_points = msg.data()[32];
 		for (int i = 0; i < 3 * num_of_points; ++i)
-			pointsOnValve.push_back(msg[31+i]);
+			pointsOnValve.push_back(msg[33+i]);
 	}
 	this->mutex_robotshape.unlock();
 
@@ -1737,12 +1743,16 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::waitKey(1);
 	// only for visualization -> needs to be in old frame
 
+	
+
 	// last transformation to align image frame with robot frame for convenience
 	::Eigen::Vector2d displacement(0, img.rows);
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 
 	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
 	tangentEig = rot.block(0, 0, 2, 2).transpose() * tangentEig;
+
+	plotCommandedVelocities(img, centroidEig, tangentEig);
 
 	memcpy(m_centroid, centroidEig.data(), 2 * sizeof(double));
 	memcpy(m_tangent, tangentEig.data(), 2 * sizeof(double));
@@ -1836,6 +1846,8 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
 	memcpy(m_centroid_apex_to_valve, centroidEig.data(), 2 * sizeof(double));
 
+	plotCommandedVelocities(img);
+
 	int contact_frames = ::std::count(this->m_contactBufferFiltered .rbegin(), this->m_contactBufferFiltered.rbegin() + 20, 1);
 
 }
@@ -1849,4 +1861,36 @@ void	Camera_processing::checkTransitionState()
 		::std::cout << " using green line detection for transition" <<::std::endl;
 	else if (m_use_original_line_transition)
 		::std::cout << " using original line detection for transition" << ::std::endl;
+}
+
+
+void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroidEig, const ::Eigen::Vector2d& tangentEig)
+{
+	// compute the two orthogonal velocity components
+	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
+	double lambda_centering = (centroidEig.transpose() * orig_vel);
+	::Eigen::Vector2d centering_vel = lambda_centering * centroidEig;
+
+	double lambda_tangent = (centroidEig.transpose() * orig_vel);
+	::Eigen::Vector2d tangent_vel = lambda_tangent * tangentEig;
+
+	// change velocities back to image frame
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+	centering_vel = rot.block(0, 0, 2, 2) * centering_vel;
+	tangent_vel = rot.block(0, 0, 2, 2) * tangent_vel;
+
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(centering_vel[0], centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(tangent_vel[0], tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
+}
+
+
+void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img)
+{
+	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
+
+	// change velocities back to image frame
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+	orig_vel = rot.block(0, 0, 2, 2) * orig_vel;
+
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(orig_vel[0], orig_vel[1]), ::cv::Scalar(0, 255, 255), 2);
 }

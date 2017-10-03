@@ -154,6 +154,9 @@ private:
 	double				m_cameraFrameRate;
 	RecursiveFilter::Filter*				m_freqFilter;
 
+
+	double	m_commanded_vel[2];
+
 	std::deque<float> m_durations;
 	float m_measured_period;
 
@@ -205,6 +208,8 @@ private:
 	void computeCircumnavigationParametersDebug(const ::cv::Mat& img);
 	void computeApexToValveParameters(const ::cv::Mat& img);
 	void computeApexToValveParametersDebug(const ::cv::Mat& img);
+	void plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroidEig, const ::Eigen::Vector2d& tangentEig);
+	void plotCommandedVelocities(const ::cv::Mat& img);
 	// camera management functions
 	void changeExposure(float delta);
 
