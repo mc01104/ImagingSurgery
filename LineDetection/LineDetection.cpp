@@ -271,8 +271,9 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	if (nonzero.size() > 50)
 	{
         //::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
-		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 70, 25, 3);
-
+		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 5, 3);
+		::cv::imshow("thresholded", output);
+		::cv::waitKey(1);
 		if (lines_hough.size() > 0)
 		{
 			this->averageTangentPCA(lines_hough, line);
@@ -284,8 +285,7 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	///*	::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(255, 255, 255), 2, CV_AA);
 	//	::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(255, 255, 255), 2, CV_AA);*\
 
-		::cv::imshow("thresholded", output);
-		::cv::waitKey(1);
+
 
 		return true;
 	}
@@ -403,14 +403,19 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 	::cv::split(hsv, hsv_split);
 
     ::cv::Mat mask_h, mask_s, mask_v;
-	const int min_h = 20, max_h = 120;
+	const int min_h = 10, max_h = 110;
 	const int min_s = 1, max_s = 255;
+	const int min_v = 1, max_v = 255;
+	//const int min_h = 70, max_h = 115;
+	//const int min_s = 28, max_s = 89;
+	//const int min_v = 185, max_v = 255;
+
     ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
     ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
-    //::cv::inRange(hsv_split[2] ,min_s,max_s,mask_v);
+    ::cv::inRange(hsv_split[2] ,min_v,max_v,mask_v);
 
 	::cv::bitwise_and(mask_s, mask_h, out); 
-	//::cv::bitwise_and(out, mask_h, out);
+	::cv::bitwise_and(mask_v, out, out);
 	::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
 
 

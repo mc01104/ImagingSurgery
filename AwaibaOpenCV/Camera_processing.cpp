@@ -804,11 +804,12 @@ void Camera_processing::recordImages(void)
 				video.release();
 				bundle.close();
 			}
-			bundle.close();
-			video.release();
-		}
-	}
 
+		}
+
+	}
+	bundle.close();
+	video.release();
 	::std::cout << "Recording Data Thread exited successfully" << ::std::endl;
 }
 
