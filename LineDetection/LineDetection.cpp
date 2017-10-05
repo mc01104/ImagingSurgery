@@ -508,20 +508,20 @@ LineDetector::thresholdImageDemo(const ::cv::Mat& img, ::cv::Mat& out)
 
     ::cv::Mat mask_h, mask_s, mask_v;
 	//const int min_h = 80, max_h = 98;
-	const int min_h = 70, max_h = 98;
-	//const int min_s = 48, max_s = 80;
-	const int min_s = 70, max_s = 150;
+	const int min_h = 70, max_h = 110;
+	const int min_s = 48, max_s = 80;
+	//const int min_s = 0, max_s = 255;
     ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
     ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
     //::cv::inRange(hsv_split[2] ,min_s,max_s,mask_v);
 
 	::cv::bitwise_and(mask_s, mask_h, out); 
 	//::cv::bitwise_and(out, mask_h, out);
-	::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
+	//::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
 
 	// mask the working channel
 	// scope 1
-	::cv::circle(channel_mask, ::cv::Point(25, 149), 50,  0, -1);
+	//::cv::circle(channel_mask, ::cv::Point(25, 149), 50,  0, -1);
 	//::cv::circle(channel_mask, ::cv::Point(149, 45), 50,  0, -1); // (this was just for testing)
 	//::cv::circle(channel_mask, ::cv::Point(46, 132), 50,  0, -1); // (this was just for testing)
 	//::cv::circle(channel_mask, ::cv::Point(30, 132), 50,  0, -1); // (this was just for testing)
@@ -533,7 +533,7 @@ LineDetector::thresholdImageDemo(const ::cv::Mat& img, ::cv::Mat& out)
 	//// scope 4
 	//::cv::circle(channel_mask, ::cv::Point(43, 116), 46,  0, -1);
 
-	::cv::bitwise_and(out, channel_mask, out); 
+	//::cv::bitwise_and(out, channel_mask, out); 
 
     // Apply morphological opening to remove small things
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(5,5));

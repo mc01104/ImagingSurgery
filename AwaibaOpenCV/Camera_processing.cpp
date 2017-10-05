@@ -88,7 +88,7 @@ using namespace cv;
 using namespace RecursiveFilter;
 
 //#define __DESKTOP_DEVELOPMENT__
-//#define	__BENCHTOP__
+#define	__BENCHTOP__
 
 
 // VTK global variables (only way to get a thread running ...)
@@ -1680,8 +1680,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	{
 
 #ifdef __BENCHTOP__
-		//m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
-		m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
+		m_linedetected = m_linedetector.processImageDemo(img, line, centroid, false);
+		//m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #else
 		if (!this->m_use_online_model)
 			m_linedetected = m_linedetector.processImage(img, line, centroid, false, 5, LineDetector::MODE::CIRCUM);
@@ -1712,7 +1712,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// filter
 	r = m_radius_filter.step(r);
-	theta = m_theta_filter.step(theta);
+	//theta = m_theta_filter.step(theta);
 
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);

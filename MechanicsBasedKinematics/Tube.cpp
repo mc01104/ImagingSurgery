@@ -1,7 +1,7 @@
 ﻿#include "Tube.h"
 
 Tube::Tube(double bendingStiffness, double PoissonsRatio, std::vector<Section> _sections)
-	: kxy(bendingStiffness), nu(PoissonsRatio), length(0.0), collarLength(10)
+	: kxy(bendingStiffness), nu(PoissonsRatio), length(0.0), collarLength(17)
 {
 	if(!_sections.empty())
 		this->sections = _sections;
