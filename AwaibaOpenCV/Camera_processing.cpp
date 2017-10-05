@@ -1712,7 +1712,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// filter
 	r = m_radius_filter.step(r);
-	//theta = m_theta_filter.step(theta);
+	theta = m_theta_filter.step(theta);
 
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
