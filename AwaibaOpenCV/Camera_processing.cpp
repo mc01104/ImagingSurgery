@@ -1212,7 +1212,7 @@ void Camera_processing::robotDisplay(void)
 					for (unsigned int i = 0; i < npts; i++)
 						lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
 					for (int i = 0; i < 3; ++i)
-						tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i];  // remove hardcoded 20;
+						tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 0.1*SolutionFrames[npts-1].GetZ()[i];  // remove hardcoded 20;
 					lineSource->SetPoint(npts, tmp[0], tmp[1], tmp[2]);
 				}
 				else
