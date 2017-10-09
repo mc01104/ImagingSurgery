@@ -66,10 +66,13 @@ void WallSegmentation::thresholdImage(const cv::Mat &img, ::cv::Mat &output)
     ::cv::threshold(S, mask_s, thresh_S,255, ::cv::THRESH_BINARY_INV);
 
 	::cv::Mat mask_v;
-	::cv::threshold(V, mask_v, thresh_V, 255, ::cv::THRESH_BINARY_INV);
+	::cv::threshold(V, mask_v, thresh_V, 255, ::cv::THRESH_BINARY);
 
     ::cv::Mat mask_a;
     ::cv::inRange(A, min_a, max_a, mask_a);
+
+	//::cv::bitwise_and(mask_s, mask_v, output); 
+ //   ::cv::bitwise_and(output,mask_a,output);
 
 	::cv::bitwise_and(mask_s, mask_v, output); 
     ::cv::bitwise_and(output,mask_a,output);

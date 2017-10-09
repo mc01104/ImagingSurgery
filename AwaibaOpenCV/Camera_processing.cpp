@@ -1712,7 +1712,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// filter
 	r = m_radius_filter.step(r);
-	theta = m_theta_filter.step(theta);
+	//theta = m_theta_filter.step(theta);
 
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
@@ -1911,8 +1911,8 @@ void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img)
 	// change velocities back to image frame
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	orig_vel = rot.block(0, 0, 2, 2) * orig_vel;
-
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + orig_vel(0), img.cols/2 + orig_vel(1)), ::cv::Scalar(0, 255, 255), 2);
+	double kappa = 5.0;
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + kappa *  orig_vel(0), img.cols/2 + kappa * orig_vel(1)), ::cv::Scalar(0, 255, 255), 2);
 
 	
 }
