@@ -251,7 +251,7 @@ private:
 	LineDetector		m_linedetector;
 	ModelBasedLineEstimation	m_modelBasedLine;
 	RecursiveFilter::MovingAverageFilter	m_radius_filter;
-	RecursiveFilter::AngularMovingAverageFilter m_theta_filter;
+	RecursiveFilter::DirectionMovingAverageFilter m_theta_filter;
 	bool	m_use_original_line_transition;
 	bool	m_use_green_line_transition;
 	double		apex_coordinates[5];

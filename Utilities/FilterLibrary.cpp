@@ -154,3 +154,50 @@ RecursiveMovingAverage::step(double incomingValue)
 
 	return prevValue;
 }
+
+DirectionMovingAverageFilter::DirectionMovingAverageFilter(int windowSize)	: MovingAverageFilter(windowSize)
+{
+}
+
+DirectionMovingAverageFilter::~DirectionMovingAverageFilter()
+{
+}
+
+double
+DirectionMovingAverageFilter::computeAverage()
+{
+
+	::Eigen::MatrixXd dataPCA;
+	::Eigen::Vector2d tmp;
+	::Eigen::Vector2d averageDir;
+
+	for (int i = 0; i < this->data.size(); ++i)
+	{
+		tmp(0) = ::std::cos(data[i]);
+		tmp(1) = ::std::sin(data[i]);
+
+		appendRowEigen(dataPCA, tmp);
+
+		tmp(0) *= -1;
+		tmp(1) *= -1;
+
+		appendRowEigen(dataPCA, tmp);
+	}
+
+	::Eigen::JacobiSVD<::Eigen::MatrixXd> svd(dataPCA.transpose() * dataPCA, ::Eigen::ComputeThinU | ::Eigen::ComputeThinV);
+
+	averageDir(0) = svd.matrixU()(0, 0);
+	averageDir(1) = svd.matrixU()(1, 0);
+
+	double radius, angle;
+	cartesian2DPointToPolar(averageDir, radius, angle);
+
+	return angle;
+
+}
+
+double
+DirectionMovingAverageFilter::step(double incomingValue)
+{
+	return MovingAverageFilter::step(incomingValue);
+}

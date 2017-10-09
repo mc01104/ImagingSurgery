@@ -73,4 +73,15 @@ namespace RecursiveFilter
 
 	};
 
+	class DirectionMovingAverageFilter : public MovingAverageFilter
+	{
+		public:
+			DirectionMovingAverageFilter(int windowSize = 5);
+			~DirectionMovingAverageFilter();
+
+			double step(double incomingValue);
+
+		protected:
+			virtual double computeAverage();
+	};
 };
