@@ -165,7 +165,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 	inner_tube_rotation = 0;
 
-	m_use_original_line_transition = true;
+	m_use_original_line_transition = false;
 	m_use_green_line_transition = true;
 
 	::std::string svm_base_folder = "./SVM_params/";

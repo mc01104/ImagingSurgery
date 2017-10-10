@@ -416,8 +416,11 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
 	::cv::bitwise_and(mask_s, mask_h, out); 
 	::cv::bitwise_and(mask_v, out, out);
-	::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
+	//::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
 
+	::cv::Mat channel_mask = ::cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
+	::cv::circle(channel_mask, ::cv::Point(125, 125), 125,  255, -1);
+	::cv::bitwise_and(out, channel_mask, out); 
 
 	// mask the working channel
 	// mask the working channel

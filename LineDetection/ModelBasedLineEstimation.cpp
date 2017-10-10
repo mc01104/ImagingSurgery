@@ -684,8 +684,10 @@ void ModelBasedLineEstimation::computePointsForFittingWire()
 	::cv::bitwise_and(mask_s, mask_h, out); 
 	::cv::bitwise_and(mask_v, out, out);
 
-	::cv::Mat channel_mask = ::cv::Mat::ones(this->current_img.rows, this->current_img.cols, CV_8UC1)*255;
-
+	//::cv::Mat channel_mask = ::cv::Mat::ones(this->current_img.rows, this->current_img.cols, CV_8UC1)*255;
+	::cv::Mat channel_mask = ::cv::Mat::zeros(this->current_img.rows, this->current_img.cols, CV_8UC1);
+	::cv::circle(channel_mask, ::cv::Point(125, 125), 125,  255, -1);
+	::cv::bitwise_and(out, channel_mask, out); 
 	//// mask the working channel
 	//// scope 1
 	//::cv::circle(channel_mask, ::cv::Point(29, 149), 40,  0, -1);
@@ -696,7 +698,7 @@ void ModelBasedLineEstimation::computePointsForFittingWire()
 	//// scope 4
 	//::cv::circle(channel_mask, ::cv::Point(43, 116), 46,  0, -1);
 
-	::cv::bitwise_and(out, channel_mask, out); 
+	//::cv::bitwise_and(out, channel_mask, out); 
 
     // Apply morphological opening to remove small things
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(5,5));
