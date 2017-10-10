@@ -40,7 +40,7 @@ class ModelBasedLineEstimation
 
 		bool			line_detected;
 		bool			update_model;
-
+		cv::Mat			thresholded_binary;
 	public:
 
 		ModelBasedLineEstimation();
@@ -65,6 +65,8 @@ class ModelBasedLineEstimation
 		void	setInitImageRotation(double rotation) {this->init_image_rotation = rotation;};
 
 	protected:
+		void averageTangentPCA(::std::vector<::cv::Vec4i>& lines, ::cv::Vec4f& line);
+
 		void predict(double robot_position[3], double robot_desired_velocity[3]);
 
 		void update(const ::cv::Mat& img);
@@ -83,6 +85,7 @@ class ModelBasedLineEstimation
 		void computePointsForFitting();
 		void computePointsForFittingNew();
 		void computePointsForFittingBenchtop();
+		void computePointsForFittingBenchtopWire();
 
 		void computePointsForFittingWire();
 
@@ -91,6 +94,7 @@ class ModelBasedLineEstimation
 		bool convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv::Mat& V);
 
 		bool fitLine();
+		bool fitLineHough();
 
 		bool checkLineFitting();
 

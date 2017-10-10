@@ -110,8 +110,8 @@ ModelBasedLineEstimation::update(const ::cv::Mat& img)
 		::std::copy(this->pointsToFit.begin(), this->pointsToFit.end(), this->highProbPointsToFit.begin());
 	}
 
-	this->line_detected = this->fitLine();
-
+	this->line_detected = this->fitLineHough();
+	//this->line_detected = this->fitLine();
 	if (this->checkLineFitting() && this->update_model)
 		this->addPointToModel();
 }
@@ -669,14 +669,21 @@ void ModelBasedLineEstimation::computePointsForFittingWire()
 	::cv::split(hsv, hsv_split);
 
     ::cv::Mat mask_h, mask_s, mask_v;
-	const int min_h = 30, max_h = 110;
+	const int min_h = 10, max_h = 110;
 	const int min_s = 1, max_s = 255;
+	const int min_v = 1, max_v = 255;
+
+	//const int min_h = 70, max_h = 115;
+	//const int min_s = 28, max_s = 89;
+	//const int min_v = 185, max_v = 255;
+
     ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
     ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
-    //::cv::inRange(hsv_split[2] ,min_s,max_s,mask_v);
+    ::cv::inRange(hsv_split[2] ,min_v,max_v,mask_v);
 
 	::cv::bitwise_and(mask_s, mask_h, out); 
-	//::cv::bitwise_and(out, mask_h, out);
+	::cv::bitwise_and(mask_v, out, out);
+
 	::cv::Mat channel_mask = ::cv::Mat::ones(this->current_img.rows, this->current_img.cols, CV_8UC1)*255;
 
 	//// mask the working channel
@@ -695,10 +702,10 @@ void ModelBasedLineEstimation::computePointsForFittingWire()
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(5,5));
     ::cv::morphologyEx(out,out,::cv::MORPH_OPEN,kernel);
 
-	cv::Mat thresholded_binary;
-    out.convertTo(thresholded_binary,CV_8UC1);
+	//cv::Mat thresholded_binary;
+    out.convertTo(this->thresholded_binary,CV_8UC1);
 	
-    ::cv::findNonZero(thresholded_binary, this->pointsToFit);
+    ::cv::findNonZero(this->thresholded_binary, this->pointsToFit);
 
 	::cv::Mat	 output;
 	::cv::cvtColor(out, output, CV_GRAY2BGR);
@@ -707,4 +714,63 @@ void ModelBasedLineEstimation::computePointsForFittingWire()
 	::cv::waitKey(1);
 }
 
+bool
+ModelBasedLineEstimation::fitLineHough()
+{
+
+	::std::vector<::cv::Vec4i> lines;
+	//::cv::imshow("thresholded", output);
+	//::cv::waitKey(1);
+
+	if (this->highProbPointsToFit.size() > 0)
+	{
+
+		::cv::HoughLinesP(this->thresholded_binary, lines, 1, 1 * M_PI/180.0, 30, 5, 3);
+		if (lines.size() > 0)
+			this->averageTangentPCA(lines, this->fittedLine);
+		else 
+			return false;
+
+		this->computeCentroid();
+
+		//if (lines.size() > 0)
+		//	this->averageTangentPCA(lines, this->fittedLine);
+		//else
+		//	return false;
+
+        ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*100,fittedLine[3]+fittedLine[1]*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+        ::cv::line( this->current_img, ::cv::Point(fittedLine[2],fittedLine[3]), ::cv::Point(fittedLine[2]+fittedLine[0]*(-100),fittedLine[3]+fittedLine[1]*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		::cv::circle(this->current_img, ::cv::Point(this->centroid[0], centroid[1]), 5, ::cv::Scalar(255,0,0));
+
+		return true;
+	}
+
+ 	return false;
+}
+
+
+void ModelBasedLineEstimation::averageTangentPCA(::std::vector<::cv::Vec4i>& lines, ::cv::Vec4f& line)
+{
+	::Eigen::MatrixXd data;
+	::Eigen::Vector2d tmp;
+	for (int i = 0; i < lines.size(); ++i)
+	{
+		tmp(0) = lines[i][2] - lines[i][0];
+		tmp(1) = lines[i][3] - lines[i][1];
+		tmp.normalize();
+
+		appendRowEigen(data, tmp);
+
+		tmp(0) *= -1;
+		tmp(1) *= -1;
+
+		appendRowEigen(data, tmp);
+	}
+
+	::Eigen::JacobiSVD<::Eigen::MatrixXd> svd(data.transpose() * data, ::Eigen::ComputeThinU | ::Eigen::ComputeThinV);
+
+	line(0) = svd.matrixU()(0, 0);
+	line(1) = svd.matrixU()(1, 0);
+
+}
 

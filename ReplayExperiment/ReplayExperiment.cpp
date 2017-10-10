@@ -51,7 +51,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-50-58";		// loses it when it goes to the margin
 
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_14-00-09";	
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_12-58-07";	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_12-58-07";	
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-49-13";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-15-33";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-07_bypass_cardioscopy/Videos_2017-09-07/2017-09-07_15-54-40";
@@ -59,7 +59,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/sink_line_detection/2017-09-09_17-25-47";
 	
 	// test green line exvivo
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-58-17";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-58-17";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-54-17";
 	
 
