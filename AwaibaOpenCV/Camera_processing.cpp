@@ -430,6 +430,7 @@ void Camera_processing::processInput(char key)
 		break;
 	case 'i':
 		m_modelBasedLine.resetModel();
+		::std::cout << "model was reset" << ::std::endl;
 		break;
 	case 'f':
 		m_estimateFreq = !m_estimateFreq;
@@ -975,8 +976,7 @@ bool Camera_processing::networkKinematics(void)
 		else
 			ss << "0";
 		ss << ::std::endl;
-		//::std::cout << "msg:" << ::std::endl;
-		//::std::cout << ss.str().c_str() << ::std::endl;
+
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
@@ -1083,8 +1083,8 @@ void Camera_processing::initializeValveDisplay()
 	mapperCircleOnLine->SetInputConnection(circleSourceOnLine->GetOutputPort());;
 	actorCircleOnline =	vtkSmartPointer<vtkActor>::New();
 	actorCircleOnline->SetMapper(mapperCircleOnLine);
-	actorCircleOnline->GetProperty()->SetColor(0, 1, 1);
-	actorCircleOnline->GetProperty()->SetEdgeColor(0,1,1);
+	actorCircleOnline->GetProperty()->SetColor(1, 0, 0);
+	actorCircleOnline->GetProperty()->SetEdgeColor(1, 0, 0);
 	actorCircleOnline->GetProperty()->SetEdgeVisibility(1);
 	actorCircleOnline->GetProperty()->SetOpacity(0.3);
 	renDisplay3D->AddActor(actorCircleOnline);
@@ -1244,6 +1244,9 @@ void Camera_processing::robotDisplay(void)
 					::std::cout << "radius:" << this->m_modelBasedLine.getModel().getRadius() << ::std::endl;
 
 				}
+				else
+					this->circleSourceOnLine->SetRadius(0.0);
+
 			}
 			catch (runtime_error& ex) 
 			{
@@ -1712,7 +1715,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// filter
 	r = m_radius_filter.step(r);
-	//theta = m_theta_filter.step(theta);
+	//theta = m_theta_filter.step(theta);			// this exacerbates the line flickering problem
 
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
@@ -1723,7 +1726,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	// -----------------------------//
 
 
-	// find closest point from center to line -> we will bring that point to the center of the images
+	// find closest point from center to line -> we will bring that point to the center of the images - I think this is redundant
 	double lambda = (image_center - centroidEig).transpose() * tangentEig;
 	centroidEig += lambda * tangentEig;
 
@@ -1814,12 +1817,12 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	::cv::Vec2f centroid2;
 	::cv::Vec4f line2;
 
-	if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::TRANSITION) && m_use_original_line_transition)
+	if (m_linedetector.processImage(img, line2, centroid2, false, 10, LineDetector::MODE::TRANSITION) && m_use_original_line_transition)
 	{
 		this->detected_valve.push_back(true);
 		//::std::cout <<"in 1" <<::std::endl;
 	}
-	else if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::CIRCUM) && m_use_green_line_transition)
+	else if (m_linedetector.processImage(img, line2, centroid2, false, 10, LineDetector::MODE::CIRCUM) && m_use_green_line_transition)
 	{
 		this->detected_valve.push_back(true);
 				//::std::cout <<"in 2" <<::std::endl;
@@ -1855,10 +1858,6 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 
 	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
 	memcpy(m_centroid_apex_to_valve, centroidEig.data(), 2 * sizeof(double));
-
-	//plotCommandedVelocities(frame_rotated2);
-
-	int contact_frames = ::std::count(this->m_contactBufferFiltered .rbegin(), this->m_contactBufferFiltered.rbegin() + 20, 1);
 
 }
 

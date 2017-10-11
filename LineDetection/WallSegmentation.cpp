@@ -25,6 +25,7 @@ bool WallSegmentation::processImage(::cv::Mat img, int& x, int& y, bool display,
 
 	::cv::Mat thresholded_mask, intermediate_img;
     img_blur.copyTo(intermediate_img, ow_mask);
+
     this->thresholdImage(intermediate_img, thresholded_mask);
 
     if (display)
@@ -70,9 +71,6 @@ void WallSegmentation::thresholdImage(const cv::Mat &img, ::cv::Mat &output)
 
     ::cv::Mat mask_a;
     ::cv::inRange(A, min_a, max_a, mask_a);
-
-	//::cv::bitwise_and(mask_s, mask_v, output); 
- //   ::cv::bitwise_and(output,mask_a,output);
 
 	::cv::bitwise_and(mask_s, mask_v, output); 
     ::cv::bitwise_and(output,mask_a,output);

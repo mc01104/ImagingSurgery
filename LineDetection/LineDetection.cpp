@@ -259,6 +259,7 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 
 	//this->thresholdImageAllChannels(img,thresholded);
 	this->thresholdImageWire(img,thresholded);
+
     thresholded.convertTo(thresholded_binary,CV_8UC1);
 	
     ::std::vector< ::cv::Point> nonzero;
@@ -266,37 +267,25 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 
 	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
+	::cv::imshow("thresholded", output);
+	::cv::waitKey(1);
 
 	::std::vector<::cv::Vec4i> lines_hough;
 	if (nonzero.size() > 50)
 	{
         //::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 5, 3);
-		::cv::imshow("thresholded", output);
-		::cv::waitKey(1);
-		if (lines_hough.size() > 0)
-		{
-			this->averageTangentPCA(lines_hough, line);
-		}
-		else 
+		if (lines_hough.size() <= 0)
 			return false;
+
+		this->averageTangentPCA(lines_hough, line);
+
 		this->computeCentroid(nonzero, centroid);
-
-	///*	::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(255, 255, 255), 2, CV_AA);
-	//	::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(255, 255, 255), 2, CV_AA);*\
-
-
 
 		return true;
 	}
 	else 
-	{
-		::cv::imshow("thresholded", thresholded_binary);
-		::cv::waitKey(1);
-
 		return false;
-	}
-
 }
 
 void LineDetector::thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thresholded)
@@ -416,6 +405,7 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
 	::cv::bitwise_and(mask_s, mask_h, out); 
 	::cv::bitwise_and(mask_v, out, out);
+
 	//::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
 
 	::cv::Mat channel_mask = ::cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
