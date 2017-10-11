@@ -959,7 +959,7 @@ bool Camera_processing::networkKinematics(void)
 
 		/// create network message for circumnavigation
 		::ostringstream ss;
-		ss << force << " " << m_linedetected << " " << m_contact_response << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
+		ss << force << " " << m_linedetected << " " << m_contactBufferFiltered.back() << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
 
 		ss << m_wall_detected << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
 
