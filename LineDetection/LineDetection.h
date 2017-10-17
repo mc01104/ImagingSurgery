@@ -33,6 +33,7 @@ class LineDetector
 		bool processImageDemoHough(::cv::Mat img, ::std::vector<::cv::Vec2f>& lines, ::cv::Vec2f& centroid, ::cv::Mat& thres);
 		bool processImageDemoHoughProbabilistic(::cv::Mat img, ::std::vector<::cv::Vec4i>& lines, ::cv::Vec2f& centroid, ::cv::Mat& thres, ::cv::Vec4f& line);
 		bool processImageDemoRANSAC(::cv::Mat img, cv::Vec4f &line, cv::Vec2f &centroid, ::cv::Mat& thres);
+		bool getCentroid(const ::cv::Mat& img, ::cv::Point& centroid);
 private:
         bool RGBtoOpponent(const ::cv::Mat &img, ::cv::Mat &O1, ::cv::Mat &O2, ::cv::Mat &O3);
         bool detectLine(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid = ::cv::Vec2f());

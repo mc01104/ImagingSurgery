@@ -81,7 +81,7 @@ public:
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(1), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(1), new_version(true)
+	filter(5), theta_filter_complex(5), new_version(true)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -90,7 +90,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 500;
+	this->offset = 0;
 
 	for (int i = this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -147,7 +147,7 @@ void ReplayEngine::run()
 
 void ReplayEngine::simulate(void* tData)
 {
-	::cv::VideoWriter video("leak_detection.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 30, ::cv::Size(250, 250));
+	::cv::VideoWriter video("line_detection_surgery_switching_5_3.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
 
 	ReplayEngine* tDataSim = reinterpret_cast<ReplayEngine*> (tData);
 
@@ -216,7 +216,7 @@ void ReplayEngine::simulate(void* tData)
 				tDataSim->detectLeak(tmpImage);
 				break;
 		}
-
+		//::std::cout << tDataSim->counter << ::std::endl;
 		tDataSim->counter++;
 		::cv::imshow("Display", tmpImage);
 		video.write(tmpImage);
@@ -554,9 +554,9 @@ void ReplayEngine::getCurrentImage(::cv::Mat& im)
 	im = this->img;
 }
 
-void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img , ::cv::Vec2f& centroid, ::Eigen::Vector2d& centroidEig, ::Eigen::Vector2d& tangentEig)
+void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img , ::cv::Vec2f& centroid, ::Eigen::Vector2d& centroidEig, ::Eigen::Vector2d& tangentEig, ::Eigen::Vector2d& tangentEigFiltered)
 {
-	
+	double theta_previous = 0;
 	centroidEig(0) = centroid[0];
 	centroidEig(1) = centroid[1];
 
@@ -571,27 +571,41 @@ void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img ,
 	::Eigen::VectorXd closest_point;
 	nearestPointToLine(image_center, centroidEig, tangentEig, closest_point);
 	cartesian2DPointToPolar(closest_point.segment(0, 2) - image_center, r, theta);
-
+	//double angle = acos(tangentEig.transpose() * tangent_prev);
+	::std::cout << tangentEig.transpose() * tangent_prev << ::std::endl;
 	// filter
 	r = this->r_filter.step(r);
-	theta = this->theta_filter_complex.step(theta);
+	
+	theta = this->theta_filter_complex.step(theta); 
+
+	//::Eigen::Vector2d tmp2(cos(theta_previous), sin(theta_previous));
+	//::Eigen::Vector2d tmp3(cos(theta), sin(theta));
+
+	//double angle = acos(tmp2.transpose() * tmp3);
+
+	//if (angle > 60 * M_PI/180.0)
+	//	::std::cout << "counter:" << this->counter << "       " << angle * 180/M_PI << ::std::endl;
+	//::std::cout <<   ((theta - theta_previous) * 180/M_PI)    << ::std::endl;
 
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
 	centroidEig(1) = r * sin(theta);
 
-	//computePerpendicularVector(centroidEig, tangentEig);
+	computePerpendicularVector(centroidEig, tangentEigFiltered);
 	centroidEig += image_center;
 
 	// find closest point from center to line -> we will bring that point to the center of the images
 	double lambda = (image_center - centroidEig).transpose() * tangentEig;
 	centroidEig += lambda * tangentEig;
 
+	tangent_prev = tangentEig;
 	::Eigen::Matrix3d rot1 = RotateZ(this->imageInitRotation * M_PI/180.0 - this->robot_rotation);
 	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
 	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
-	//::std::cout << (centroidEig - image_center).transpose() * tangentEig << ::std::endl;;
 
+	tangentEigFiltered = rot1.block(0, 0, 2, 2).transpose()* tangentEigFiltered;
+	//::std::cout << (centroidEig - image_center).transpose() * tangentEig << ::std::endl;;
+	
 }
 
 void ReplayEngine::applyVisualServoingController(const ::Eigen::Vector2d& centroid, const ::Eigen::Vector2d& tangent, ::Eigen::Vector2d& commandedVelocity)
@@ -642,7 +656,6 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		this->lineDetected = false;
 		
 		double position[3] = {0, 0, 0};
-		//this->getTipPosition(position);
 
 		double innerTubeRotation = 0;
 		this->getInnerTubeRotation(innerTubeRotation);
@@ -653,32 +666,30 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		memcpy(velocity, velocityCommand, 2 * sizeof(double));
 		velocity[2] = 0;
 		bool predictedLineDetected = false;
-		::Eigen::Vector2d centroidEig, tangentEig, velCommand, centroidEig2, tangentEig2;
+		::Eigen::Vector2d centroidEig, tangentEig, velCommand, centroidEig2, tangentEig2, tangentEigFiltered;
 		::cv::Vec4f line, line2;
 		if (response == 1)
 		{
-			//::std::cout << "contact" << ::std::endl;
 
-		::cv::Vec2f centroid, centroid2;
-		this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
-		//this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 5, LineDetector::MODE::CIRCUM);
-		//predictedLineDetected = this->modelBasedLine.getPredictedTangent(line2);
-		centroidEig2(0) = line2[2];
-		centroidEig2(1) = line2[3];
 
-		tangentEig2(0) = line2[1];
-		tangentEig2(1) = line2[0];
+			::cv::Vec2f centroid, centroid2;
+			//this->lineDetected = this->modelBasedLine.step(position, velocity, img, innerTubeRotation, line, centroid);
+			this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 5, LineDetector::MODE::CIRCUM);
+			//predictedLineDetected = this->modelBasedLine.getPredictedTangent(line2);
+			centroidEig2(0) = line2[2];
+			centroidEig2(1) = line2[3];
 
-		if (this->lineDetected)
-			this->processDetectedLine(line, img, centroid, centroidEig, tangentEig);
+			tangentEig2(0) = line2[1];
+			tangentEig2(1) = line2[0];
+
+			if (this->lineDetected)
+				this->processDetectedLine(line, img, centroid, centroidEig, tangentEig, tangentEigFiltered);
 
 		}
-		//else
-		//	::std::cout << "no contact" << ::std::endl;
-
 
 
 		this->applyVisualServoingController(centroidEig, tangentEig, velCommand);
+
 		this->robot_mutex.lock();
 		memcpy(this->velocityCommand, velCommand.data(), 2 * sizeof(double));
 		this->robot_mutex.unlock();
@@ -687,14 +698,18 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		::cv::Mat rot_mat = getRotationMatrix2D(center,this->imageInitRotation - this->robot_rotation * 180.0/3.141592, 1.0 );
 		warpAffine(img, img, rot_mat, img.size() );
 
-		if (this->lineDetected)
-			this->plotCommandedVelocities(img, centroidEig, tangentEig);
+		//if (this->lineDetected)
+		//	this->plotCommandedVelocities(img, centroidEig, tangentEig);
 
 		if (this->lineDetected)
 		{
-			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 			::cv::circle(img, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*100, centroidEig(1)+tangentEigFiltered(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*(-100), centroidEig(1)+tangentEigFiltered(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+
 		}
 		if (predictedLineDetected)
 		{
@@ -708,26 +723,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			::cv::line( img, ::cv::Point(125, 125), ::cv::Point(125+tangentEigPlot(0)*(-100),125+tangentEigPlot(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
 
 		}
-		//static ::std::ofstream valve("valve_stats.txt");
-		//double valveCenter[3];
-		//double valveNormal[3];
-		//double radius = 0;
-		//if (this->modelBasedLine.getModel().isInitialized())
-		//{
-		//	::std::cout << "valve radius:" << this->modelBasedLine.getModel().getRadius();
-		//	this->modelBasedLine.getModel().getCenter(valveCenter);
-		//	this->modelBasedLine.getModel().getNormal(valveNormal);
-		//	radius = this->modelBasedLine.getModel().getRadius();
 
-		//	for (int i = 0; i < 3; ++i)
-		//		valve << valveCenter[i] << " ";
-
-		//	for (int i = 0; i < 3; ++i)
-		//		valve << valveNormal[i] << " ";
-
-		//	valve << radius << ::std::endl;
-
-		//}
 }
 
 void ReplayEngine::detectWall(::cv::Mat& img)
@@ -737,8 +733,8 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 
 	::cv::Vec4f line1;
 	::cv::Vec2f centroid4;
-	if (this->m_dummyLine.processImage(img, line1, centroid4, false, 0, LineDetector::MODE::TRANSITION))
-		::std::cout << "valve detected" << ::std::endl;
+	//if (this->m_dummyLine.processImage(img, line1, centroid4, false, 0, LineDetector::MODE::TRANSITION))
+	//	::std::cout << "valve detected" << ::std::endl;
 
 
 	::cv::Point center = ::cv::Point(img.cols/2, img.rows/2 );
@@ -753,7 +749,7 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 	int x=0, y=0;
 	this->wallDetected = this->wallDetector.processImage(img, x, y, true, center.x, center.y, 125);
 
-	this->applyVisualServoingController(x, y,velCommand, BOTTOM);
+	this->applyVisualServoingController(x, y,velCommand, LEFT);
 
 	//::std::cout << "servoing commands:" << velCommand.transpose() << ::std::endl;
 	this->robot_mutex.lock();
@@ -787,8 +783,8 @@ void ReplayEngine::applyVisualServoingController(int x, int y, ::Eigen::Vector3d
 			break;
 
 	}
-	::std::cout << "x:" << x << "   y:" << y << ::std::endl;
-	::std::cout << "commanded velocities:" << commandedVelocity.transpose() << ::std::endl;
+	//::std::cout << "x:" << x << "   y:" << y << ::std::endl;
+	//::std::cout << "commanded velocities:" << commandedVelocity.transpose() << ::std::endl;
 }
 
 void ReplayEngine::followLeft(int x, int y, ::Eigen::Vector3d& commandedVelocity)
@@ -979,18 +975,43 @@ void ReplayEngine::detectLeak(::cv::Mat& img)
 
 void ReplayEngine::plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroid, const ::Eigen::Vector2d& tangent)
 {
-	// compute the two orthogonal velocity components
-	double lambda_centering = (centroid.transpose() * m_velocity_prev);
-	::Eigen::Vector2d centering_vel = lambda_centering * centroid;
+	//// compute the two orthogonal velocity components
+	//double lambda_centering = (centroid.transpose() * m_velocity_prev);
+	//::Eigen::Vector2d centering_vel = lambda_centering * centroid;
 
-	double lambda_tangent = (centroid.transpose() * m_velocity_prev);
-	::Eigen::Vector2d tangent_vel = lambda_tangent * tangent;
+	//double lambda_tangent = (centroid.transpose() * m_velocity_prev);
+	//::Eigen::Vector2d tangent_vel = lambda_tangent * tangent;
+
+	//// change velocities back to image frame
+	//::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+	//centering_vel = rot.block(0, 0, 2, 2) * centering_vel;
+	//tangent_vel = rot.block(0, 0, 2, 2) * tangent_vel;
+
+	//::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(centering_vel[0], centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
+	//::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(tangent_vel[0], tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
+
+	// compute the two orthogonal velocity components
+	//::std::cout << m_commanded_vel[0] << ", " << m_commanded_vel[1] << ::std::endl;
+	::Eigen::Vector2d im_center(125, 125);
+	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (this->velocityCommand, 2);
+
+	Eigen::Vector2d centroidEig = centroid - im_center;
+	centroidEig.normalize();
+	double lambda_centering = (centroidEig.transpose() * orig_vel);
+	double plotting_scale = 50;
+	::Eigen::Vector2d centering_vel = plotting_scale * lambda_centering * centroidEig;
+
+	double lambda_tangent = (tangent.transpose() * orig_vel);
+	::Eigen::Vector2d tangent_vel = plotting_scale * lambda_tangent * tangent;
 
 	// change velocities back to image frame
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	centering_vel = rot.block(0, 0, 2, 2) * centering_vel;
 	tangent_vel = rot.block(0, 0, 2, 2) * tangent_vel;
 
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(centering_vel[0], centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(tangent_vel[0], tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
+	//::std::cout << "centroid:" << centroidEig.transpose() << ::std::endl;
+	//::std::cout << "tangent: " << tangentEig.transpose() << ::std::endl;
+	//::std::cout << "centering norm: " << centering_vel.norm() << ",   " << "tangent norm:" << tangent_vel.norm() << ::std::endl;
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + centering_vel[0], img.cols/2 + centering_vel[1]), ::cv::Scalar(0, 0, 0), 2);
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + tangent_vel[0], img.cols/2 +tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
 }

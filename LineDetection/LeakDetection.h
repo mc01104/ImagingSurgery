@@ -13,7 +13,7 @@ class LeakDetector
 
 		void processImage(const ::cv::Mat& img, int x, int y);
 
-
+		void processImage(const ::cv::Mat& img, ::std::vector<::cv::Point>& leak_centroids);
 	private:
 		
 		void thresholdImage();

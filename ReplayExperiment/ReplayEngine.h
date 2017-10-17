@@ -55,7 +55,7 @@ class ReplayEngine
 		LineDetector		lineDetector;
 		RecursiveFilter::MovingAverageFilter		r_filter;
 		RecursiveFilter::RecursiveMovingAverage		theta_filter;
-		RecursiveFilter::AngularMovingAverageFilter theta_filter_complex;
+		RecursiveFilter::DirectionMovingAverageFilter theta_filter_complex;
 
 		ModelBasedLineEstimation	modelBasedLine;
 		LineDetector			m_dummyLine;
@@ -93,6 +93,7 @@ class ReplayEngine
 
 		bool	new_version;
 
+		::Eigen::Vector2d tangent_prev;
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION, LEAK_DETECTION} status;
 		enum WALL_TO_FOLLOW {LEFT, TOP, BOTTOM};
@@ -153,7 +154,7 @@ public:
 
 		void getCurrentImage(::cv::Mat& im);
 
-		void processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img , ::cv::Vec2f& centroid, ::Eigen::Vector2d& centroidEig, ::Eigen::Vector2d& tangentEig);
+		void processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img , ::cv::Vec2f& centroid, ::Eigen::Vector2d& centroidEig, ::Eigen::Vector2d& tangentEig,  ::Eigen::Vector2d& tangentEigFiltered);
 
 		// this simulates the line-following controller
 		void applyVisualServoingController(const ::Eigen::Vector2d& centroid, const ::Eigen::Vector2d& tangent, ::Eigen::Vector2d& commandedVelocity);

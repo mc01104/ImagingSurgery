@@ -61,6 +61,7 @@
 #include "LineDetection.h"
 #include "WallSegmentation.h"
 #include "ModelBasedLineEstimation.h"
+#include "LeakDetection.h"
 
 using namespace Core;
 using namespace cv;
@@ -78,7 +79,11 @@ struct ImgBuf {
 class Camera_processing {
 
 private:
-
+	enum CIRC_STATUS
+	{
+		CW,
+		CCW
+	} circStatus;
 
 	/********** Members private *********/
 	bool m_running; 
@@ -208,6 +213,9 @@ private:
 	void computeCircumnavigationParametersDebug(const ::cv::Mat& img);
 	void computeApexToValveParameters(const ::cv::Mat& img);
 	void computeApexToValveParametersDebug(const ::cv::Mat& img);
+
+	bool detectLeaks(const ::cv::Mat& img, int& x, int& y);
+	void postProcessLeaks(::std::vector<::cv::Point>& leaks, int& x, int& y);
 	void plotCommandedVelocities(const ::cv::Mat& img, double centroid[2], double tangent[2]);
 	void plotCommandedVelocities(const ::cv::Mat& img);
 	// camera management functions
@@ -217,6 +225,11 @@ private:
 
 	void		updateHeartFrequency();
 	void		parseNetworkMessage(::std::vector<double>& msg);
+
+	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
+	vtkSmartPointer<vtkPolyDataMapper> apexMapper;
+	vtkSmartPointer<vtkActor> apexActor;
+
 	vtkSmartPointer<vtkSphereSource> sphereSource;
 	vtkSmartPointer<vtkRegularPolygonSource> circleSource;
 	vtkSmartPointer<vtkPolyDataMapper> mapperCircle;
@@ -261,9 +274,10 @@ private:
 	bool				m_apex_to_valve;
 	double				m_centroid_apex_to_valve[2];
 	bool				m_wall_detected;
+	
+	LeakDetector	m_leakdetector;
+	bool			m_leak_detection_active;
 
-
-	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
 	bool			m_use_automatic_transition;
 	bool			m_use_online_model;
 	bool			m_show_line;
@@ -295,5 +309,8 @@ public:
 	float PredictForce();
 	void	checkTransitionState();
 	void initializeArrow();
+	void getTangentVelocity(::Eigen::Vector2d& vel);
+	void imageToWorldFrame(::cv::Point& point);
 };
 
+	

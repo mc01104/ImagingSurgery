@@ -274,7 +274,8 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	if (nonzero.size() > 50)
 	{
         //::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
-		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 5, 3);
+		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 20, 20, 10);
+		//::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 5, 3);
 		if (lines_hough.size() <= 0)
 			return false;
 
@@ -408,9 +409,9 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
 	//::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
 
-	::cv::Mat channel_mask = ::cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
-	::cv::circle(channel_mask, ::cv::Point(125, 125), 125,  255, -1);
-	::cv::bitwise_and(out, channel_mask, out); 
+	//::cv::Mat channel_mask = ::cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
+	//::cv::circle(channel_mask, ::cv::Point(125, 125), 125,  255, -1);
+	//::cv::bitwise_and(out, channel_mask, out); 
 
 	// mask the working channel
 	// mask the working channel
@@ -774,5 +775,37 @@ LineDetector::averageTangentPCA(::std::vector<::cv::Vec4i>& lines, ::cv::Vec4f& 
 
 	line(0) = svd.matrixU()(0, 0);
 	line(1) = svd.matrixU()(1, 0);
+
+}
+
+bool 
+LineDetector::getCentroid(const ::cv::Mat& img, ::cv::Point& centroid)
+{
+    ::cv::Mat thresholded;
+	
+    ::cv::Mat thresholded_binary(img.size(),CV_8UC1);
+
+	this->thresholdImage(img,thresholded);
+ 
+	::cv::Mat masked_img;
+    ::cv::Mat ow_mask = ::cv::Mat::zeros(img.rows,img.cols, CV_8UC1);
+    ::cv::circle(ow_mask,::cv::Point(img.rows/2,img.cols/2),img.rows/2,255,-1);
+	thresholded.copyTo(masked_img,ow_mask);
+
+	masked_img.convertTo(thresholded_binary,CV_8UC1);
+
+	::std::vector< ::cv::Point> nonzero;
+	::cv::findNonZero(thresholded_binary, nonzero);
+
+	if (nonzero.size() <= 0)
+		return false;
+
+	::cv::Vec2f tmp;
+	this->computeCentroid(nonzero, tmp);
+
+	centroid.x = tmp[0];
+	centroid.y = tmp[1];
+
+	return true;
 
 }
