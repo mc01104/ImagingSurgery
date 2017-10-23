@@ -131,7 +131,7 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(10), m_theta_filter(10), m_wall_detector(), m_leak_detection_active(false), circStatus(CW)
+	, m_radius_filter(10), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -986,7 +986,7 @@ bool Camera_processing::networkKinematics(void)
 
 		/// create network message for circumnavigation
 		::ostringstream ss;
-		ss << force << " " << m_linedetected << " " << m_contactBufferFiltered.back() << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
+		ss << force << " " << m_linedetected << " " << m_contact_response << " " << m_centroid[0] << " " << m_centroid[1] << " " << m_tangent[0] << " " << m_tangent[1] << " ";
 
 		ss << m_wall_detected << " " << m_centroid_apex_to_valve[0] << " " << m_centroid_apex_to_valve[1] << " ";
 
@@ -1742,7 +1742,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// filter
 	r = m_radius_filter.step(r);
-	//theta = m_theta_filter.step(theta);			// this exacerbates the line flickering problem
+	theta = m_theta_filter.step(theta);			// this exacerbates the line flickering problem
 
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
