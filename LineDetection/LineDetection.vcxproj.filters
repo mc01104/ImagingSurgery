@@ -39,6 +39,9 @@
     <ClInclude Include="LeakDetection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IncrementalValveModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -57,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LeakDetection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IncrementalValveModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

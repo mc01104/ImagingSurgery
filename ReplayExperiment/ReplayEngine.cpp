@@ -79,9 +79,9 @@ public:
 
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
-	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(1), theta_filter(1, &angularDistanceMinusPItoPI),
+	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(5), new_version(true)
+	filter(5), theta_filter_complex(20), new_version(true)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -147,7 +147,7 @@ void ReplayEngine::run()
 
 void ReplayEngine::simulate(void* tData)
 {
-	::cv::VideoWriter video("line_detection_surgery_switching_5_3.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
+	::cv::VideoWriter video("line_detection_surgery_switching_20.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
 
 	ReplayEngine* tDataSim = reinterpret_cast<ReplayEngine*> (tData);
 

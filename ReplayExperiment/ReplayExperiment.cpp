@@ -9,6 +9,7 @@
 #include "FileUtils.h"
 #include "classifier.h"
 #include "ValveModel.h"
+#include "IncrementalValveModel.h"
 #include "Utilities.h"
 #include "CTRFactory.h"
 #include "CTR.h"
@@ -20,6 +21,7 @@ void testMapFunctions();
 void testBenchtopDetection();
 bool testLeakDetection();
 void testMultipleWires();
+void testIncrementalModel();
 
 #define __NEW_VERSION__
 
@@ -77,22 +79,24 @@ int _tmain(int argc, _TCHAR* argv[])
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-07-24";
 
 	// switching directions
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-39-12";
-	
-	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-39-12";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_15-11-37";
 
-	BagOfFeatures contact_classifier;
-	contact_classifier.load(path_to_classifier);
+	//::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
-	ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
-	engine.setClassifier(contact_classifier);
-	engine.setStatus(ReplayEngine::LINE_DETECTION); 
-	engine.run();
+	//BagOfFeatures contact_classifier;
+	//contact_classifier.load(path_to_classifier);
+
+	//ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
+	//engine.setClassifier(contact_classifier);
+	//engine.setStatus(ReplayEngine::LINE_DETECTION); 
+	//engine.run();
 
 	//testMapFunctions();
 	//testBenchtopDetection();
 	//testLeakDetection();
 	//testMultipleWires();
+	testIncrementalModel();
 
 	//double a = 2.336;
 	//::std::cout << std::setprecision(50) << a << ::std::endl;
@@ -363,4 +367,51 @@ void	testMultipleWires()
 
 	video.release();
 
+}
+
+void testIncrementalModel()
+{
+	IncrementalValveModel model;
+
+	::std::string filename = "circleModel.txt";
+
+	::std::vector<::std::string> dataStr = ReadLinesFromFile(filename);
+	::std::vector<double> tmpData;
+	for (int i = 0; i < dataStr.size(); ++i)	
+	{
+		tmpData = DoubleVectorFromString(dataStr[i]);
+
+		model.updateModel(tmpData[0], tmpData[1], tmpData[2]);
+
+		//::std::cout << "point " << i << ::std::endl;
+		//::std::cout << "radius: " << model.getRadius() << ::std::endl;
+
+		//double center[3] = {0};
+		//model.getCenter(center);
+		//::std::cout << "center: ";
+		//PrintCArray(center, 3);
+
+		//double normal[3] = {0};
+		//model.getNormal(normal);
+		//::std::cout << "normal: ";
+		//PrintCArray(normal, 3);
+	}
+
+	::std::cout << "radius: " << model.getRadius() << ::std::endl;
+
+	double center[3] = {0};
+	model.getCenter(center);
+	::std::cout << "center: ";
+	PrintCArray(center, 3);
+
+	double normal[3] = {0};
+	model.getNormal(normal);
+	::std::cout << "normal: ";
+	PrintCArray(normal, 3);
+
+	//::Eigen::Vector3d point(0, 10, 0), velocity(1, 0, 0);
+
+	//int direction = model.getDirectionOfMotion(point, velocity);
+
+	//::std::cout << (direction == 0 ? "clockwise" : "counter-clockwise") << ::std::endl;
 }
