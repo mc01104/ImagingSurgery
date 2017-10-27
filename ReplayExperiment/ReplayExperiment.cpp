@@ -10,6 +10,7 @@
 #include "classifier.h"
 #include "ValveModel.h"
 #include "IncrementalValveModel.h"
+#include "Registration.h"
 #include "Utilities.h"
 #include "CTRFactory.h"
 #include "CTR.h"
@@ -23,6 +24,8 @@ bool testLeakDetection();
 void testMultipleWires();
 void testIncrementalModel();
 int testReplayEngine();
+void testRegistration();
+
 #define __NEW_VERSION__
 
 enum LINE_MODE
@@ -38,8 +41,34 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testBenchtopDetection();
 	//testLeakDetection();
 	//testMultipleWires();
-	testReplayEngine();
+	//testReplayEngine();
 	//testIncrementalModel();
+	testRegistration();
+}
+
+void testRegistration()
+{
+	RegistrationHandler reg;
+
+	::cv::VideoWriter video = ::cv::VideoWriter("registration.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(500, 250));
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/2017-10-26_15-19-37";
+	::std::vector<::std::string> imList;
+	int num = getImList(imList, img_path);
+	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
+
+	double error = 0;
+	int offset = 1300;
+	::cv::Mat img, img_rec;
+	for (int i = 0; i < imList.size() - offset; ++i)
+	{
+		img = ::cv::imread(checkPath(img_path + "/" + imList[i + offset]));
+
+		reg.processImage(img, error, img_rec);
+		video.write(img_rec);
+		//::std::cout << i << ::std::endl;
+	}
+
+	video.release();
 }
 
 int testReplayEngine()
