@@ -20,7 +20,7 @@ RegistrationHandler::processImage(const ::cv::Mat& img, double& registrationErro
 	::cv::hconcat(img, thresImage, img_rec);
 	::cv::imshow("img", img_rec);
 	::cv::waitKey(1);
-	
+
 	return sucess;
 }
 
@@ -62,9 +62,26 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	::std::vector< ::cv::Point> nonzero;
 	::cv::findNonZero(bin, nonzero);
 
+	
 	if (nonzero.size() < 10)
 		return false;
 
+	this->computeCentroid(nonzero);
+
 	return true;
 
+}
+
+void RegistrationHandler::computeCentroid(::std::vector<::cv::Point>& points)
+{
+	::std::vector<::cv::Point>::const_iterator it = points.begin();
+	double sum_x = 0, sum_y = 0;
+	for(it; it != points.end(); ++it)
+	{
+		sum_x += it->x;
+		sum_y += it->y;
+	}
+
+	this->centroid(0) = sum_x/points.size();
+	this->centroid(1) = sum_y/points.size();
 }
