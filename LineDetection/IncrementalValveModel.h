@@ -67,6 +67,13 @@ class IncrementalValveModel
 
 		void setWallFollowingState(IncrementalValveModel::WALL_FOLLOWED state) {this->wallFollowingState = state;};
 
+		void getNearestPointOnCircle(double position[3], double closestPoint[3]);
+
+		double getNumberOfPoints() {return  this->points.size();};
+
+		void clockfaceToWorldPosition(double angle, ::Eigen::Vector3d& point);
+
+		void getLeakPosition(::std::vector<::Eigen::Vector3d>& leaks);
 	protected:
 
 		void addPoint(double x, double y, double z);
@@ -83,5 +90,6 @@ class IncrementalValveModel
 		void initializeCircleCenter();
 		double computeSquaredDistance(const ::Eigen::Vector3d& point);
 		void updateCircleOptState();
+		bool pointExists(double x, double y, double z);
 };
 

@@ -248,3 +248,4 @@ void splitString(const std::string &s, char delim, Out result)
 }
 
 void ransac(const ::std::vector<::Eigen::Vector2d>& points, int max_iter, double& alpha, double& beta, double& radius, double& angle);
+::std::vector<double> linspace(double a, double b, int n);

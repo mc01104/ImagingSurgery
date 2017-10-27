@@ -6,11 +6,12 @@
 
 IncrementalValveModel::IncrementalValveModel()
 	: radius(9.0), center(0, 0, 0), normal(0, 0, 1), referencePosition(0, 1, 0), initialized(false), maxNPoints(200), registrationRotation(0),
-	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT)
+	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(TOP)
 {
 	errorJacobian.setZero();
 	x.setZero();
-	x(5) = this->radius/1.0;
+	x(5) = this->radius/10.0;
+	center /= 100;
 }
 
 IncrementalValveModel::~IncrementalValveModel()
@@ -31,11 +32,15 @@ void
 IncrementalValveModel::addPoint(double x, double y, double z)
 {
 	// if this is the first point initialize the center
+	if (this->pointExists(x, y, z))
+		return;
+
 	this->points.push_back(::Eigen::Vector3d(x, y, z));
 
 	if (this->points.size() == 1)
 	{
 		this->initializeCircleCenter();
+		this->center(2) = z;
 
 		this->initialized = true;
 	}
@@ -58,7 +63,7 @@ IncrementalValveModel::initializeCircleCenter()
 		break;
 	}
 	
-	this->x.segment(0, 3) = center;
+	this->x.segment(0, 3) = center/100;
 }
 
 void 
@@ -75,7 +80,8 @@ void IncrementalValveModel::setRegistrationRotation(double rotation)
 {
 	this->registrationRotation = rotation;
 
-	this->updateReferencePosition();
+	::Eigen::Matrix3d rot = RotateZ(this->registrationRotation * M_PI/180.0);
+	this->referencePosition = rot * this->referencePosition;
 
 }
 
@@ -86,8 +92,6 @@ IncrementalValveModel::updateReferencePosition()
 	this->referencePosition = this->referencePosition.eval() - this->referencePosition.dot(this->normal) * this->normal;
 	this->referencePosition.normalize();
 
-	::Eigen::Matrix3d rotation = RotateZ(this->registrationRotation * M_PI/180.0);
-	this->referencePosition = rotation * this->referencePosition;
 }
 
 void
@@ -132,6 +136,13 @@ IncrementalValveModel::getClockfacePosition(double x, double y, double z, double
 	this->computeAngle(point, angle);
 
 	this->angleToClockfacePosition(angle, clockfacePosition);
+}
+
+void 
+IncrementalValveModel::clockfaceToWorldPosition(double time, ::Eigen::Vector3d& point)
+{
+	double angle = 0.5*  60 * time + this->registrationRotation;        // not sure if the registration is correct
+	getNearestPointOnCircle(this->center[0] + cos(angle*M_PI/180.0), this->center[1] + sin(angle*M_PI/180.0), this->center[2], point);
 }
 
 // ---------- TESTED -----------//
@@ -232,10 +243,10 @@ IncrementalValveModel::computeErrorJacobian()
 void 
 IncrementalValveModel::updateCircleOptState()
 {
-	this->center = this->x.segment(0, 3);
+	this->center = this->x.segment(0, 3) * 100;
 	this->normal.segment(0, 2) = this->x.segment(3, 2);
 	this->normal(2) = sqrt(1.0 - this->normal(0) * this->normal(0) - this->normal(0) * this->normal(0));
-	this->radius = this->x(5) * 1.0;
+	this->radius = this->x(5) * 10.0;
 
 	this->updateReferencePosition();
 
@@ -245,15 +256,16 @@ IncrementalValveModel::updateCircleOptState()
 void
 IncrementalValveModel::updateCircleParameters()
 {
-
-	if (this->points.size() < 5)
+	if (this->points.size() < 3)
 		return;
 
 	int counter = 0; 
 	::Eigen::VectorXd xPrev;
+
 	double vectorChange = 10000;
 	double errorChange = 10000;
 	double errorPrev = 0, error = 0;
+
 	while(vectorChange > 0.01 && abs(errorChange) > 0.01)
 	{
 		this->computeErrorJacobian();
@@ -264,13 +276,17 @@ IncrementalValveModel::updateCircleParameters()
 		this->updateCircleOptState();
 		error = this->computeError();
 
+		if (counter++ > 20)
+			return;
+
 		if (error > errorPrev)
 		{
 			this->lambda *= 0.3;
 
 			this->x = xPrev;
+
 			this->updateCircleOptState();
-	//		::std::cout << "adjusting lambda" << ::std::endl;
+
 			continue;
 		}
 		else
@@ -280,11 +296,9 @@ IncrementalValveModel::updateCircleParameters()
 
 		errorChange = error - errorPrev;
 
-		//::std::cout << "iteration :" << counter << "    errorChange: " << errorChange << "   vectorChange:" << vectorChange << ::std::endl;
-		if (counter++ > 100)
-			return;
+
 	}
-	//::std::cout << "error:" <<  error << ::std::endl;
+
 }
 
 int 
@@ -297,4 +311,39 @@ IncrementalValveModel::getDirectionOfMotion(const ::Eigen::Vector3d& point, cons
 
 	return (tmp(2) > 0 ? 0 : 1);
 
+}
+
+void 
+IncrementalValveModel::getNearestPointOnCircle(double position[3], double closestPoint[3])
+{
+	::Eigen::Vector3d point;
+	this->getNearestPointOnCircle(position[0], position[1], position[2], point);
+	memcpy(closestPoint, point.data(), 3 * sizeof(double));
+}
+
+bool 
+IncrementalValveModel::pointExists(double x, double y, double z)
+{
+	double dst = 0;
+	::Eigen::Vector3d point = ::Eigen::Vector3d(x, y, z);
+	for (int i = 0; i < this->points.size(); ++i)
+		if ( (this->points[i] - point).norm() < 3)				// in mm
+			return true;
+
+	return false;
+}
+
+void
+IncrementalValveModel::getLeakPosition(::std::vector<::Eigen::Vector3d>& leaks)
+{
+	leaks.clear();
+	double leakClockPositions[3] = {10, 2, 6};
+	::Eigen::Vector3d tmp(center), point;
+
+	for (int i = 0; i < 3; ++i)
+	{
+		this->clockfaceToWorldPosition(leakClockPositions[i], tmp);
+		getNearestPointOnCircle(tmp(0), tmp(1), center[2], point);
+		leaks.push_back(point);
+	}
 }

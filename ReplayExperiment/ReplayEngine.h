@@ -12,6 +12,7 @@
 #include "WallSegmentation.h"
 #include "FilterLibrary.h"
 #include "LeakDetection.h"
+#include "IncrementalValveModel.h"
 
 #include "Classifier.h"
 
@@ -43,7 +44,9 @@ class ReplayEngine
 		double							imageInitRotation;
 		double							actualPosition[3];
 
-
+		float				contactCurr;
+		float				contactPrev;
+		::Eigen::Vector2d	centroidEig2;
 		double				joints[5];
 		::std::vector<SE3>  frames;
 
@@ -80,6 +83,17 @@ class ReplayEngine
 		vtkSmartPointer<vtkPolyDataMapper> mapperCircle;
 		vtkSmartPointer<vtkActor> actorCircle;
 
+		vtkSmartPointer<vtkSphereSource> leakSource1;
+		vtkSmartPointer<vtkPolyDataMapper> mapperleak1;
+		vtkSmartPointer<vtkActor> actorleak1;
+
+		vtkSmartPointer<vtkSphereSource> leakSource2;
+		vtkSmartPointer<vtkPolyDataMapper> mapperleak2;
+		vtkSmartPointer<vtkActor> actorleak2;
+
+		vtkSmartPointer<vtkSphereSource> leakSource3;
+		vtkSmartPointer<vtkPolyDataMapper> mapperleak3;
+		vtkSmartPointer<vtkActor> actorleak3;
 
 		vtkSmartPointer<vtkSphereSource> pointOnCircleSource;
 		vtkSmartPointer<vtkPolyDataMapper> pointOnCircleMapper;
@@ -94,6 +108,8 @@ class ReplayEngine
 		bool	new_version;
 
 		::Eigen::Vector2d tangent_prev;
+
+		IncrementalValveModel iModel;
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION, LEAK_DETECTION} status;
 		enum WALL_TO_FOLLOW {LEFT, TOP, BOTTOM};
@@ -185,4 +201,9 @@ public:
 		void followBottom(int x, int y, ::Eigen::Vector3d& commandedVelocity);
 
 		void plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroidEig, const ::Eigen::Vector2d& tangentEig);
+
+		void computePointOnValve(::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
+
+		void initializeLeaks();
+
 };
