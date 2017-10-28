@@ -161,11 +161,15 @@
     <ClInclude Include="WallSegmentation.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="IncrementalValveModel.cpp" />
+    <ClCompile Include="IncrementalValveModel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="LeakDetection.cpp" />
     <ClCompile Include="LineDetection.cpp" />
     <ClCompile Include="ModelBasedLineEstimation.cpp" />
-    <ClCompile Include="Registration.cpp" />
+    <ClCompile Include="Registration.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

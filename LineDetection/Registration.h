@@ -17,7 +17,7 @@ class RegistrationHandler
 
 		bool processImage(const ::cv::Mat& img, double& registrationError, ::cv::Mat& img_rec);
 
-		void getCentroid(::Eigen::Vector3d& centroid) {centroid = this->centroid;};
+		void getCentroid(::Eigen::Vector2d& centroid) {centroid = this->centroid;};
 
 	protected:
 		bool threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg);

@@ -61,6 +61,8 @@
 #include "LineDetection.h"
 #include "WallSegmentation.h"
 #include "ModelBasedLineEstimation.h"
+#include "IncrementalValveModel.h"
+#include "Registration.h"
 #include "LeakDetection.h"
 
 using namespace Core;
@@ -263,6 +265,9 @@ private:
 
 	LineDetector		m_linedetector;
 	ModelBasedLineEstimation	m_modelBasedLine;
+	IncrementalValveModel		m_valveModel;
+	RegistrationHandler			m_registrationHandler;
+
 	RecursiveFilter::MovingAverageFilter	m_radius_filter;
 	RecursiveFilter::DirectionMovingAverageFilter m_theta_filter;
 	bool	m_use_original_line_transition;
@@ -289,6 +294,8 @@ private:
 	int				m_is_control_active;
 	int				m_breathing;
 
+	::Eigen::Vector2d m_channel_center;
+
 	::std::vector<bool> detected_valve;
 public:
 	void updatePoints();
@@ -298,6 +305,8 @@ public:
 	Camera_processing(int period, bool sendContact);
 	~Camera_processing();
 
+
+	void computePointOnValve(::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 	// Accessors
 	::std::vector<float> getWhiteBalance();
 	void setWhiteBalance(float r, float g, float b);

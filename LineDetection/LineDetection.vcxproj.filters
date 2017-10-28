@@ -65,10 +65,10 @@
     <ClCompile Include="LeakDetection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="IncrementalValveModel.cpp">
+    <ClCompile Include="Registration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Registration.cpp">
+    <ClCompile Include="IncrementalValveModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

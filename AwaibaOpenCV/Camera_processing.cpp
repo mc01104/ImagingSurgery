@@ -131,7 +131,7 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(10), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW)
+	, m_radius_filter(10), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler()
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -173,6 +173,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		robot_position[i] = desired_vel[i] = m_model_robot_position[i] = 0;
 
 	inner_tube_rotation = 0;
+	// channel center //
+	m_channel_center(0) = 120;
+	m_channel_center(1) = 110;
 
 	m_use_original_line_transition = false;
 	m_use_green_line_transition = true;
@@ -998,6 +1001,13 @@ bool Camera_processing::networkKinematics(void)
 
 		ss << m_state_transition << " ";
 
+		//double clockfacePosition = -1;
+		//::Eigen::Vector3d point;
+		//if (this->m_valveModel.isInitialized())
+		//	this->m_valveModel.getClockfacePosition(this->robot_position[0], this->robot_position[1], this->robot_position[2], clockfacePosition, point);
+
+		//ss << clockfacePosition << " ";
+
 		if (m_apex_initialized)
 			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4] << " ";
 		else
@@ -1705,6 +1715,10 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::Vec2f centroid;
 
 	m_linedetected = false;
+	bool breakingContact = false;
+
+	if (this->m_contactBufferFiltered.size() > 3);
+		breakingContact = !this->m_contactBufferFiltered.back() && this->m_contactBufferFiltered[this->m_contactBufferFiltered.size() - 2];
 
 	if (m_contact_response == 1)
 	{
@@ -1713,19 +1727,47 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		//m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
 		m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #else
+		// not sure if I want to keep it like that...
 		if (!this->m_use_online_model)
+		{
 			m_linedetected = m_linedetector.processImage(img, line, centroid, false, 5, LineDetector::MODE::CIRCUM);
+
+		}
 		else
+		{
 			m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
+		}
 #endif
 	}
 
 	if (!m_linedetected)
 		return;
 
-	::Eigen::Vector2d centroidEig;
+	::cv::Mat img_rec;
+	double regError = 0;
+	if (this->m_registrationHandler.processImage(img, regError, img_rec))
+		this->m_valveModel.setRegistrationRotation(regError);
+
+	::Eigen::Vector3d normal(0, 0, 1);
+	double normal_[3];
+	this->m_valveModel.getNormal(normal_);
+	normal = ::Eigen::Map<::Eigen::Vector3d> (normal_, 3);
+
+	::Eigen::Vector2d centroidEig, centroidModel;
 	centroidEig(0) = centroid[0];
 	centroidEig(1) = centroid[1];
+
+	centroidModel = centroidEig;
+	::Eigen::Vector3d centroidOnValve;
+	if (breakingContact)
+	{
+		centroidOnValve.segment(0, 2) = centroidModel;
+		computePointOnValve(centroidOnValve, this->m_channel_center, this->inner_tube_rotation, this->rotation, normal);
+		centroidOnValve(2) = this->robot_position[2];
+
+		this->m_valveModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2));
+	}
+
 
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
@@ -2051,4 +2093,24 @@ void Camera_processing::postProcessLeaks(::std::vector<::cv::Point>& leaks, int&
 	x = leaks[ind].x;
 	y = leaks[ind].y;
 
+}
+
+void
+Camera_processing::computePointOnValve(::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+{
+	//::Eigen::Vector2d DP = centroidOnValve.segment(0, 2) - channelCenter;   // in pixels
+	//DP /= 26.67;
+
+	//::Eigen::Matrix3d rotation = RotateZ(imageInitRotation * M_PI/180.0 - innerTubeRotation);
+	//DP = rotation.block(0, 0, 2, 2).transpose()* DP;
+
+	//rotation = RotateZ( -90 * M_PI/180.0);
+	//DP = rotation.block(0, 0, 2, 2).transpose()* DP; // in world frame in mm
+
+	//::Eigen::Vector3d tmp;
+	//tmp.segment(0, 2) = DP;
+	//tmp(2) = 0;
+	//tmp = tmp - tmp.dot(normal) * normal;
+
+	//centroidOnValve += tmp;
 }
