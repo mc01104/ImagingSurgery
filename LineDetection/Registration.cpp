@@ -1,27 +1,32 @@
 #include "stdafx.h"
 #include "Registration.h"
+#include "HTransform.h"
 
+RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
+	markers(12, 4, 8)
+{
+	model = new IncrementalValveModel();
+}
 
-RegistrationHandler::RegistrationHandler()
+RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model)
 {
 }
 
 RegistrationHandler::~RegistrationHandler()
 {
+	delete model;
 }
 
 bool
-RegistrationHandler::processImage(const ::cv::Mat& img, double& registrationError, ::cv::Mat& img_rec)
+RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError)
 {
 	::cv::Mat thresImage;
-	bool sucess = this->threshold(img, thresImage);
+	bool success = this->threshold(img, thresImage);
 
-	/*::cv::Mat combinedImage;*/
-	::cv::hconcat(img, thresImage, img_rec);
-	::cv::imshow("img", img_rec);
-	::cv::waitKey(1);
+	if (success)
+		this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
 
-	return sucess;
+	return success;
 }
 
 bool
@@ -84,4 +89,59 @@ void RegistrationHandler::computeCentroid(::std::vector<::cv::Point>& points)
 
 	this->centroid(0) = sum_x/points.size();
 	this->centroid(1) = sum_y/points.size();
+}
+
+void RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+{
+	// convert centroid to world coordinates by accounting also the offset of the marker and the working channel
+	this->computePointOnValve(robot_position, innerTubeRotation, imageInitRotation, normal);
+	this->regPoint = robot_position;
+
+	// find the clockface position that corresponds to this point in space
+	double clockfacePosition = 0;
+	::Eigen::Vector3d point;
+	this->model->getClockfacePosition(this->regPoint(0), this->regPoint(1), this->regPoint(2), clockfacePosition, point);
+
+	// compute the error
+	this->computeOffset(clockfacePosition);
+}
+
+
+void
+RegistrationHandler::computePointOnValve(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+{
+	::Eigen::Vector2d DP = this->centroid - this->workingChannel;   // in pixels
+	DP /= 26.67;
+
+	::Eigen::Matrix3d rotation = RotateZ(imageInitRotation * M_PI/180.0 - innerTubeRotation);
+	DP = rotation.block(0, 0, 2, 2).transpose()* DP;
+
+	rotation = RotateZ( -90 * M_PI/180.0);
+	DP = rotation.block(0, 0, 2, 2).transpose()* DP; // in world frame in mm
+
+	::Eigen::Vector3d tmp;
+	tmp.segment(0, 2) = DP;
+	tmp(2) = 0;
+	tmp = tmp - tmp.dot(normal) * normal;
+
+	robot_position += tmp;
+}
+
+void 
+RegistrationHandler::computeOffset(double clockPosition)
+{
+	double min_dist = 1000, distance = 0;
+	double closest_marker = clockPosition;
+	for (int i = 0; i < this->markers.size(); ++i)
+	{
+		distance = ::std::abs(clockPosition - this->markers[i]);
+		if (distance < min_dist)
+		{
+			min_dist = distance;
+			closest_marker = this->markers[i];
+
+		}
+	}
+
+	this->registrationError = closest_marker - clockPosition;				// check that
 }

@@ -63,8 +63,8 @@ void testRegistration()
 	{
 		img = ::cv::imread(checkPath(img_path + "/" + imList[i + offset]));
 
-		reg.processImage(img, error, img_rec);
-		video.write(img_rec);
+		//reg.processImage(img, error, img_rec);
+		//video.write(img_rec);
 		//::std::cout << i << ::std::endl;
 	}
 

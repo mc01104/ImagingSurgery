@@ -256,6 +256,23 @@ private:
 	vtkSmartPointer<vtkPolyDataMapper> mapperPoints;
 	vtkSmartPointer<vtkActor> actorPoints; 
 
+	vtkSmartPointer<vtkSphereSource> leakSource1;
+	vtkSmartPointer<vtkPolyDataMapper> mapperleak1;
+	vtkSmartPointer<vtkActor> actorleak1;
+
+	vtkSmartPointer<vtkSphereSource> leakSource2;
+	vtkSmartPointer<vtkPolyDataMapper> mapperleak2;
+	vtkSmartPointer<vtkActor> actorleak2;
+
+	vtkSmartPointer<vtkSphereSource> leakSource3;
+	vtkSmartPointer<vtkPolyDataMapper> mapperleak3;
+	vtkSmartPointer<vtkActor> actorleak3;
+
+	vtkSmartPointer<vtkSphereSource> pointOnCircleSource;
+	vtkSmartPointer<vtkPolyDataMapper> pointOnCircleMapper;
+	vtkSmartPointer<vtkActor> pointOnCircleActor;
+
+
 	::std::vector<double> pointsOnValve;
 
 	vtkSmartPointer<vtkPolyData> linesPolyData;
@@ -279,6 +296,7 @@ private:
 	bool				m_apex_to_valve;
 	double				m_centroid_apex_to_valve[2];
 	bool				m_wall_detected;
+	IncrementalValveModel::WALL_FOLLOWED wall_followed;
 	
 	LeakDetector	m_leakdetector;
 	bool			m_leak_detection_active;
@@ -304,7 +322,7 @@ public:
 	// Constructor and destructor
 	Camera_processing(int period, bool sendContact);
 	~Camera_processing();
-
+	void initializeLeaks();
 
 	void computePointOnValve(::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 	// Accessors

@@ -36,6 +36,8 @@ class IncrementalValveModel
 
 		double registrationRotation;
 
+		bool registered;
+
 		WALL_FOLLOWED wallFollowingState;
 
 	public:

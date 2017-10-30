@@ -6,7 +6,7 @@
 
 IncrementalValveModel::IncrementalValveModel()
 	: radius(9.0), center(0, 0, 0), normal(0, 0, 1), referencePosition(0, 1, 0), initialized(false), maxNPoints(200), registrationRotation(0),
-	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(TOP)
+	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false)
 {
 	errorJacobian.setZero();
 	x.setZero();
@@ -78,11 +78,15 @@ IncrementalValveModel::updateCircleBaseVectors()
 
 void IncrementalValveModel::setRegistrationRotation(double rotation)
 {
+	if (this->registered)
+		return;
+
 	this->registrationRotation = rotation;
 
 	::Eigen::Matrix3d rot = RotateZ(this->registrationRotation * M_PI/180.0);
 	this->referencePosition = rot * this->referencePosition;
 
+	this->registered = true;
 }
 
 // ---- NOT TESTED YET!! -------- // 
@@ -104,6 +108,8 @@ IncrementalValveModel::resetModel()
 	registrationRotation = 0.0;
 
 	this->points.clear();
+
+	this->registered = false;
 }
 
 void
