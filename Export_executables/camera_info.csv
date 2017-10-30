@@ -1,7 +1,7 @@
 %comment
 whitebal,1.0,0.99,1.29
 savedir,C:\\AwaibaData\\
-rotation,-90.0
+rotation,+90
 ipaddress,192.168.0.3
 rendershape,1
 svmdir,.\\SVM_params_surgery\\

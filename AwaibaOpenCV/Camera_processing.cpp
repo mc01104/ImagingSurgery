@@ -168,6 +168,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_board="NanoUSB2";
 	m_ControlLED=false;
 	m_contact_response = 0;
+	m_contact_response_prev = 0;
 	m_OK = false;
 	newImg = false;
 	newImg_force = false;
@@ -1004,12 +1005,12 @@ bool Camera_processing::networkKinematics(void)
 
 		ss << m_state_transition << " ";
 
-		//double clockfacePosition = -1;
-		//::Eigen::Vector3d point;
-		//if (this->m_valveModel.isInitialized())
-		//	this->m_valveModel.getClockfacePosition(this->robot_position[0], this->robot_position[1], this->robot_position[2], clockfacePosition, point);
+		double clockfacePosition = -1;
+		::Eigen::Vector3d point;
+		if (this->m_valveModel.isInitialized())
+			this->m_valveModel.getClockfacePosition(this->robot_position[0], this->robot_position[1], this->robot_position[2], clockfacePosition, point);
 
-		//ss << clockfacePosition << " ";
+		ss << clockfacePosition << " ";
 
 		if (m_apex_initialized)
 			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4] << " ";
@@ -1314,10 +1315,11 @@ void Camera_processing::robotDisplay(void)
 					this->circleSource->SetCenter(center);
 					this->circleSource->SetRadius(radius);
 					this->circleSource->SetNormal(normal);
-
+					//PrintCArray(center, 3);
+					//::std::cout << "radius:" << radius << ::std::endl;
 					this->m_valveModel.getNearestPointOnCircle(actualPosition, center);
-					this->pointOnCircleSource->SetCenter(center);
-					this->pointOnCircleSource->SetRadius(2);				// remove and only do once
+/*					this->pointOnCircleSource->SetCenter(center);
+					this->pointOnCircleSource->SetRadius(2);	*/			// remove and only do once
 
 					this->m_valveModel.getLeakPosition(leaks);
 					this->leakSource1->SetCenter(leaks[0].data());
@@ -1536,6 +1538,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 			m_mutex_force.lock();
 
 			m_contactAvgOverHeartCycle = sum/m_FramesPerHeartCycle;
+		//	m_contact_response_prev = m_contact_response;
 			m_contact_response = response;
 
 			if (m_sendContact) 
@@ -1773,9 +1776,16 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	m_linedetected = false;
 	bool breakingContact = false;
 
-	if (this->m_contactBufferFiltered.size() > 3);
-		breakingContact = !this->m_contactBufferFiltered.back() && this->m_contactBufferFiltered[this->m_contactBufferFiltered.size() - 2];
-
+	//if (this->m_contactBufferFiltered.size() > 3);
+	//	breakingContact = !this->m_contactBufferFiltered.back() && this->m_contactBufferFiltered[this->m_contactBufferFiltered.size() - 2];
+	float response;
+	
+	this->m_bof.predict(img, response);
+	breakingContact = ( response == 0) && (this->m_contact_response_prev == 1);
+	//::std::cout << m_contact_response_prev << "    " << response << "        " << breakingContact << ::std::endl;
+	this->m_contact_response_prev = response;
+	//if (breakingContact)
+	//	::std::cout << " break" << ::std::endl;
 	if (m_contact_response == 1)
 	{
 
@@ -1816,16 +1826,22 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	centroidModel = centroidEig;
 	::Eigen::Vector3d centroidOnValve;
-	if (breakingContact)
+	if (m_contact_response == 1)
 	{
+//::std::cout << "1" << ::std::endl;
 		centroidOnValve.segment(0, 2) = centroidModel;
-		computePointOnValve(centroidOnValve, this->m_channel_center, this->inner_tube_rotation, this->rotation, normal);
-		centroidOnValve(2) = this->robot_position[2];
-
-		this->m_valveModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2));
+//::std::cout << "2" << ::std::endl;
+		computePointOnValve(robot_positionEig, centroidOnValve, this->m_channel_center, this->inner_tube_rotation, this->rotation, normal);
+//::std::cout << "3" << ::std::endl;
+		robot_positionEig(2) = this->robot_position[2];
+//::std::cout << "4" << ::std::endl;
+		this->m_valveModel.updateModel(robot_positionEig(0), robot_positionEig(1),robot_positionEig(2));
+		//::std::cout << centroidOnValve.transpose() << ::std::endl;
+//::std::cout << "5" << ::std::endl;
+		//::std::cout << "breaking contact" << ::std::endl;
 	}
 
-
+	//::std::cout << breakingContact << ::std::endl;
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
 	tangentEig[1] = line[1];
@@ -2153,7 +2169,7 @@ void Camera_processing::postProcessLeaks(::std::vector<::cv::Point>& leaks, int&
 }
 
 void
-Camera_processing::computePointOnValve(::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+Camera_processing::computePointOnValve(::Eigen::Vector3d& robot_position, ::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
 {
 	::Eigen::Vector2d DP = centroidOnValve.segment(0, 2) - channelCenter;   // in pixels
 	DP /= 26.67;
@@ -2169,7 +2185,7 @@ Camera_processing::computePointOnValve(::Eigen::Vector3d& centroidOnValve, const
 	tmp(2) = 0;
 	tmp = tmp - tmp.dot(normal) * normal;
 
-	centroidOnValve += tmp;
+	robot_position += tmp;
 }
 
 void Camera_processing::initializeLeaks()
