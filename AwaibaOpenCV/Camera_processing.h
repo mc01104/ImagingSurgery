@@ -61,6 +61,9 @@
 #include "LineDetection.h"
 #include "WallSegmentation.h"
 #include "ModelBasedLineEstimation.h"
+#include "IncrementalValveModel.h"
+#include "Registration.h"
+#include "LeakDetection.h"
 
 using namespace Core;
 using namespace cv;
@@ -78,7 +81,11 @@ struct ImgBuf {
 class Camera_processing {
 
 private:
-
+	enum CIRC_STATUS
+	{
+		CW,
+		CCW
+	} circStatus;
 
 	/********** Members private *********/
 	bool m_running; 
@@ -208,6 +215,9 @@ private:
 	void computeCircumnavigationParametersDebug(const ::cv::Mat& img);
 	void computeApexToValveParameters(const ::cv::Mat& img);
 	void computeApexToValveParametersDebug(const ::cv::Mat& img);
+
+	bool detectLeaks(const ::cv::Mat& img, int& x, int& y);
+	void postProcessLeaks(::std::vector<::cv::Point>& leaks, int& x, int& y);
 	void plotCommandedVelocities(const ::cv::Mat& img, double centroid[2], double tangent[2]);
 	void plotCommandedVelocities(const ::cv::Mat& img);
 	// camera management functions
@@ -217,6 +227,11 @@ private:
 
 	void		updateHeartFrequency();
 	void		parseNetworkMessage(::std::vector<double>& msg);
+
+	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
+	vtkSmartPointer<vtkPolyDataMapper> apexMapper;
+	vtkSmartPointer<vtkActor> apexActor;
+
 	vtkSmartPointer<vtkSphereSource> sphereSource;
 	vtkSmartPointer<vtkRegularPolygonSource> circleSource;
 	vtkSmartPointer<vtkPolyDataMapper> mapperCircle;
@@ -241,6 +256,23 @@ private:
 	vtkSmartPointer<vtkPolyDataMapper> mapperPoints;
 	vtkSmartPointer<vtkActor> actorPoints; 
 
+	vtkSmartPointer<vtkSphereSource> leakSource1;
+	vtkSmartPointer<vtkPolyDataMapper> mapperleak1;
+	vtkSmartPointer<vtkActor> actorleak1;
+
+	vtkSmartPointer<vtkSphereSource> leakSource2;
+	vtkSmartPointer<vtkPolyDataMapper> mapperleak2;
+	vtkSmartPointer<vtkActor> actorleak2;
+
+	vtkSmartPointer<vtkSphereSource> leakSource3;
+	vtkSmartPointer<vtkPolyDataMapper> mapperleak3;
+	vtkSmartPointer<vtkActor> actorleak3;
+
+	vtkSmartPointer<vtkSphereSource> pointOnCircleSource;
+	vtkSmartPointer<vtkPolyDataMapper> pointOnCircleMapper;
+	vtkSmartPointer<vtkActor> pointOnCircleActor;
+
+
 	::std::vector<double> pointsOnValve;
 
 	vtkSmartPointer<vtkPolyData> linesPolyData;
@@ -250,6 +282,9 @@ private:
 
 	LineDetector		m_linedetector;
 	ModelBasedLineEstimation	m_modelBasedLine;
+	IncrementalValveModel		m_valveModel;
+	RegistrationHandler			m_registrationHandler;
+
 	RecursiveFilter::MovingAverageFilter	m_radius_filter;
 	RecursiveFilter::DirectionMovingAverageFilter m_theta_filter;
 	bool	m_use_original_line_transition;
@@ -261,9 +296,11 @@ private:
 	bool				m_apex_to_valve;
 	double				m_centroid_apex_to_valve[2];
 	bool				m_wall_detected;
+	IncrementalValveModel::WALL_FOLLOWED wall_followed;
+	
+	LeakDetector	m_leakdetector;
+	bool			m_leak_detection_active;
 
-
-	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
 	bool			m_use_automatic_transition;
 	bool			m_use_online_model;
 	bool			m_show_line;
@@ -275,6 +312,8 @@ private:
 	int				m_is_control_active;
 	int				m_breathing;
 
+	::Eigen::Vector2d m_channel_center;
+
 	::std::vector<bool> detected_valve;
 public:
 	void updatePoints();
@@ -283,7 +322,9 @@ public:
 	// Constructor and destructor
 	Camera_processing(int period, bool sendContact);
 	~Camera_processing();
+	void initializeLeaks();
 
+	void computePointOnValve(::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 	// Accessors
 	::std::vector<float> getWhiteBalance();
 	void setWhiteBalance(float r, float g, float b);
@@ -295,5 +336,8 @@ public:
 	float PredictForce();
 	void	checkTransitionState();
 	void initializeArrow();
+	void getTangentVelocity(::Eigen::Vector2d& vel);
+	void imageToWorldFrame(::cv::Point& point);
 };
 
+	

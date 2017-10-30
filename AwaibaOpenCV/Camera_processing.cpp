@@ -131,7 +131,8 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(10), m_theta_filter(10), m_wall_detector()
+	, m_radius_filter(10), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
+	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -142,6 +143,17 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_freqFilter = new MovingAverageFilter(5);
 	m_input_freq_received = false;
 	m_network = false;
+
+	apexSource  = vtkSmartPointer<vtkRegularPolygonSource>::New();
+	apexMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	apexMapper->SetInputConnection(apexSource->GetOutputPort());
+	apexActor = vtkSmartPointer<vtkActor>::New();
+	apexActor->SetMapper(apexMapper);
+	apexActor->GetProperty()->SetOpacity(0.2);
+	apexActor->GetProperty()->SetColor(1,0,0);
+	renDisplay3D->AddActor(apexActor);
+
+	this->initializeLeaks();
 
 	m_running = true;
 	m_record = false;
@@ -164,8 +176,11 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		robot_position[i] = desired_vel[i] = m_model_robot_position[i] = 0;
 
 	inner_tube_rotation = 0;
+	// channel center //
+	m_channel_center(0) = 120;
+	m_channel_center(1) = 110;
 
-	m_use_original_line_transition = true;
+	m_use_original_line_transition = false;
 	m_use_green_line_transition = true;
 
 	::std::string svm_base_folder = "./SVM_params/";
@@ -430,6 +445,7 @@ void Camera_processing::processInput(char key)
 		break;
 	case 'i':
 		m_modelBasedLine.resetModel();
+		::std::cout << "model was reset" << ::std::endl;
 		break;
 	case 'f':
 		m_estimateFreq = !m_estimateFreq;
@@ -459,6 +475,17 @@ void Camera_processing::processInput(char key)
 		m_use_original_line_transition = !m_use_original_line_transition;
 		checkTransitionState();
 		break;
+	case '6':
+		circStatus = CW;
+		::std::cout << "operator is moving CW" << ::std::endl;
+		break;
+	case '7':
+		circStatus = CCW;
+		::std::cout << "operator is moving CCW" << ::std::endl;
+		break;
+	case 'l':
+		m_leak_detection_active = !m_leak_detection_active;
+		::std::cout << "leak detection is " << (m_leak_detection_active ? "activated" : "deactivated") << ::std::endl;
 	}
 }
 
@@ -610,10 +637,7 @@ void Camera_processing::displayImages(void)
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
-			{
 				this->computeApexToValveParameters(frame);
-				//this->plotCommandedVelocities(frame);
-			}
 			else // maybe put initialization code here
 			{
 				m_theta_filter.resetFilter();							// this is not the proper place
@@ -623,6 +647,13 @@ void Camera_processing::displayImages(void)
 				m_linedetected = false;
 				m_wall_detected = false;
 			}
+
+			int x = 0, y = 0;
+			bool leak_detected = false;
+			if (m_leak_detection_active)
+				leak_detected = this->detectLeaks(frame, x, y);
+			
+
 
 			display = false;
 
@@ -634,6 +665,9 @@ void Camera_processing::displayImages(void)
 			rot_mat = getRotationMatrix2D( center, rotation - rot*180.0/3.141592, 1.0 );
 
 			warpAffine( frame, frame_rotated, rot_mat, frame_rotated.size() );
+
+			if (leak_detected)
+				cv::circle( frame_rotated, Point(y, 250-x), 5, Scalar( 0, 0, 0 ),  -1);
 
 			if (rec) // draw a red circle on frame when recording
 				cv::circle( frame_rotated, Point( 240, 10 ), 5, Scalar( 0, 0, 255 ),  -1);
@@ -970,13 +1004,19 @@ bool Camera_processing::networkKinematics(void)
 
 		ss << m_state_transition << " ";
 
+		//double clockfacePosition = -1;
+		//::Eigen::Vector3d point;
+		//if (this->m_valveModel.isInitialized())
+		//	this->m_valveModel.getClockfacePosition(this->robot_position[0], this->robot_position[1], this->robot_position[2], clockfacePosition, point);
+
+		//ss << clockfacePosition << " ";
+
 		if (m_apex_initialized)
 			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4] << " ";
 		else
 			ss << "0";
 		ss << ::std::endl;
-		//::std::cout << "msg:" << ::std::endl;
-		//::std::cout << ss.str().c_str() << ::std::endl;
+
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
@@ -1035,17 +1075,31 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->m_commanded_vel[0] = msg.data()[22];
 	this->m_commanded_vel[1] = msg.data()[23];
 
-	m_input_plane_received = msg.data()[24];
+	int tmp = msg.data()[24];
+	switch (tmp)
+	{
+		case 0:
+			this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::LEFT;
+			break;
+		case 1:
+			this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::TOP;
+			break;
+		case 2:
+			this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::BOTTOM;
+			break;
+	}
+
+	m_input_plane_received = msg.data()[25];
 	if (m_input_plane_received)
 	{
-		memcpy(m_normal, &msg.data()[25], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[28], 3 * sizeof(double));
-		m_radius = msg.data()[31];
+		memcpy(m_normal, &msg.data()[26], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[29], 3 * sizeof(double));
+		m_radius = msg.data()[32];
 
 		pointsOnValve.clear();
-		int num_of_points = msg.data()[32];
+		int num_of_points = msg.data()[33];
 		for (int i = 0; i < 3 * num_of_points; ++i)
-			pointsOnValve.push_back(msg[33+i]);
+			pointsOnValve.push_back(msg[34+i]);
 	}
 	this->mutex_robotshape.unlock();
 
@@ -1083,8 +1137,8 @@ void Camera_processing::initializeValveDisplay()
 	mapperCircleOnLine->SetInputConnection(circleSourceOnLine->GetOutputPort());;
 	actorCircleOnline =	vtkSmartPointer<vtkActor>::New();
 	actorCircleOnline->SetMapper(mapperCircleOnLine);
-	actorCircleOnline->GetProperty()->SetColor(0, 1, 1);
-	actorCircleOnline->GetProperty()->SetEdgeColor(0,1,1);
+	actorCircleOnline->GetProperty()->SetColor(1, 0, 0);
+	actorCircleOnline->GetProperty()->SetEdgeColor(1, 0, 0);
 	actorCircleOnline->GetProperty()->SetEdgeVisibility(1);
 	actorCircleOnline->GetProperty()->SetOpacity(0.3);
 	renDisplay3D->AddActor(actorCircleOnline);
@@ -1185,8 +1239,14 @@ void Camera_processing::robotDisplay(void)
 
 	auto start = std::chrono::high_resolution_clock::now();
 	::Eigen::Vector3d tmp;
+	::std::vector<double> s;
+	double error[3] = {0};
+	double actualPosition[3] = {0};
+
+	::std::vector<::Eigen::Vector3d> leaks;
 	while(m_running)
 	{
+		memcpy(actualPosition, this->robot_position, 3 * sizeof(double));
 		auto duration_s = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
 		if (duration_s.count()>=50) 
 		{
@@ -1208,12 +1268,22 @@ void Camera_processing::robotDisplay(void)
 
 				if (npts>2)
 				{
+					//lineSource->SetNumberOfPoints(npts + 1); //  to add the straight segment
+					//for (unsigned int i = 0; i < npts; i++)
+					//	lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
+					//for (int i = 0; i < 3; ++i)
+					//	tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i];  // remove hardcoded 20;
+					//lineSource->SetPoint(npts, tmp[0], tmp[1], tmp[2]);
+					for (int i = 0; i < 3; ++i)
+						error[i] = actualPosition[i] - (SolutionFrames.back().GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i]); 
+					s = linspace(0, 1, npts+1);
 					lineSource->SetNumberOfPoints(npts + 1); //  to add the straight segment
 					for (unsigned int i = 0; i < npts; i++)
-						lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
+						lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0] + s[i] * error[0],SolutionFrames[i].GetPosition()[1]  + s[i] * error[1], SolutionFrames[i].GetPosition()[2] + s[i] * error[2]);
 					for (int i = 0; i < 3; ++i)
-						tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 0.1*SolutionFrames[npts-1].GetZ()[i];  // remove hardcoded 20;
+						tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i] + s.back() * error[i];  // remove hardcoded 20;
 					lineSource->SetPoint(npts, tmp[0], tmp[1], tmp[2]);
+
 				}
 				else
 				{
@@ -1235,15 +1305,39 @@ void Camera_processing::robotDisplay(void)
 				this->m_input_plane_received = planeReceived;
 				this->mutex_robotshape.unlock();
 
-				if (this->m_use_online_model && this->m_modelBasedLine.getModel().isInitialized())
+				//if (this->m_use_online_model && this->m_modelBasedLine.getModel().isInitialized())
+				if (this->m_valveModel.isInitialized())
 				{
-					this->circleSourceOnLine->SetCenter(this->m_modelBasedLine.getModel().getCenter());
-					this->circleSourceOnLine->SetRadius(this->m_modelBasedLine.getModel().getRadius());
-					this->circleSourceOnLine->SetNormal(this->m_modelBasedLine.getModel().getNormal());
+					this->m_valveModel.getCenter(center);
+					radius = this->m_valveModel.getRadius();
+					this->m_valveModel.getNormal(normal);
+					this->circleSource->SetCenter(center);
+					this->circleSource->SetRadius(radius);
+					this->circleSource->SetNormal(normal);
+
+					this->m_valveModel.getNearestPointOnCircle(actualPosition, center);
+					this->pointOnCircleSource->SetCenter(center);
+					this->pointOnCircleSource->SetRadius(2);				// remove and only do once
+
+					this->m_valveModel.getLeakPosition(leaks);
+					this->leakSource1->SetCenter(leaks[0].data());
+					this->leakSource1->SetRadius(2);
+
+					this->leakSource2->SetCenter(leaks[1].data());
+					this->leakSource2->SetRadius(2);
+
+					this->leakSource3->SetCenter(leaks[2].data());
+					this->leakSource3->SetRadius(2);
+					//this->circleSourceOnLine->SetCenter(this->m_modelBasedLine.getModel().getCenter());
+					//this->circleSourceOnLine->SetRadius(this->m_modelBasedLine.getModel().getRadius());
+					//this->circleSourceOnLine->SetNormal(this->m_modelBasedLine.getModel().getNormal());
 					
-					::std::cout << "radius:" << this->m_modelBasedLine.getModel().getRadius() << ::std::endl;
+					//::std::cout << "radius:" << this->m_modelBasedLine.getModel().getRadius() << ::std::endl;
 
 				}
+				else
+					this->circleSourceOnLine->SetRadius(0.0);
+
 			}
 			catch (runtime_error& ex) 
 			{
@@ -1674,28 +1768,63 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
 
+	this->m_valveModel.setWallFollowingState(this->wall_followed);
+
 	m_linedetected = false;
+	bool breakingContact = false;
+
+	if (this->m_contactBufferFiltered.size() > 3);
+		breakingContact = !this->m_contactBufferFiltered.back() && this->m_contactBufferFiltered[this->m_contactBufferFiltered.size() - 2];
 
 	if (m_contact_response == 1)
 	{
 
 #ifdef __BENCHTOP__
-		m_linedetected = m_linedetector.processImageDemo(img, line, centroid, false);
-		//m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
+		//m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
+		m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
 #else
+		// not sure if I want to keep it like that...
 		if (!this->m_use_online_model)
+		{
 			m_linedetected = m_linedetector.processImage(img, line, centroid, false, 5, LineDetector::MODE::CIRCUM);
+
+		}
 		else
+		{
 			m_linedetected = m_modelBasedLine.step(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
+		}
 #endif
 	}
 
 	if (!m_linedetected)
 		return;
 
-	::Eigen::Vector2d centroidEig;
+	::Eigen::Vector3d normal(0, 0, 1);
+	double normal_[3];
+	this->m_valveModel.getNormal(normal_);
+	normal = ::Eigen::Map<::Eigen::Vector3d> (normal_, 3);
+
+	::cv::Mat img_rec;
+	double regError = 0;
+	::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->robot_position, 3);
+	if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
+		this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
+
+	::Eigen::Vector2d centroidEig, centroidModel;
 	centroidEig(0) = centroid[0];
 	centroidEig(1) = centroid[1];
+
+	centroidModel = centroidEig;
+	::Eigen::Vector3d centroidOnValve;
+	if (breakingContact)
+	{
+		centroidOnValve.segment(0, 2) = centroidModel;
+		computePointOnValve(centroidOnValve, this->m_channel_center, this->inner_tube_rotation, this->rotation, normal);
+		centroidOnValve(2) = this->robot_position[2];
+
+		this->m_valveModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2));
+	}
+
 
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
@@ -1712,7 +1841,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	// filter
 	r = m_radius_filter.step(r);
-	theta = m_theta_filter.step(theta);
+	theta = m_theta_filter.step(theta);			// this exacerbates the line flickering problem
 
 	//bring back to centroid-tangent
 	centroidEig(0) = r * cos(theta);
@@ -1723,7 +1852,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	// -----------------------------//
 
 
-	// find closest point from center to line -> we will bring that point to the center of the images
+	// find closest point from center to line -> we will bring that point to the center of the images - I think this is redundant
 	double lambda = (image_center - centroidEig).transpose() * tangentEig;
 	centroidEig += lambda * tangentEig;
 
@@ -1784,20 +1913,10 @@ void Camera_processing::initializeApex()
 
 	double normal[3] = {0, 0, 1};
 
-	apexSource  = vtkSmartPointer<vtkRegularPolygonSource>::New();
+	
 	apexSource->SetRadius(5);						
 	apexSource->SetCenter(apex_position);				
 	apexSource->SetNormal(normal);
-
-	vtkSmartPointer<vtkPolyDataMapper> apexMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	apexMapper->SetInputConnection(apexSource->GetOutputPort());
-
-	vtkSmartPointer<vtkActor> apexActor = vtkSmartPointer<vtkActor>::New();
-	apexActor->SetMapper(apexMapper);
-
-	apexActor->GetProperty()->SetOpacity(0.2);
-	apexActor->GetProperty()->SetColor(1,0,0);
-	renDisplay3D->AddActor(apexActor);
 
 	m_apex_initialized = true;
 }
@@ -1814,12 +1933,12 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	::cv::Vec2f centroid2;
 	::cv::Vec4f line2;
 
-	if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::TRANSITION) && m_use_original_line_transition)
+	if (m_linedetector.processImage(img, line2, centroid2, false, 10, LineDetector::MODE::TRANSITION) && m_use_original_line_transition)
 	{
 		this->detected_valve.push_back(true);
 		//::std::cout <<"in 1" <<::std::endl;
 	}
-	else if (m_linedetector.processImage(img, line2, centroid2, false, 20, LineDetector::MODE::CIRCUM) && m_use_green_line_transition)
+	else if (m_linedetector.processImage(img, line2, centroid2, false, 10, LineDetector::MODE::CIRCUM) && m_use_green_line_transition)
 	{
 		this->detected_valve.push_back(true);
 				//::std::cout <<"in 2" <<::std::endl;
@@ -1855,10 +1974,6 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 
 	centroidEig = rot.block(0, 0, 2, 2).transpose() * centroidEig - rot.block(0, 0, 2, 2).transpose() * displacement;
 	memcpy(m_centroid_apex_to_valve, centroidEig.data(), 2 * sizeof(double));
-
-	//plotCommandedVelocities(frame_rotated2);
-
-	int contact_frames = ::std::count(this->m_contactBufferFiltered .rbegin(), this->m_contactBufferFiltered.rbegin() + 20, 1);
 
 }
 
@@ -1911,8 +2026,198 @@ void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img)
 	// change velocities back to image frame
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	orig_vel = rot.block(0, 0, 2, 2) * orig_vel;
-
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + orig_vel(0), img.cols/2 + orig_vel(1)), ::cv::Scalar(0, 255, 255), 2);
+	double kappa = 5.0;
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + kappa *  orig_vel(0), img.cols/2 + kappa * orig_vel(1)), ::cv::Scalar(0, 255, 255), 2);
 
 	
+}
+
+
+bool Camera_processing::detectLeaks(const ::cv::Mat& img, int& x, int& y)
+{
+	::std::vector<::cv::Point> potentialLeaks;
+	this->m_leakdetector.processImage(img, potentialLeaks);
+
+	// rotate leaks to the world frame
+	for (int i = 0; i < potentialLeaks.size(); ++i)
+		this->imageToWorldFrame(potentialLeaks[i]);
+
+	if (potentialLeaks.size() <= 0)
+		return false;
+
+	// get the tangent velocity and circumnavigation direction
+	::Eigen::Vector2d tangent_vel;
+	this->getTangentVelocity(tangent_vel);
+
+	::cv::Point centroid;
+	this->m_linedetector.getCentroid(img, centroid);
+	this->imageToWorldFrame(centroid);
+
+
+	::cv::Point tangent_vel_cv(tangent_vel(0),tangent_vel(1));
+
+	// reject leaks in the inside of the valve
+	::std::vector<::cv::Point> leaks;
+	double cross_product;
+	::cv::Point tmp;
+	for (int i = 0; i < potentialLeaks.size(); ++i)
+	{
+		tmp = potentialLeaks[i];
+		tmp.x = tmp.x - centroid.x;
+		tmp.y = tmp.y - centroid.y;
+		cross_product = tangent_vel_cv.cross(tmp);
+		if (cross_product < 0 && this->circStatus == CW)
+			continue;
+		else if (cross_product > 0 && this->circStatus == CCW);
+			continue;
+
+		leaks.push_back(potentialLeaks[i]);
+	}
+
+	if (leaks.size() <= 0)
+		return false;
+
+	postProcessLeaks(leaks, x, y);
+
+	return true;
+}
+
+void Camera_processing::getTangentVelocity(::Eigen::Vector2d& vel)
+{
+	// compute the two orthogonal velocity components
+	//::std::cout << m_commanded_vel[0] << ", " << m_commanded_vel[1] << ::std::endl;
+	::Eigen::Vector2d im_center(125, 125);
+	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
+	::Eigen::Vector2d centroidEig = ::Eigen::Map<::Eigen::Vector2d> (m_centroid, 2);
+	::Eigen::Vector2d tangentEig = ::Eigen::Map<::Eigen::Vector2d> (m_tangent, 2);
+
+	centroidEig = centroidEig - im_center;
+	centroidEig.normalize();
+	double lambda_centering = (centroidEig.transpose() * orig_vel);
+	double plotting_scale = 50;
+	::Eigen::Vector2d centering_vel = plotting_scale * lambda_centering * centroidEig;
+
+	double lambda_tangent = (tangentEig.transpose() * orig_vel);
+	vel =  lambda_tangent * tangentEig;
+
+}
+
+void Camera_processing::imageToWorldFrame(::cv::Point& point)
+{
+	::Eigen::Vector2d image_center(125, 125); // not general -> fix!
+	::Eigen::Matrix3d rot1 = RotateZ(rotation * M_PI/180.0 - robot_rotation);
+	::Eigen::Vector2d pointEig(point.x, point.y);
+	pointEig = rot1.block(0, 0, 2, 2).transpose()* (pointEig - image_center) + image_center;
+
+	::Eigen::Vector2d displacement(0, 125);   // not general -> fix!
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+
+	pointEig = rot.block(0, 0, 2, 2).transpose() * pointEig - rot.block(0, 0, 2, 2).transpose() * displacement;
+
+	point.x = pointEig(0);
+	point.y = pointEig(1);
+
+}
+
+void Camera_processing::postProcessLeaks(::std::vector<::cv::Point>& leaks, int& x, int& y)
+{
+	if (leaks.size() == 1)
+	{
+		x = leaks.front().x;
+		y = leaks.front().y;
+
+		return;
+	}
+
+	::Eigen::Vector2d leak;
+	double distance = 0;
+	double distance_min = 10000000;
+	int ind = 0;
+	// which leak should we keep?
+	for (int i = 0; i < leaks.size(); ++i)
+	{
+		leak(0) = leaks[i].x;
+		leak(1) = leaks[i].y;
+
+		distancePointToLine(leak, ::Eigen::Map<::Eigen::Vector2d> (m_centroid, 2), ::Eigen::Map<::Eigen::Vector2d> (m_tangent, 2), distance);
+		if (distance < distance_min)
+		{
+			ind = i;
+			distance_min = distance;
+		}
+	}
+
+	x = leaks[ind].x;
+	y = leaks[ind].y;
+
+}
+
+void
+Camera_processing::computePointOnValve(::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+{
+	::Eigen::Vector2d DP = centroidOnValve.segment(0, 2) - channelCenter;   // in pixels
+	DP /= 26.67;
+
+	::Eigen::Matrix3d rotation = RotateZ(imageInitRotation * M_PI/180.0 - innerTubeRotation);
+	DP = rotation.block(0, 0, 2, 2).transpose()* DP;
+
+	rotation = RotateZ( -90 * M_PI/180.0);
+	DP = rotation.block(0, 0, 2, 2).transpose()* DP; // in world frame in mm
+
+	::Eigen::Vector3d tmp;
+	tmp.segment(0, 2) = DP;
+	tmp(2) = 0;
+	tmp = tmp - tmp.dot(normal) * normal;
+
+	centroidOnValve += tmp;
+}
+
+void Camera_processing::initializeLeaks()
+{
+	leakSource1 = vtkSmartPointer<vtkSphereSource>::New();
+	leakSource1->SetRadius(0);						
+	double tmp[3] = {0, 0, 0};
+	leakSource1->SetCenter(tmp);				
+
+
+	mapperleak1 = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapperleak1->SetInputConnection(leakSource1->GetOutputPort());
+
+	actorleak1 =	vtkSmartPointer<vtkActor>::New();
+	actorleak1->SetMapper(mapperleak1);
+	actorleak1->GetProperty()->SetColor(255, 1, 1);
+	actorleak1->GetProperty()->SetOpacity(0.3);
+
+	renDisplay3D->AddActor(actorleak1);
+
+
+	leakSource2 = vtkSmartPointer<vtkSphereSource>::New();
+	leakSource2->SetRadius(0);						
+	leakSource2->SetCenter(tmp);				
+
+	mapperleak2 = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapperleak2->SetInputConnection(leakSource2->GetOutputPort());
+
+	actorleak2 =	vtkSmartPointer<vtkActor>::New();
+	actorleak2->SetMapper(mapperleak2);
+	actorleak2->GetProperty()->SetColor(0, 255, 1);
+	actorleak2->GetProperty()->SetOpacity(0.3);
+
+	renDisplay3D->AddActor(actorleak2);
+
+	leakSource3 = vtkSmartPointer<vtkSphereSource>::New();
+	leakSource3->SetRadius(0);						
+	leakSource3->SetCenter(tmp);				
+
+	mapperleak3 = vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapperleak3->SetInputConnection(leakSource3->GetOutputPort());
+
+	actorleak3 =	vtkSmartPointer<vtkActor>::New();
+	actorleak3->SetMapper(mapperleak3);
+	actorleak3->GetProperty()->SetColor(0, 1, 255);
+	actorleak3->GetProperty()->SetOpacity(0.3);
+
+	renDisplay3D->AddActor(actorleak3);
+
+
 }

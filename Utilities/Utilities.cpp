@@ -369,3 +369,15 @@ void distancePointToLine(const ::Eigen::Vector2d& point, ::Eigen::VectorXd& line
 	distance = ::std::abs(vertical.transpose() * (point - line.segment(2, 2)));
 
 }
+
+::std::vector<double> linspace(double a, double b, int n) 
+{
+    ::std::vector<double> array;
+    double step = (b-a) / (n-1);
+
+    while(a <= b) {
+        array.push_back(a);
+        a += step;           // could recode to better handle rounding errors
+    }
+    return array;
+}

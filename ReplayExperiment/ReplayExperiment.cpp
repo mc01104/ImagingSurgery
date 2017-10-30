@@ -9,6 +9,8 @@
 #include "FileUtils.h"
 #include "classifier.h"
 #include "ValveModel.h"
+#include "IncrementalValveModel.h"
+#include "Registration.h"
 #include "Utilities.h"
 #include "CTRFactory.h"
 #include "CTR.h"
@@ -20,6 +22,9 @@ void testMapFunctions();
 void testBenchtopDetection();
 bool testLeakDetection();
 void testMultipleWires();
+void testIncrementalModel();
+int testReplayEngine();
+void testRegistration();
 
 #define __NEW_VERSION__
 
@@ -32,7 +37,42 @@ enum LINE_MODE
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	//testMapFunctions();
+	//testBenchtopDetection();
+	//testLeakDetection();
+	//testMultipleWires();
+	//testReplayEngine();
+	//testIncrementalModel();
+	testRegistration();
+}
 
+void testRegistration()
+{
+	RegistrationHandler reg;
+
+	::cv::VideoWriter video = ::cv::VideoWriter("registration.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(500, 250));
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/2017-10-26_15-19-37";
+	::std::vector<::std::string> imList;
+	int num = getImList(imList, img_path);
+	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
+
+	double error = 0;
+	int offset = 1300;
+	::cv::Mat img, img_rec;
+	for (int i = 0; i < imList.size() - offset; ++i)
+	{
+		img = ::cv::imread(checkPath(img_path + "/" + imList[i + offset]));
+
+		//reg.processImage(img, error, img_rec);
+		//video.write(img_rec);
+		//::std::cout << i << ::std::endl;
+	}
+
+	video.release();
+}
+
+int testReplayEngine()
+{
 	//// ------- WALL SEGMENTATION ----------- ///////
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-10-53";	// OK
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-15-59";	// OK
@@ -51,7 +91,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-50-58";		// loses it when it goes to the margin
 
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_14-00-09";	
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_12-58-07";	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_12-58-07";	
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-49-13";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-15-33";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-07_bypass_cardioscopy/Videos_2017-09-07/2017-09-07_15-54-40";
@@ -67,6 +107,20 @@ int _tmain(int argc, _TCHAR* argv[])
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-14_bypass_cardioscopy/2017-09-14_15-16-00";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-44-19";
 	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-30-33";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-31-12";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-33-19";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-41-10";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-43-14";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-03-41";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-06-02";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-07-24";
+
+	// switching directions
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-39-12";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_15-11-37";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_14-04-54";
+	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;
@@ -81,6 +135,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testBenchtopDetection();
 	//testLeakDetection();
 	//testMultipleWires();
+	//testIncrementalModel();
 
 	//double a = 2.336;
 	//::std::cout << std::setprecision(50) << a << ::std::endl;
@@ -351,4 +406,80 @@ void	testMultipleWires()
 
 	video.release();
 
+}
+
+void testIncrementalModel()
+{
+	IncrementalValveModel model;
+	::Eigen::Vector3d point;
+	double cPosition;
+
+	model.setRegistrationRotation(180);
+	model.getClockfacePosition(1, 0, 0, cPosition, point);
+	model.clockfaceToWorldPosition(6, point);
+
+	::std::cout << "clockface position: " << cPosition << ::std::endl;
+	::std::cout << "time 6 corresponds to:" << point.transpose() << ::std::endl;
+
+	model.clockfaceToWorldPosition(5, point);
+	::std::cout << "time 5 corresponds to:" << point.transpose() << ::std::endl;
+
+	::std::vector<::Eigen::Vector3d> leaks;
+	model.getLeakPosition(leaks);
+
+	for (int i = 0; i < 3; ++i)
+		::std::cout << "leak " << num2str(i) << ":" << leaks[i].transpose() << ::std::endl;
+	//::std::vector<::std::string> dataStr = ReadLinesFromFile(filename);
+	//::std::vector<double> tmpData;
+
+	//double duration = 0;
+	//double duration_max = 0;
+	//for (int i = 0; i < dataStr.size(); ++i)	
+	//{
+	//	tmpData = DoubleVectorFromString(dataStr[i]);
+	//    auto start = std::chrono::system_clock::now();
+	//	model.updateModel(tmpData[0], tmpData[1], tmpData[2]);
+	//	auto end = std::chrono::system_clock::now();
+ //
+	//	std::chrono::duration<double> elapsed_seconds = end-start;
+	//	std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+ //
+	//	//std::cout << "finished computation at " << std::ctime(&end_time)
+	//	//		  << "elapsed time: " << elapsed_seconds.count() << "s\n";
+
+	//	duration += elapsed_seconds.count();
+	//	if (duration > duration_max)
+	//		duration_max = duration;
+	//	//::std::cout << "point " << i << ::std::endl;
+	//	//::std::cout << "radius: " << model.getRadius() << ::std::endl;
+
+	//	//double center[3] = {0};
+	//	//model.getCenter(center);
+	//	//::std::cout << "center: ";
+	//	//PrintCArray(center, 3);
+
+	//	//double normal[3] = {0};
+	//	//model.getNormal(normal);
+	//	//::std::cout << "normal: ";
+	//	//PrintCArray(normal, 3);
+	//}
+	//::std::cout << "avg duration:" << duration/dataStr.size() << ::std::endl;
+	//::std::cout << "max duration:" << duration_max << ::std::endl;
+	//::std::cout << "radius: " << model.getRadius() << ::std::endl;
+
+	//double center[3] = {0};
+	//model.getCenter(center);
+	//::std::cout << "center: ";
+	//PrintCArray(center, 3);
+
+	//double normal[3] = {0};
+	//model.getNormal(normal);
+	//::std::cout << "normal: ";
+	//PrintCArray(normal, 3);
+
+	////::Eigen::Vector3d point(0, 10, 0), velocity(1, 0, 0);
+
+	////int direction = model.getDirectionOfMotion(point, velocity);
+
+	////::std::cout << (direction == 0 ? "clockwise" : "counter-clockwise") << ::std::endl;
 }

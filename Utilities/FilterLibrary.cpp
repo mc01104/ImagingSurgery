@@ -199,5 +199,12 @@ DirectionMovingAverageFilter::computeAverage()
 double
 DirectionMovingAverageFilter::step(double incomingValue)
 {
-	return MovingAverageFilter::step(incomingValue);
+	double tmp =  MovingAverageFilter::step(incomingValue);
+
+	::Eigen::Vector2d tmpEig(cos(tmp), sin(tmp));
+	::Eigen::Vector2d tmpEig2(cos(incomingValue), sin(incomingValue));
+	if (tmpEig.transpose() * tmpEig2 < 0)
+		tmp += M_PI;
+
+	return tmp;
 }

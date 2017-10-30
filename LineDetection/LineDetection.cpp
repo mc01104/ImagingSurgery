@@ -259,6 +259,7 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 
 	//this->thresholdImageAllChannels(img,thresholded);
 	this->thresholdImageWire(img,thresholded);
+
     thresholded.convertTo(thresholded_binary,CV_8UC1);
 	
     ::std::vector< ::cv::Point> nonzero;
@@ -266,37 +267,26 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 
 	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
+	::cv::imshow("thresholded", output);
+	::cv::waitKey(1);
 
 	::std::vector<::cv::Vec4i> lines_hough;
 	if (nonzero.size() > 50)
 	{
         //::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
-		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 5, 3);
-		::cv::imshow("thresholded", output);
-		::cv::waitKey(1);
-		if (lines_hough.size() > 0)
-		{
-			this->averageTangentPCA(lines_hough, line);
-		}
-		else 
+		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 20, 20, 10);
+		//::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 5, 3);
+		if (lines_hough.size() <= 0)
 			return false;
+
+		this->averageTangentPCA(lines_hough, line);
+
 		this->computeCentroid(nonzero, centroid);
-
-	///*	::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*100,line[3]+line[1]*100), ::cv::Scalar(255, 255, 255), 2, CV_AA);
-	//	::cv::line( output, ::cv::Point(line[2],line[3]), ::cv::Point(line[2]+line[0]*(-100),line[3]+line[1]*(-100)), ::cv::Scalar(255, 255, 255), 2, CV_AA);*\
-
-
 
 		return true;
 	}
 	else 
-	{
-		::cv::imshow("thresholded", thresholded_binary);
-		::cv::waitKey(1);
-
 		return false;
-	}
-
 }
 
 void LineDetector::thresholdImageAllChannels(const ::cv::Mat& img,::cv::Mat& thresholded)
@@ -416,8 +406,12 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
 	::cv::bitwise_and(mask_s, mask_h, out); 
 	::cv::bitwise_and(mask_v, out, out);
-	::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
 
+	//::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
+
+	//::cv::Mat channel_mask = ::cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
+	//::cv::circle(channel_mask, ::cv::Point(125, 125), 125,  255, -1);
+	//::cv::bitwise_and(out, channel_mask, out); 
 
 	// mask the working channel
 	// mask the working channel
@@ -508,20 +502,20 @@ LineDetector::thresholdImageDemo(const ::cv::Mat& img, ::cv::Mat& out)
 
     ::cv::Mat mask_h, mask_s, mask_v;
 	//const int min_h = 80, max_h = 98;
-	const int min_h = 70, max_h = 110;
-	const int min_s = 48, max_s = 80;
-	//const int min_s = 0, max_s = 255;
+	const int min_h = 70, max_h = 98;
+	//const int min_s = 48, max_s = 80;
+	const int min_s = 70, max_s = 150;
     ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
     ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
     //::cv::inRange(hsv_split[2] ,min_s,max_s,mask_v);
 
 	::cv::bitwise_and(mask_s, mask_h, out); 
 	//::cv::bitwise_and(out, mask_h, out);
-	//::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
+	::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
 
 	// mask the working channel
 	// scope 1
-	//::cv::circle(channel_mask, ::cv::Point(25, 149), 50,  0, -1);
+	::cv::circle(channel_mask, ::cv::Point(25, 149), 50,  0, -1);
 	//::cv::circle(channel_mask, ::cv::Point(149, 45), 50,  0, -1); // (this was just for testing)
 	//::cv::circle(channel_mask, ::cv::Point(46, 132), 50,  0, -1); // (this was just for testing)
 	//::cv::circle(channel_mask, ::cv::Point(30, 132), 50,  0, -1); // (this was just for testing)
@@ -533,7 +527,7 @@ LineDetector::thresholdImageDemo(const ::cv::Mat& img, ::cv::Mat& out)
 	//// scope 4
 	//::cv::circle(channel_mask, ::cv::Point(43, 116), 46,  0, -1);
 
-	//::cv::bitwise_and(out, channel_mask, out); 
+	::cv::bitwise_and(out, channel_mask, out); 
 
     // Apply morphological opening to remove small things
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(5,5));
@@ -781,5 +775,37 @@ LineDetector::averageTangentPCA(::std::vector<::cv::Vec4i>& lines, ::cv::Vec4f& 
 
 	line(0) = svd.matrixU()(0, 0);
 	line(1) = svd.matrixU()(1, 0);
+
+}
+
+bool 
+LineDetector::getCentroid(const ::cv::Mat& img, ::cv::Point& centroid)
+{
+    ::cv::Mat thresholded;
+	
+    ::cv::Mat thresholded_binary(img.size(),CV_8UC1);
+
+	this->thresholdImage(img,thresholded);
+ 
+	::cv::Mat masked_img;
+    ::cv::Mat ow_mask = ::cv::Mat::zeros(img.rows,img.cols, CV_8UC1);
+    ::cv::circle(ow_mask,::cv::Point(img.rows/2,img.cols/2),img.rows/2,255,-1);
+	thresholded.copyTo(masked_img,ow_mask);
+
+	masked_img.convertTo(thresholded_binary,CV_8UC1);
+
+	::std::vector< ::cv::Point> nonzero;
+	::cv::findNonZero(thresholded_binary, nonzero);
+
+	if (nonzero.size() <= 0)
+		return false;
+
+	::cv::Vec2f tmp;
+	this->computeCentroid(nonzero, tmp);
+
+	centroid.x = tmp[0];
+	centroid.y = tmp[1];
+
+	return true;
 
 }

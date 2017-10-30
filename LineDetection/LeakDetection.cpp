@@ -71,6 +71,33 @@ LeakDetector::thresholdImage()
 	::cv::inRange(rgb_split[2], 180, 215, this->thresholdedImage);
 }
 
+void 
+LeakDetector::processImage(const ::cv::Mat& img, ::std::vector<::cv::Point>& leak_centroids)
+{
+	img.copyTo(this->currentImage);
+
+	::cv::Mat hsv;
+	::std::vector<::cv::Mat> hsv_split;
+
+	::cv::cvtColor(this->currentImage, hsv, CV_BGR2HSV);
+
+	::cv::split(hsv, hsv_split);
+
+	this->thresholdImageHSV();
+
+	::cv::Mat labels;
+	::cv::Mat stats;
+	int num = ::cv::connectedComponentsWithStats(this->thresholdedImage, labels, stats, centroids);
+	
+	leak_centroids.clear();
+	int max_area = 0;
+	int ind = 0;
+
+	for (int i = 1; i < num ; ++i)
+		if (stats.at<int>(i, ::cv::CC_STAT_AREA) > 200 && stats.at<int>(i, ::cv::CC_STAT_AREA) < 20000)
+			leak_centroids.push_back(::cv::Point(centroids.at<double>(i, 0), centroids.at<double>(i, 1)));
+
+}
 
 void
 LeakDetector::thresholdImageHSV()

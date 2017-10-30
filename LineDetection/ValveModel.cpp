@@ -9,7 +9,7 @@ ValveModel::ValveModel():
 	v2(0, 1, 0),
 	column_sums(0, 0, 0),
 	initialized(false),
-	maxNPoints(200)
+	maxNPoints(100)
 {
 	XtX.setZero();
 	this->projectionMatrix.resize(3, 3);
