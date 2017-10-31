@@ -2204,7 +2204,7 @@ void Camera_processing::initializeLeaks()
 	actorleak1->GetProperty()->SetColor(255, 1, 1);
 	actorleak1->GetProperty()->SetOpacity(0.3);
 
-	renDisplay3D->AddActor(actorleak1);
+	//renDisplay3D->AddActor(actorleak1);
 
 
 	leakSource2 = vtkSmartPointer<vtkSphereSource>::New();
@@ -2219,7 +2219,7 @@ void Camera_processing::initializeLeaks()
 	actorleak2->GetProperty()->SetColor(0, 255, 1);
 	actorleak2->GetProperty()->SetOpacity(0.3);
 
-	renDisplay3D->AddActor(actorleak2);
+	//renDisplay3D->AddActor(actorleak2);
 
 	leakSource3 = vtkSmartPointer<vtkSphereSource>::New();
 	leakSource3->SetRadius(0);						
@@ -2233,7 +2233,7 @@ void Camera_processing::initializeLeaks()
 	actorleak3->GetProperty()->SetColor(0, 1, 255);
 	actorleak3->GetProperty()->SetOpacity(0.3);
 
-	renDisplay3D->AddActor(actorleak3);
+	//renDisplay3D->AddActor(actorleak3);
 
 
 }
