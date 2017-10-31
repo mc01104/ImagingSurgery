@@ -102,6 +102,7 @@ void RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_posi
 	::Eigen::Vector3d point;
 	this->model->getClockfacePosition(this->regPoint(0), this->regPoint(1), this->regPoint(2), clockfacePosition, point);
 
+	::std::cout << "marker detected at robot's " << clockfacePosition << " o' clock" << ::std::endl;
 	// compute the error
 	this->computeOffset(clockfacePosition);
 }
@@ -131,10 +132,13 @@ void
 RegistrationHandler::computeOffset(double clockPosition)
 {
 	double min_dist = 1000, distance = 0;
+	double d1 = 0, d2 = 0;
 	double closest_marker = clockPosition;
 	for (int i = 0; i < this->markers.size(); ++i)
 	{
-		distance = ::std::abs(clockPosition - this->markers[i]);
+		d1 = ::std::abs(clockPosition - this->markers[i]);
+		d2 = ::std::abs(12 + (this->markers[i] - clockPosition));
+		distance = ::std::min(d1, d2);
 		if (distance < min_dist)
 		{
 			min_dist = distance;
@@ -143,7 +147,21 @@ RegistrationHandler::computeOffset(double clockPosition)
 		}
 	}
 
-	this->registrationError = closest_marker - clockPosition;				// check that
+	//this->registrationError = closest_marker - clockPosition;				// check that
+	double angularOffset = min_dist * 30; // in degrees
+
+	double angle1 = 0.5*  60 * clockPosition; // + this->registrationRotation; 
+	double angle2 = 0.5*  60 * closest_marker; // + this->registrationRotation; 
+
+	::Eigen::Vector3d pRobot(cos(angle1 * M_PI/180.0), sin(angle1 * M_PI/180.0), 1);
+	::Eigen::Vector3d pMarker(cos(angle1 * M_PI/180.0), sin(angle1 * M_PI/180.0), 1);
+
+	double tmp = pRobot.cross(pMarker)[3];
+	
+	if (tmp < 0)
+		angularOffset *= -1;
+
+	this->registrationError = angularOffset;
 }
 
 bool 
