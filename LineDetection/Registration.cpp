@@ -155,6 +155,8 @@ RegistrationHandler::processImageSynthetic(const ::cv::Mat& img, ::Eigen::Vector
 	if (success)
 		this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
 
+	if (success)
+		registrationError = this->registrationError;
 	return success;
 }
 
@@ -180,7 +182,7 @@ RegistrationHandler::thresholdSynthetic(const ::cv::Mat& img, ::cv::Mat& thresho
 
 
 	::cv::Mat output;
-	::cv::bitwise_and(mask_h1, mask_h2, output);
+	::cv::bitwise_or(mask_h1, mask_h2, output);
 	//::cv::bitwise_and(output, mask_v, output);
 
     // Apply morphological opening to remove small things

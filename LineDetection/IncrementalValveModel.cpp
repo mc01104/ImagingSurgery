@@ -80,7 +80,7 @@ void IncrementalValveModel::setRegistrationRotation(double rotation)
 {
 	if (this->registered)
 		return;
-
+	::std::cout << "registration offset:" << rotation << ::std::endl;
 	this->registrationRotation = rotation;
 
 	::Eigen::Matrix3d rot = RotateZ(this->registrationRotation * M_PI/180.0);
