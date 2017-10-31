@@ -145,3 +145,63 @@ RegistrationHandler::computeOffset(double clockPosition)
 
 	this->registrationError = closest_marker - clockPosition;				// check that
 }
+
+bool 
+RegistrationHandler::processImageSynthetic(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError)
+{
+	::cv::Mat thresImage;
+	bool success = this->thresholdSynthetic(img, thresImage);
+
+	if (success)
+		this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
+
+	return success;
+}
+
+
+bool 
+RegistrationHandler::thresholdSynthetic(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
+{
+	::cv::Mat hsv;
+	::cv::cvtColor(img, hsv, ::cv::COLOR_BGR2HSV);
+
+	::std::vector<::cv::Mat> HSV_split;
+	::cv::split(hsv, HSV_split);
+
+	int l_thres = 163;
+	int h_thres = 180;
+
+	int l_thres_2 = 0;
+	int h_thres_2 = 11;
+
+	::cv::Mat mask_h1, mask_h2;
+	::cv::inRange(HSV_split[0], l_thres, h_thres, mask_h1);
+	::cv::inRange(HSV_split[0], l_thres_2, l_thres_2, mask_h2);
+
+
+	::cv::Mat output;
+	::cv::bitwise_and(mask_h1, mask_h2, output);
+	//::cv::bitwise_and(output, mask_v, output);
+
+    // Apply morphological opening to remove small things
+    ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE, ::cv::Size(5,5));
+    ::cv::morphologyEx(output, output, ::cv::MORPH_OPEN,kernel);
+
+	::cv::cvtColor(output, thresholdedImg, CV_GRAY2BGR);
+	::cv::imshow("marker", thresholdedImg);
+	::cv::waitKey(1);
+
+	::cv::Mat bin;
+	output.convertTo(bin, CV_8UC1);
+	
+	::std::vector< ::cv::Point> nonzero;
+	::cv::findNonZero(bin, nonzero);
+	
+	if (nonzero.size() < 10)
+		return false;
+
+	this->computeCentroid(nonzero);
+
+	return true;
+
+}

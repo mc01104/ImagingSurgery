@@ -1817,7 +1817,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::Mat img_rec;
 	double regError = 0;
 	::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->robot_position, 3);
-	if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
+	if (this->m_registrationHandler.processImageSynthetic(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
 		this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
 
 	::Eigen::Vector2d centroidEig, centroidModel;
