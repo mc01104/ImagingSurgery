@@ -147,7 +147,7 @@ private:
 	int m_FramesPerHeartCycle;
 	bool m_sendContact;
 	float m_contact_response;
-
+	float m_contact_response_prev;
 	float m_contactAvgOverHeartCycle;
 	bool m_contactMeasured;
 	std::deque<float> m_contactBuffer;
@@ -324,7 +324,7 @@ public:
 	~Camera_processing();
 	void initializeLeaks();
 
-	void computePointOnValve(::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
+	void computePointOnValve(::Eigen::Vector3d& robot_position, ::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 	// Accessors
 	::std::vector<float> getWhiteBalance();
 	void setWhiteBalance(float r, float g, float b);
