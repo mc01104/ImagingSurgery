@@ -102,7 +102,7 @@ void RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_posi
 	::Eigen::Vector3d point;
 	this->model->getClockfacePosition(this->regPoint(0), this->regPoint(1), this->regPoint(2), clockfacePosition, point);
 
-	::std::cout << "marker detected at robot's " << clockfacePosition << " o' clock" << ::std::endl;
+	//::std::cout << "marker detected at robot's " << clockfacePosition << " o' clock" << ::std::endl;
 	// compute the error
 	this->computeOffset(clockfacePosition);
 }
