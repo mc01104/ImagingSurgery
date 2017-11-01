@@ -482,8 +482,7 @@ void Camera_processing::processInput(char key)
 		//break;
 		this->manualRegistration = !this->manualRegistration;
 		::std::cout << "automatic registration is switched " << (this->manualRegistration ? "off" : "on") << ::std::endl;
-		if (this->manualRegistration)
-			this->m_valveModel.resetRegistration();
+		this->m_valveModel.resetRegistration();
 	case 'o':
 		m_rotateImage =  !m_rotateImage;
 		break;
