@@ -193,7 +193,7 @@ private:
 	double				m_tangentImageFrame[2];
 
 	bool				m_state_transition;
-
+	int					clockFollowed;
 	// Thread functions
     void acquireImages(void);
 	void displayImages(void);
@@ -311,10 +311,12 @@ private:
 	double			m_contact_desired_ratio;
 	int				m_is_control_active;
 	int				m_breathing;
-
+	bool			manualRegistration;
 	::Eigen::Vector2d m_channel_center;
 
 	::std::vector<bool> detected_valve;
+
+	double	registrationOffset;
 public:
 	void updatePoints();
 	void addArrow(double normal[3], double center[3]);

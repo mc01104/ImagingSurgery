@@ -32,6 +32,10 @@ class RegistrationHandler
 
 		bool processImage(const ::cv::Mat& img, double& registrationError, ::cv::Mat& img_rec);
 		bool processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError);
+
+		bool processImageSynthetic(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError);
+		bool thresholdSynthetic(const ::cv::Mat& img, ::cv::Mat& thresholdedImg);
+
 		void getCentroid(::Eigen::Vector2d& centroid) {centroid = this->centroid;};
 
 		void setWorkingChannel(::Eigen::Vector2d& workingChannel) {this->workingChannel = workingChannel;};

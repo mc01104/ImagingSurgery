@@ -10,7 +10,8 @@ class IncrementalValveModel
 		{
 			LEFT = 0,
 			TOP,
-			BOTTOM
+			BOTTOM,
+			USER
 		};
 
 	protected:
@@ -40,6 +41,8 @@ class IncrementalValveModel
 
 		WALL_FOLLOWED wallFollowingState;
 
+		int clockFollowed;
+
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -67,7 +70,11 @@ class IncrementalValveModel
 
 		void setRegistrationRotation(double rotation);
 
+		void resetRegistration() {this->registered = false; this->setRegistrationRotation(0); this->registered = false;};
+
 		void setWallFollowingState(IncrementalValveModel::WALL_FOLLOWED state) {this->wallFollowingState = state;};
+
+		void setFollowedClockPosition(double position) {this->clockFollowed = position;};
 
 		void getNearestPointOnCircle(double position[3], double closestPoint[3]);
 

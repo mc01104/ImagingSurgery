@@ -102,6 +102,7 @@ void RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_posi
 	::Eigen::Vector3d point;
 	this->model->getClockfacePosition(this->regPoint(0), this->regPoint(1), this->regPoint(2), clockfacePosition, point);
 
+	//::std::cout << "marker detected at robot's " << clockfacePosition << " o' clock" << ::std::endl;
 	// compute the error
 	this->computeOffset(clockfacePosition);
 }
@@ -131,10 +132,13 @@ void
 RegistrationHandler::computeOffset(double clockPosition)
 {
 	double min_dist = 1000, distance = 0;
+	double d1 = 0, d2 = 0;
 	double closest_marker = clockPosition;
 	for (int i = 0; i < this->markers.size(); ++i)
 	{
-		distance = ::std::abs(clockPosition - this->markers[i]);
+		d1 = ::std::abs(clockPosition - this->markers[i]);
+		d2 = ::std::abs(12 + (this->markers[i] - clockPosition));
+		distance = ::std::min(d1, d2);
 		if (distance < min_dist)
 		{
 			min_dist = distance;
@@ -143,5 +147,81 @@ RegistrationHandler::computeOffset(double clockPosition)
 		}
 	}
 
-	this->registrationError = closest_marker - clockPosition;				// check that
+	//this->registrationError = closest_marker - clockPosition;				// check that
+	double angularOffset = min_dist * 30; // in degrees
+
+	double angle1 = 0.5*  60 * clockPosition; // + this->registrationRotation; 
+	double angle2 = 0.5*  60 * closest_marker; // + this->registrationRotation; 
+
+	::Eigen::Vector3d pRobot(cos(angle1 * M_PI/180.0), sin(angle1 * M_PI/180.0), 1);
+	::Eigen::Vector3d pMarker(cos(angle1 * M_PI/180.0), sin(angle1 * M_PI/180.0), 1);
+
+	double tmp = pRobot.cross(pMarker)[3];
+	
+	if (tmp < 0)
+		angularOffset *= -1;
+
+	this->registrationError = angularOffset;
+}
+
+bool 
+RegistrationHandler::processImageSynthetic(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError)
+{
+	::cv::Mat thresImage;
+	bool success = this->thresholdSynthetic(img, thresImage);
+
+	if (success)
+		this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
+
+	if (success)
+		registrationError = this->registrationError;
+	return success;
+}
+
+
+bool 
+RegistrationHandler::thresholdSynthetic(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
+{
+	::cv::Mat hsv;
+	::cv::cvtColor(img, hsv, ::cv::COLOR_BGR2HSV);
+
+	::std::vector<::cv::Mat> HSV_split;
+	::cv::split(hsv, HSV_split);
+
+	int l_thres = 163;
+	int h_thres = 180;
+
+	int l_thres_2 = 0;
+	int h_thres_2 = 11;
+
+	::cv::Mat mask_h1, mask_h2;
+	::cv::inRange(HSV_split[0], l_thres, h_thres, mask_h1);
+	::cv::inRange(HSV_split[0], l_thres_2, l_thres_2, mask_h2);
+
+
+	::cv::Mat output;
+	::cv::bitwise_or(mask_h1, mask_h2, output);
+	//::cv::bitwise_and(output, mask_v, output);
+
+    // Apply morphological opening to remove small things
+    ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE, ::cv::Size(5,5));
+    ::cv::morphologyEx(output, output, ::cv::MORPH_OPEN,kernel);
+
+	::cv::cvtColor(output, thresholdedImg, CV_GRAY2BGR);
+	::cv::imshow("marker", thresholdedImg);
+	::cv::waitKey(1);
+
+	::cv::Mat bin;
+	output.convertTo(bin, CV_8UC1);
+	
+	::std::vector< ::cv::Point> nonzero;
+	::cv::findNonZero(bin, nonzero);
+	
+	if (nonzero.size() < 10)
+		return false;
+
+	this->computeCentroid(nonzero);
+
+	return true;
+
 }
