@@ -6,7 +6,7 @@
 
 IncrementalValveModel::IncrementalValveModel()
 	: radius(9.0), center(0, 0, 0), normal(0, 0, 1), referencePosition(0, 1, 0), initialized(false), maxNPoints(200), registrationRotation(0),
-	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false)
+	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(0)
 {
 	errorJacobian.setZero();
 	x.setZero();
@@ -60,6 +60,10 @@ IncrementalValveModel::initializeCircleCenter()
 		break;
 	case BOTTOM:
 		center = this->points.back() + this->radius * ::Eigen::Vector3d(1, 0, 0);
+		break;
+	case USER:
+		double angle = 0.5*  60 * this->clockFollowed;
+		center = this->points.back() - this->radius * ::Eigen::Vector3d(cos(angle * M_PI/180.0), sin(angle * M_PI/180.0), 0);
 		break;
 	}
 	

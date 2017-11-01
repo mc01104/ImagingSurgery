@@ -132,7 +132,7 @@ public:
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 	, m_radius_filter(10), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
-	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT)
+	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -143,6 +143,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_freqFilter = new MovingAverageFilter(5);
 	m_input_freq_received = false;
 	m_network = false;
+	registrationOffset = 0;
+
+	clockFollowed = 0;
 
 	apexSource  = vtkSmartPointer<vtkRegularPolygonSource>::New();
 	apexMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -178,8 +181,29 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 	inner_tube_rotation = 0;
 	// channel center //
-	m_channel_center(0) = 120;
-	m_channel_center(1) = 110;
+	//// scope 1
+	//m_channel_center(0) = 37;
+	//m_channel_center(1) = 102;
+
+	// scope 2
+	m_channel_center(0) = 213;
+	m_channel_center(1) = 102;
+
+	//// scope 3
+	//m_channel_center(0) = 180;
+	//m_channel_center(1) = 70;
+
+	//// scope 4
+	//m_channel_center(0) = 51;
+	//m_channel_center(1) = 133;
+
+	//// scope 5
+	//m_channel_center(0) = 152;
+	//m_channel_center(1) = 151;
+
+	//// scope 6
+	//m_channel_center(0) = 120;
+	//m_channel_center(1) = 110;
 
 	m_use_original_line_transition = false;
 	m_use_green_line_transition = true;
@@ -445,17 +469,21 @@ void Camera_processing::processInput(char key)
 			::std::cout << "online model is off" << ::std::endl;
 		break;
 	case 'i':
-		m_modelBasedLine.resetModel();
+		m_valveModel.resetModel();
 		::std::cout << "model was reset" << ::std::endl;
 		break;
 	case 'f':
-		m_estimateFreq = !m_estimateFreq;
-		if (m_estimateFreq)
-		{
-			::std::cout << "frequency estimation is switched on" << ::std::endl;
-			m_freqFilter->resetFilter();
-		}
-		break;
+		//m_estimateFreq = !m_estimateFreq;
+		//if (m_estimateFreq)
+		//{
+		//	::std::cout << "frequency estimation is switched on" << ::std::endl;
+		//	m_freqFilter->resetFilter();
+		//}
+		//break;
+		this->manualRegistration = !this->manualRegistration;
+		::std::cout << "automatic registration is switched " << (this->manualRegistration ? "off" : "on") << ::std::endl;
+		if (this->manualRegistration)
+			this->m_valveModel.resetRegistration();
 	case 'o':
 		m_rotateImage =  !m_rotateImage;
 		break;
@@ -1079,28 +1107,34 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	int tmp = msg.data()[24];
 	switch (tmp)
 	{
-		case 0:
+		case -1:
 			this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::LEFT;
 			break;
-		case 1:
+		case -2:
 			this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::TOP;
 			break;
-		case 2:
+		case -3:
 			this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::BOTTOM;
+			break;
+		default:
+			this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::USER;
+			this->clockFollowed = tmp;
 			break;
 	}
 
-	m_input_plane_received = msg.data()[25];
+	this->registrationOffset = msg.data()[25];
+
+	m_input_plane_received = msg.data()[26];
 	if (m_input_plane_received)
 	{
-		memcpy(m_normal, &msg.data()[26], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[29], 3 * sizeof(double));
-		m_radius = msg.data()[32];
+		memcpy(m_normal, &msg.data()[27], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[30], 3 * sizeof(double));
+		m_radius = msg.data()[33];
 
 		pointsOnValve.clear();
-		int num_of_points = msg.data()[33];
+		int num_of_points = msg.data()[34];
 		for (int i = 0; i < 3 * num_of_points; ++i)
-			pointsOnValve.push_back(msg[34+i]);
+			pointsOnValve.push_back(msg[35+i]);
 	}
 	this->mutex_robotshape.unlock();
 
@@ -1141,7 +1175,7 @@ void Camera_processing::initializeValveDisplay()
 	actorCircleOnline->GetProperty()->SetColor(1, 0, 0);
 	actorCircleOnline->GetProperty()->SetEdgeColor(1, 0, 0);
 	actorCircleOnline->GetProperty()->SetEdgeVisibility(1);
-	actorCircleOnline->GetProperty()->SetOpacity(0.3);
+	actorCircleOnline->GetProperty()->SetOpacity(0.4);
 	renDisplay3D->AddActor(actorCircleOnline);
 
 
@@ -1312,9 +1346,9 @@ void Camera_processing::robotDisplay(void)
 					this->m_valveModel.getCenter(center);
 					radius = this->m_valveModel.getRadius();
 					this->m_valveModel.getNormal(normal);
-					this->circleSource->SetCenter(center);
-					this->circleSource->SetRadius(radius);
-					this->circleSource->SetNormal(normal);
+					this->circleSourceOnLine->SetCenter(center);
+					this->circleSourceOnLine->SetRadius(radius);
+					this->circleSourceOnLine->SetNormal(normal);
 					//PrintCArray(center, 3);
 					//::std::cout << "radius:" << radius << ::std::endl;
 					this->m_valveModel.getNearestPointOnCircle(actualPosition, center);
@@ -1772,6 +1806,9 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::Vec2f centroid;
 
 	this->m_valveModel.setWallFollowingState(this->wall_followed);
+	if (this->wall_followed == IncrementalValveModel::WALL_FOLLOWED::USER)
+		this->m_valveModel.setFollowedClockPosition(this->clockFollowed);
+
 
 	m_linedetected = false;
 	bool breakingContact = false;
@@ -1817,8 +1854,15 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::Mat img_rec;
 	double regError = 0;
 	::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->robot_position, 3);
-	if (this->m_registrationHandler.processImageSynthetic(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
-		this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
+
+	if (this->manualRegistration)
+		this->m_valveModel.setRegistrationRotation(this->registrationOffset);
+	else
+	{
+		if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
+			this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
+
+	}
 
 	::Eigen::Vector2d centroidEig, centroidModel;
 	centroidEig(0) = centroid[0];
