@@ -482,8 +482,8 @@ void Camera_processing::processInput(char key)
 		//break;
 		this->manualRegistration = !this->manualRegistration;
 		::std::cout << "automatic registration is switched " << (this->manualRegistration ? "off" : "on") << ::std::endl;
-		if (this->manualRegistration)
-			this->m_valveModel.resetRegistration();
+		this->m_valveModel.resetRegistration();
+		break;
 	case 'o':
 		m_rotateImage =  !m_rotateImage;
 		break;
@@ -1859,7 +1859,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		this->m_valveModel.setRegistrationRotation(this->registrationOffset);
 	else
 	{
-		if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
+		if (this->m_registrationHandler.processImageSynthetic(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
 			this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
 
 	}
@@ -2011,7 +2011,7 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 
 	int x = 0, y = 0;
 	this->m_wall_detected = this->m_wall_detector.processImage(img, x, y, true);
-
+	this->m_wall_detected = false;
 	// adjust for the cropping
 	::Eigen::Vector2d centroidEig;
 	centroidEig(0) = x;
