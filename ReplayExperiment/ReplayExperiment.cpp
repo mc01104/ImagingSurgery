@@ -15,6 +15,8 @@
 #include "CTRFactory.h"
 #include "CTR.h"
 
+#include "OpenCVClock.h"
+
 void testVectorOperations();
 void testBuildingModel();
 void testJointConversion();
@@ -25,6 +27,7 @@ void testMultipleWires();
 void testIncrementalModel();
 int testReplayEngine();
 void testRegistration();
+void testClock();
 
 #define __NEW_VERSION__
 
@@ -41,9 +44,49 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testBenchtopDetection();
 	//testLeakDetection();
 	//testMultipleWires();
-	//testReplayEngine();
+	testReplayEngine();
 	//testIncrementalModel();
-	testRegistration();
+	//testRegistration();
+	//testClock();
+}
+
+
+void testClock()
+{
+	bool videoOn = false;
+	OpenCVClock clockCV;
+	::cv::VideoWriter video;
+	if (videoOn)
+		 video = ::cv::VideoWriter("clock.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(500, 250));
+	
+	::std::string img_path = "green_circle.png";
+	
+	::cv::Mat img;
+	double time;
+	for (int i = 0; i < 100000; ++i)
+	{
+		img = ::cv::imread(img_path);
+
+		time = i * 0.01;
+		if (i == 100)
+			clockCV.setRegistrationOffset(1);
+		if (i == 200)
+			clockCV.setRegistrationOffset(1);
+		if (i == 300)
+			clockCV.setRegistrationOffset(1);
+
+		clockCV.update(img, time);
+
+		::std::cout << time << ::std::endl;
+		::cv::imshow("img", img);
+		::cv::waitKey(10);
+
+		if (videoOn)
+			video.write(img);
+
+	}
+	if (videoOn)
+		video.release();
 }
 
 void testRegistration()

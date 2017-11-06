@@ -103,6 +103,10 @@ class ReplayEngine
 		vtkSmartPointer<vtkPolyDataMapper> lineMapper;
 		vtkSmartPointer<vtkActor> lineActor;
 
+		vtkSmartPointer<vtkLineSource> robotAxisSource;
+		vtkSmartPointer<vtkPolyDataMapper> robotAxisMapper;
+		vtkSmartPointer<vtkActor> RobotAxisActor;
+
 		int		counter;
 
 		bool	new_version;
@@ -165,6 +169,8 @@ public:
 		void setJoints(double joints[]);
 
 		void initializeOrigin();
+
+		void initializeRobotAxis();
 
 		void popNextImage();
 

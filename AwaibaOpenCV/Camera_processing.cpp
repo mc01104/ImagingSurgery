@@ -132,7 +132,7 @@ public:
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 	, m_radius_filter(10), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
-	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false)
+	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock()
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -157,6 +157,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	renDisplay3D->AddActor(apexActor);
 
 	this->initializeLeaks();
+	this->initializeRobotAxis();
 
 	m_running = true;
 	m_record = false;
@@ -706,6 +707,13 @@ void Camera_processing::displayImages(void)
 				this->plotCommandedVelocities(frame_rotated);
 			if (m_circumnavigation)
 				this->plotCommandedVelocities(frame_rotated, m_centroid, m_tangent);
+			double clockfacePosition = -1;
+			::Eigen::Vector3d point;
+			if (this->m_valveModel.isInitialized())
+			{
+				this->m_valveModel.getClockfacePosition(this->robot_position[0], this->robot_position[1], this->robot_position[2], clockfacePosition, point);
+				this->m_clock.update(frame_rotated, clockfacePosition);
+			}
 
 			cv::imshow( "Display", frame_rotated );
 			key = waitKey(1);
@@ -1861,6 +1869,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
 			this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
 
+		this->m_clock.setRegistrationOffset(regError/30.0);
+
 	}
 
 	::Eigen::Vector2d centroidEig, centroidModel;
@@ -2071,11 +2081,8 @@ void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, double cen
 	centering_vel = rot.block(0, 0, 2, 2) * centering_vel;
 	tangent_vel = rot.block(0, 0, 2, 2) * tangent_vel;
 
-	//::std::cout << "centroid:" << centroidEig.transpose() << ::std::endl;
-	//::std::cout << "tangent: " << tangentEig.transpose() << ::std::endl;
-	//::std::cout << "centering norm: " << centering_vel.norm() << ",   " << "tangent norm:" << tangent_vel.norm() << ::std::endl;
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + centering_vel[0], img.cols/2 + centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + tangent_vel[0], img.cols/2 +tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + centering_vel[0], img.cols/2 + centering_vel[1]), ::cv::Scalar(48, 237, 255), 2);
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + tangent_vel[0], img.cols/2 +tangent_vel[1]), ::cv::Scalar(214, 226, 72), 2);
 }
 
 
@@ -2278,5 +2285,27 @@ void Camera_processing::initializeLeaks()
 
 	//renDisplay3D->AddActor(actorleak3);
 
+
+}
+
+void
+Camera_processing::initializeRobotAxis()
+{
+	this->robotAxisSource = vtkSmartPointer<vtkLineSource>::New();
+	robotAxisSource->SetPoint1(0.0, 0.0, 0.0);
+	robotAxisSource->SetPoint2(0.0, 0.0, 200.0);
+
+	// Create a mapper and actor
+	this->robotAxisMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	this->robotAxisMapper->SetInputConnection(this->robotAxisSource->GetOutputPort());
+	
+	this->RobotAxisActor = vtkSmartPointer<vtkActor>::New();
+	this->RobotAxisActor->SetMapper(this->robotAxisMapper);
+	
+	this->RobotAxisActor->GetProperty()->SetColor(255, 255, 255);
+	this->RobotAxisActor->GetProperty()->SetLineStipplePattern(0xf0f0);
+	this->RobotAxisActor->GetProperty()->SetLineWidth(1.5);
+
+	renDisplay3D->AddActor(this->RobotAxisActor);
 
 }
