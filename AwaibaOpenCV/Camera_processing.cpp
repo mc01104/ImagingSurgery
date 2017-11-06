@@ -175,7 +175,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_OK = false;
 	newImg = false;
 	newImg_force = false;
-	m_use_automatic_transition = false;
+	m_use_automatic_transition = true;
 	for (int i = 0 ;i < 3; ++i)
 		robot_position[i] = desired_vel[i] = m_model_robot_position[i] = 0;
 
@@ -186,10 +186,10 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(1) = 102;
 
 	// scope 2
-	m_channel_center(0) = 213;
-	m_channel_center(1) = 102;
+	//m_channel_center(0) = 213;
+	//m_channel_center(1) = 102;
 
-	//// scope 3
+	// scope 3
 	//m_channel_center(0) = 180;
 	//m_channel_center(1) = 70;
 
@@ -201,9 +201,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 152;
 	//m_channel_center(1) = 151;
 
-	//// scope 6
-	//m_channel_center(0) = 120;
-	//m_channel_center(1) = 110;
+	// scope 6
+	m_channel_center(0) = 120;
+	m_channel_center(1) = 110;
 
 	m_use_original_line_transition = false;
 	m_use_green_line_transition = true;
@@ -1302,21 +1302,21 @@ void Camera_processing::robotDisplay(void)
 
 				if (npts>2)
 				{
-					//lineSource->SetNumberOfPoints(npts + 1); //  to add the straight segment
-					//for (unsigned int i = 0; i < npts; i++)
-					//	lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
-					//for (int i = 0; i < 3; ++i)
-					//	tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i];  // remove hardcoded 20;
-					//lineSource->SetPoint(npts, tmp[0], tmp[1], tmp[2]);
-					for (int i = 0; i < 3; ++i)
-						error[i] = actualPosition[i] - (SolutionFrames.back().GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i]); 
-					s = linspace(0, 1, npts+1);
 					lineSource->SetNumberOfPoints(npts + 1); //  to add the straight segment
 					for (unsigned int i = 0; i < npts; i++)
-						lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0] + s[i] * error[0],SolutionFrames[i].GetPosition()[1]  + s[i] * error[1], SolutionFrames[i].GetPosition()[2] + s[i] * error[2]);
+						lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0],SolutionFrames[i].GetPosition()[1], SolutionFrames[i].GetPosition()[2]);
 					for (int i = 0; i < 3; ++i)
-						tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i] + s.back() * error[i];  // remove hardcoded 20;
+						tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i];  // remove hardcoded 20;
 					lineSource->SetPoint(npts, tmp[0], tmp[1], tmp[2]);
+					//for (int i = 0; i < 3; ++i)
+					//	error[i] = actualPosition[i] - (SolutionFrames.back().GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i]); 
+					//s = linspace(0, 1, npts+1);
+					//lineSource->SetNumberOfPoints(npts + 1); //  to add the straight segment
+					//for (unsigned int i = 0; i < npts; i++)
+					//	lineSource->SetPoint(i, SolutionFrames[i].GetPosition()[0] + s[i] * error[0],SolutionFrames[i].GetPosition()[1]  + s[i] * error[1], SolutionFrames[i].GetPosition()[2] + s[i] * error[2]);
+					//for (int i = 0; i < 3; ++i)
+					//	tmp[i] = SolutionFrames[npts-1].GetPosition()[i] + 20*SolutionFrames[npts-1].GetZ()[i] + s.back() * error[i];  // remove hardcoded 20;
+					//lineSource->SetPoint(npts, tmp[0], tmp[1], tmp[2]);
 
 				}
 				else
