@@ -125,6 +125,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 
 	counter = 0;
 
+	this->initializeRobotAxis();
 }
 
 ReplayEngine::~ReplayEngine()
@@ -1130,5 +1131,26 @@ void ReplayEngine::initializeLeaks()
 
 	renDisplay3D->AddActor(actorleak3);
 
+
+}
+
+void ReplayEngine::initializeRobotAxis()
+{
+	this->robotAxisSource = vtkSmartPointer<vtkLineSource>::New();
+	robotAxisSource->SetPoint1(0.0, 0.0, 0.0);
+	robotAxisSource->SetPoint2(0.0, 0.0, 200.0);
+
+	// Create a mapper and actor
+	this->robotAxisMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	this->robotAxisMapper->SetInputConnection(this->robotAxisSource->GetOutputPort());
+	
+	this->RobotAxisActor = vtkSmartPointer<vtkActor>::New();
+	this->RobotAxisActor->SetMapper(this->robotAxisMapper);
+	
+	this->RobotAxisActor->GetProperty()->SetColor(255, 255, 255);
+	this->RobotAxisActor->GetProperty()->SetLineStipplePattern(0xf0f0);
+	this->RobotAxisActor->GetProperty()->SetLineWidth(1.5);
+
+	renDisplay3D->AddActor(this->RobotAxisActor);
 
 }

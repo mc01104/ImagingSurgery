@@ -64,6 +64,7 @@
 #include "IncrementalValveModel.h"
 #include "Registration.h"
 #include "LeakDetection.h"
+#include "OpenCVClock.h"
 
 using namespace Core;
 using namespace cv;
@@ -272,6 +273,10 @@ private:
 	vtkSmartPointer<vtkPolyDataMapper> pointOnCircleMapper;
 	vtkSmartPointer<vtkActor> pointOnCircleActor;
 
+	vtkSmartPointer<vtkLineSource> robotAxisSource;
+	vtkSmartPointer<vtkPolyDataMapper> robotAxisMapper;
+	vtkSmartPointer<vtkActor> RobotAxisActor;
+
 
 	::std::vector<double> pointsOnValve;
 
@@ -284,6 +289,7 @@ private:
 	ModelBasedLineEstimation	m_modelBasedLine;
 	IncrementalValveModel		m_valveModel;
 	RegistrationHandler			m_registrationHandler;
+	OpenCVClock					m_clock;
 
 	RecursiveFilter::MovingAverageFilter	m_radius_filter;
 	RecursiveFilter::DirectionMovingAverageFilter m_theta_filter;
@@ -340,6 +346,8 @@ public:
 	void initializeArrow();
 	void getTangentVelocity(::Eigen::Vector2d& vel);
 	void imageToWorldFrame(::cv::Point& point);
+
+	void initializeRobotAxis();
 };
 
 	
