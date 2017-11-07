@@ -53,7 +53,7 @@ OpenCVClock::setRegistrationOffset(double offset)
 void 
 OpenCVClock::update(::cv::Mat& img, double time)
 {
-	this->setCurrentTime(time);
+	this->setCurrentTime(time + this->registrationOffset);
 	this->updateRegistration();
 
 	// draw circle for clock body
@@ -138,4 +138,14 @@ OpenCVClock::renderRegistrationCounter(::cv::Mat& img)
 		::cv::circle(img, ::cv::Point(this->clockCenter.x + 1.5 * this->radius, this->clockCenter.y + (this->radius - markRadius))
 			, markRadius, ::cv::Scalar(255, 0, 0), -1);
 	}
+}
+
+void OpenCVClock::reset()
+{
+		this->registrationOffset = 0;
+
+		this->regCounter = 0;
+
+		this->updateRegistration();
+
 }

@@ -83,6 +83,8 @@ class IncrementalValveModel
 		void clockfaceToWorldPosition(double angle, ::Eigen::Vector3d& point);
 
 		void getLeakPosition(::std::vector<::Eigen::Vector3d>& leaks);
+
+		bool isRegistered() {return this->registered;};
 	protected:
 
 		void addPoint(double x, double y, double z);

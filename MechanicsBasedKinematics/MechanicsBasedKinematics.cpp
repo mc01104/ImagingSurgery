@@ -600,7 +600,7 @@ void MechanicsBasedKinematics::RelativeToAbsolute(const CTR* const robot, const 
 	rotation[2] = relativeConf[1] + rotation[0];
 	
 	translation[1] = -collarLength + translation[0];
-	translation[2] = relativeConf[2] -87 + translation[0] -2*collarLength;
+	translation[2] = relativeConf[2] -35 + translation[0] -2*collarLength;
 
 	//::std::cout << "tube 3 relative: " << relativeConf[2] << " - rigid body:" << relativeConf[4] << ::std::endl;
 	//PrintCArray(translation, 3);

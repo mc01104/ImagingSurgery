@@ -35,6 +35,8 @@ class OpenCVClock
 
 		void update(::cv::Mat& img, double time);
 
+		void reset();
+
 	private:
 
 		void updateTicks();
