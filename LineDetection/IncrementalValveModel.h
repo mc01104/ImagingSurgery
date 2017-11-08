@@ -70,7 +70,7 @@ class IncrementalValveModel
 
 		void setRegistrationRotation(double rotation);
 
-		void resetRegistration() {this->registered = false; this->setRegistrationRotation(0); this->registered = false;};
+		void resetRegistration(); 
 
 		void setWallFollowingState(IncrementalValveModel::WALL_FOLLOWED state) {this->wallFollowingState = state;};
 

@@ -23,10 +23,11 @@ RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot
 	::cv::Mat thresImage;
 	bool success = this->threshold(img, thresImage);
 
+	bool newRegFound = false;
 	if (success)
-		this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
+		newRegFound = this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
 
-	return success;
+	return newRegFound;
 }
 
 bool
@@ -91,7 +92,7 @@ void RegistrationHandler::computeCentroid(::std::vector<::cv::Point>& points)
 	this->centroid(1) = sum_y/points.size();
 }
 
-void RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+bool RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
 {
 	// convert centroid to world coordinates by accounting also the offset of the marker and the working channel
 	this->computePointOnValve(robot_position, innerTubeRotation, imageInitRotation, normal);
@@ -104,9 +105,8 @@ void RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_posi
 
 	//::std::cout << "marker detected at robot's " << clockfacePosition << " o' clock" << ::std::endl;
 	// compute the error
-	this->computeOffset(clockfacePosition);
+	return this->computeOffset(clockfacePosition);
 }
-
 
 void
 RegistrationHandler::computePointOnValve(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
@@ -128,7 +128,7 @@ RegistrationHandler::computePointOnValve(::Eigen::Vector3d& robot_position, doub
 	robot_position += tmp;
 }
 
-void 
+bool 
 RegistrationHandler::computeOffset(double clockPosition)
 {
 	double min_dist = 1000, distance = 0;
@@ -147,6 +147,13 @@ RegistrationHandler::computeOffset(double clockPosition)
 		}
 	}
 
+	auto result2 = std::find(this->visitedMarkers.begin(), this->visitedMarkers.end(), closest_marker);
+ 
+	if (result2 == ::std::end(this->visitedMarkers))
+		return false;
+
+	this->visitedMarkers.push_back(closest_marker);
+
 	//this->registrationError = closest_marker - clockPosition;				// check that
 	double angularOffset = min_dist * 30; // in degrees
 
@@ -162,6 +169,8 @@ RegistrationHandler::computeOffset(double clockPosition)
 		angularOffset *= -1;
 
 	this->registrationError = angularOffset;
+
+	return true;
 }
 
 bool 
@@ -224,4 +233,12 @@ RegistrationHandler::thresholdSynthetic(const ::cv::Mat& img, ::cv::Mat& thresho
 
 	return true;
 
+}
+
+void 
+RegistrationHandler::reset()
+{
+	this->registrationError = 0;
+
+	this->visitedMarkers.clear();
 }

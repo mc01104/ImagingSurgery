@@ -472,6 +472,7 @@ void Camera_processing::processInput(char key)
 	case 'i':
 		m_valveModel.resetModel();
 		this->m_clock.reset();
+		this->m_registrationHandler.reset();
 		::std::cout << "model was reset" << ::std::endl;
 		break;
 	case 'f':
@@ -1049,6 +1050,8 @@ bool Camera_processing::networkKinematics(void)
 			this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
 
 		ss << clockfacePosition << " ";
+
+		ss << this->m_valveModel.isRegistered() << " ";
 
 		if (m_apex_initialized)
 			ss << "1" << " " << apex_coordinates[0] << " "  << apex_coordinates[1] << " " << apex_coordinates[2] << " " << apex_coordinates[3] << " " <<  apex_coordinates[4] << " ";
@@ -1815,6 +1818,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
 
+	// make sure the initialized valve is correct based on which wall we followed
 	this->m_valveModel.setWallFollowingState(this->wall_followed);
 	if (this->wall_followed == IncrementalValveModel::WALL_FOLLOWED::USER)
 		this->m_valveModel.setFollowedClockPosition(this->clockFollowed);
@@ -1856,12 +1860,12 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	if (!m_linedetected)
 		return;
 
+
 	::Eigen::Vector3d normal(0, 0, 1);
 	double normal_[3];
 	this->m_valveModel.getNormal(normal_);
 	normal = ::Eigen::Map<::Eigen::Vector3d> (normal_, 3);
 
-	::cv::Mat img_rec;
 	double regError = 0;
 	::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->m_model_robot_position, 3);
 
@@ -1871,11 +1875,11 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	{
 		if (this->m_registrationHandler.processImageSynthetic(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
 		{
-			if (!m_valveModel.isRegistered())
+			//if (!m_valveModel.isRegistered())
+			//{
 				this->m_clock.setRegistrationOffset(regError/30.0);
-			this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
-
-
+				this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
+			//}
 		}
 
 	}

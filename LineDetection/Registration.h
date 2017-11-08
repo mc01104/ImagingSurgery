@@ -2,6 +2,7 @@
 
 #include <Eigen/Dense>
 #include "IncrementalValveModel.h"
+#include <vector>
 #include <opencv2/opencv.hpp>
 
 
@@ -18,6 +19,7 @@ class RegistrationHandler
 	double registrationError;
 
 	::Eigen::Vector3d markers;
+	::std::vector<int> visitedMarkers;
 
 	bool isInitialized;
 
@@ -31,20 +33,28 @@ class RegistrationHandler
 		~RegistrationHandler();
 
 		bool processImage(const ::cv::Mat& img, double& registrationError, ::cv::Mat& img_rec);
+
 		bool processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError);
 
 		bool processImageSynthetic(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError);
+
 		bool thresholdSynthetic(const ::cv::Mat& img, ::cv::Mat& thresholdedImg);
 
 		void getCentroid(::Eigen::Vector2d& centroid) {centroid = this->centroid;};
 
 		void setWorkingChannel(::Eigen::Vector2d& workingChannel) {this->workingChannel = workingChannel;};
 
+		void reset();
+
 	protected:
 		bool threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg);
+
 		void computeCentroid(::std::vector<::cv::Point>& points);
-		void computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
+
+		bool computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
+
 		void computePointOnValve(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
-		void computeOffset(double clockPosition);
+
+		bool computeOffset(double clockPosition);
 
 };
