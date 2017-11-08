@@ -189,13 +189,13 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 37;
 	//m_channel_center(1) = 102;
 
-	// scope 2
-	m_channel_center(0) = 213;
-	m_channel_center(1) = 102;
+	//// scope 2
+	//m_channel_center(0) = 213;
+	//m_channel_center(1) = 102;
 
 	// scope 3
-	//m_channel_center(0) = 180;
-	//m_channel_center(1) = 70;
+	m_channel_center(0) = 180;
+	m_channel_center(1) = 70;
 
 	//// scope 4
 	//m_channel_center(0) = 51;
@@ -208,6 +208,10 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//// scope 6
 	//m_channel_center(0) = 120;
 	//m_channel_center(1) = 110;
+
+	//// scope 7
+	//m_channel_center(0) = 86;
+	//m_channel_center(1) = 118;
 
 	m_use_original_line_transition = false;
 	m_use_green_line_transition = true;
