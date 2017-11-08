@@ -2233,6 +2233,7 @@ Camera_processing::computePointOnValve(::Eigen::Vector3d& robot_position, ::Eige
 
 	::Eigen::Matrix3d rotation = RotateZ(imageInitRotation * M_PI/180.0 - innerTubeRotation);
 	DP = rotation.block(0, 0, 2, 2).transpose()* DP;
+	//DP = rotation.block(0, 0, 2, 2)* DP;
 
 	rotation = RotateZ( -90 * M_PI/180.0);
 	DP = rotation.block(0, 0, 2, 2).transpose()* DP; // in world frame in mm

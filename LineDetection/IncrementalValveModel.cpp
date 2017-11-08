@@ -112,7 +112,7 @@ IncrementalValveModel::resetModel()
 	registrationRotation = 0.0;
 
 	this->points.clear();
-
+	referencePosition = ::Eigen::Vector3d(0, 1, 0);
 	this->registered = false;
 }
 
