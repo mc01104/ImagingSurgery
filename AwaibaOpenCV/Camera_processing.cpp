@@ -1877,6 +1877,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		{
 			//if (!m_valveModel.isRegistered())
 			//{
+			::std::cout << "in registration" << ::std::endl;
 				this->m_clock.setRegistrationOffset(regError/30.0);
 				this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
 			//}
