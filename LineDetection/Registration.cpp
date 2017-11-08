@@ -8,7 +8,8 @@ RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125,
 	model = new IncrementalValveModel();
 }
 
-RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model)
+RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model), centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
+	markers(12, 4, 8)
 {
 }
 
@@ -23,10 +24,14 @@ RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot
 	::cv::Mat thresImage;
 	bool success = this->threshold(img, thresImage);
 
+	bool newRegFound = false;
 	if (success)
-		this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
+		newRegFound = this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
 
-	return success;
+	if (newRegFound)
+		registrationError = this->registrationError;
+
+	return newRegFound;
 }
 
 bool
@@ -91,7 +96,7 @@ void RegistrationHandler::computeCentroid(::std::vector<::cv::Point>& points)
 	this->centroid(1) = sum_y/points.size();
 }
 
-void RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+bool RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
 {
 	// convert centroid to world coordinates by accounting also the offset of the marker and the working channel
 	this->computePointOnValve(robot_position, innerTubeRotation, imageInitRotation, normal);
@@ -104,9 +109,8 @@ void RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_posi
 
 	//::std::cout << "marker detected at robot's " << clockfacePosition << " o' clock" << ::std::endl;
 	// compute the error
-	this->computeOffset(clockfacePosition);
+	return this->computeOffset(clockfacePosition);
 }
-
 
 void
 RegistrationHandler::computePointOnValve(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
@@ -128,7 +132,7 @@ RegistrationHandler::computePointOnValve(::Eigen::Vector3d& robot_position, doub
 	robot_position += tmp;
 }
 
-void 
+bool 
 RegistrationHandler::computeOffset(double clockPosition)
 {
 	double min_dist = 1000, distance = 0;
@@ -136,16 +140,26 @@ RegistrationHandler::computeOffset(double clockPosition)
 	double closest_marker = clockPosition;
 	for (int i = 0; i < this->markers.size(); ++i)
 	{
-		d1 = ::std::abs(clockPosition - this->markers[i]);
-		d2 = ::std::abs(12 + (this->markers[i] - clockPosition));
+		d1 = ::std::abs(this->markers[i] - clockPosition);
+		d2 = ::std::abs(12 + (clockPosition - this->markers[i]));
 		distance = ::std::min(d1, d2);
+
 		if (distance < min_dist)
 		{
 			min_dist = distance;
 			closest_marker = this->markers[i];
-
 		}
+		
 	}
+	//::std::cout << "closest marker:" << closest_marker << std::endl;
+	auto result2 = std::find(this->visitedMarkers.begin(), this->visitedMarkers.end(), closest_marker);
+ 
+	if (result2 != this->visitedMarkers.end())
+	{
+		//::std::cout << "marker: " << closest_marker << "  has already been used to register" << ::std::endl;
+		return false;
+	}
+	this->visitedMarkers.push_back(closest_marker);
 
 	//this->registrationError = closest_marker - clockPosition;				// check that
 	double angularOffset = min_dist * 30; // in degrees
@@ -162,6 +176,8 @@ RegistrationHandler::computeOffset(double clockPosition)
 		angularOffset *= -1;
 
 	this->registrationError = angularOffset;
+
+	return true;
 }
 
 bool 
@@ -170,12 +186,14 @@ RegistrationHandler::processImageSynthetic(const ::cv::Mat& img, ::Eigen::Vector
 	::cv::Mat thresImage;
 	bool success = this->thresholdSynthetic(img, thresImage);
 
+	bool newRegFound = false;
 	if (success)
-		this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
+		newRegFound = this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
 
-	if (success)
+	if (newRegFound)
 		registrationError = this->registrationError;
-	return success;
+
+	return newRegFound;
 }
 
 
@@ -224,4 +242,12 @@ RegistrationHandler::thresholdSynthetic(const ::cv::Mat& img, ::cv::Mat& thresho
 
 	return true;
 
+}
+
+void 
+RegistrationHandler::reset()
+{
+	this->registrationError = 0;
+
+	this->visitedMarkers.clear();
 }

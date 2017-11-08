@@ -67,7 +67,7 @@ IncrementalValveModel::initializeCircleCenter()
 		break;
 	}
 	
-	this->x.segment(0, 3) = center/100;
+	this->x.segment(0, 3) = center/100.0;
 }
 
 void 
@@ -82,8 +82,8 @@ IncrementalValveModel::updateCircleBaseVectors()
 
 void IncrementalValveModel::setRegistrationRotation(double rotation)
 {
-	if (this->registered)
-		return;
+	//if (this->registered)
+	//	return;
 	::std::cout << "registration offset:" << rotation << ::std::endl;
 	this->registrationRotation = rotation;
 
@@ -112,6 +112,14 @@ IncrementalValveModel::resetModel()
 	registrationRotation = 0.0;
 
 	this->points.clear();
+	referencePosition = ::Eigen::Vector3d(0, 1, 0);
+
+	this->updateCircleOptState();
+	
+	this->v1 = ::Eigen::Vector3d(0, 1, 0);
+	this->v2 = ::Eigen::Vector3d(1, 0, 0);
+	this->lambda = 0.0005;
+	this->wallFollowingState = ::IncrementalValveModel::LEFT;
 
 	this->registered = false;
 }
@@ -357,3 +365,17 @@ IncrementalValveModel::getLeakPosition(::std::vector<::Eigen::Vector3d>& leaks)
 		leaks.push_back(point);
 	}
 }
+
+void
+IncrementalValveModel::resetRegistration()
+{
+	this->registered = false; 
+
+	this->setRegistrationRotation(0); 
+
+	this->registered = false;
+
+	this->referencePosition = ::Eigen::Vector3d(0, 1, 0);
+
+	this->updateReferencePosition();
+};

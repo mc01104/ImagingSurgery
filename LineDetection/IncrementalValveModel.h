@@ -70,7 +70,7 @@ class IncrementalValveModel
 
 		void setRegistrationRotation(double rotation);
 
-		void resetRegistration() {this->registered = false; this->setRegistrationRotation(0); this->registered = false;};
+		void resetRegistration(); 
 
 		void setWallFollowingState(IncrementalValveModel::WALL_FOLLOWED state) {this->wallFollowingState = state;};
 
@@ -83,6 +83,8 @@ class IncrementalValveModel
 		void clockfaceToWorldPosition(double angle, ::Eigen::Vector3d& point);
 
 		void getLeakPosition(::std::vector<::Eigen::Vector3d>& leaks);
+
+		bool isRegistered() {return this->registered;};
 	protected:
 
 		void addPoint(double x, double y, double z);
