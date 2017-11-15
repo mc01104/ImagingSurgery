@@ -2176,7 +2176,7 @@ void Camera_processing::imageToWorldFrame(::cv::Point& point)
 	::Eigen::Vector2d pointEig(point.x, point.y);
 	pointEig = rot1.block(0, 0, 2, 2).transpose()* (pointEig - image_center) + image_center;
 
-	::Eigen::Vector2d displacement(0, 125);   // not general -> fix!
+	::Eigen::Vector2d displacement(0, 250);   // not general -> fix!
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 
 	pointEig = rot.block(0, 0, 2, 2).transpose() * pointEig - rot.block(0, 0, 2, 2).transpose() * displacement;

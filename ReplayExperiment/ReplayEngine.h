@@ -13,6 +13,7 @@
 #include "FilterLibrary.h"
 #include "LeakDetection.h"
 #include "IncrementalValveModel.h"
+#include "Registration.h"
 
 #include "Classifier.h"
 
@@ -25,6 +26,9 @@
 #include <vtkProperty.h>
 #include <vtkSphereSource.h>
 #include <vtkLineSource.h>
+
+#include "arrowVisualizer.h"
+#include "OpenCVClock.h"
 
 class ReplayEngine
 {
@@ -64,6 +68,7 @@ class ReplayEngine
 		LineDetector			m_dummyLine;
 		LeakDetector			m_leakDetector;
 
+		RegistrationHandler		m_registrationHandler;
 		::Eigen::Vector2d	m_valve_tangent_prev;
 		::Eigen::Vector2d	m_velocity_prev;
 
@@ -114,6 +119,13 @@ class ReplayEngine
 		::Eigen::Vector2d tangent_prev;
 
 		IncrementalValveModel iModel;
+
+		ArrowVisualizer* valveNormal;
+
+		OpenCVClock m_clock;
+
+		::cv::Point regPointCV;
+		bool reg_detected;
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION, LEAK_DETECTION} status;
 		enum WALL_TO_FOLLOW {LEFT, TOP, BOTTOM};
@@ -211,5 +223,9 @@ public:
 		void computePointOnValve(::Eigen::Vector3d& centroidOnValve, const ::Eigen::Vector2d& channelCenter, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 
 		void initializeLeaks();
+
+		void imageToWorldFrame(::cv::Point& point);
+
+		void cameraToImage(::cv::Point& point);
 
 };

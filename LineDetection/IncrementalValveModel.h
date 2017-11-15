@@ -36,6 +36,7 @@ class IncrementalValveModel
 		double maxNPoints;
 
 		double registrationRotation;
+		double totalOffset;
 
 		bool registered;
 

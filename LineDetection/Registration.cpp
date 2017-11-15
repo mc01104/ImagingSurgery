@@ -3,13 +3,13 @@
 #include "HTransform.h"
 
 RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
-	markers(12, 4, 8)
+	markers(12, 4, 8), regDetected(false)
 {
 	model = new IncrementalValveModel();
 }
 
 RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model), centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
-	markers(12, 4, 8)
+	markers(12, 4, 8), regDetected(false)
 {
 }
 
@@ -22,7 +22,9 @@ bool
 RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError)
 {
 	::cv::Mat thresImage;
+	this->regDetected = false;
 	bool success = this->threshold(img, thresImage);
+	this->regDetected = success;
 
 	bool newRegFound = false;
 	if (success)
@@ -43,14 +45,24 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	::std::vector<::cv::Mat> HSV_split;
 	::cv::split(hsv, HSV_split);
 
-	int l_thres = 100;
-	int h_thres = 120;
+	int l_thres = 112;
+	int h_thres = 134;
 
-	int l_thres_s = 80;
-	int h_thres_s = 255;
+	int l_thres_s = 69;
+	int h_thres_s = 172;
 
-	int l_thres_v = 136;
+	int l_thres_v = 73;
 	int h_thres_v = 255;
+
+	//int l_thres = 100;
+	//int h_thres = 120;
+
+	//int l_thres_s = 80;
+	//int h_thres_s = 255;
+
+	//int l_thres_v = 136;
+	//int h_thres_v = 255;
+
 	::cv::Mat mask_h, mask_s, mask_v;
 	::cv::inRange(HSV_split[0], l_thres, h_thres, mask_h);
 	::cv::inRange(HSV_split[1], l_thres_s, h_thres_s, mask_s);
@@ -60,20 +72,27 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	::cv::bitwise_and(mask_h, mask_s, output);
 	::cv::bitwise_and(output, mask_v, output);
 
+    ::cv::Mat ow_mask = ::cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
+    ::cv::circle(ow_mask, ::cv::Point(img.rows/2, img.cols/2), img.rows/2, 255,-1);
+	
+	::cv::bitwise_and(output, ow_mask, output);
+
     // Apply morphological opening to remove small things
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE, ::cv::Size(5,5));
     ::cv::morphologyEx(output, output, ::cv::MORPH_OPEN,kernel);
 
 	::cv::cvtColor(output, thresholdedImg, CV_GRAY2BGR);
-
+	::cv::imshow("marker", output);
+	::cv::imshow("unrotated", img);
 	::cv::Mat bin;
 	output.convertTo(bin, CV_8UC1);
 	
 	::std::vector< ::cv::Point> nonzero;
 	::cv::findNonZero(bin, nonzero);
 
-	
-	if (nonzero.size() < 10)
+	//::std::cout << "number of detected points:" << nonzero.size() << ::std::endl;
+
+ 	if (nonzero.size() < 500)
 		return false;
 
 	this->computeCentroid(nonzero);
@@ -168,9 +187,9 @@ RegistrationHandler::computeOffset(double clockPosition)
 	double angle2 = 0.5*  60 * closest_marker; // + this->registrationRotation; 
 
 	::Eigen::Vector3d pRobot(cos(angle1 * M_PI/180.0), sin(angle1 * M_PI/180.0), 1);
-	::Eigen::Vector3d pMarker(cos(angle1 * M_PI/180.0), sin(angle1 * M_PI/180.0), 1);
+	::Eigen::Vector3d pMarker(cos(angle2 * M_PI/180.0), sin(angle2 * M_PI/180.0), 1);
 
-	double tmp = pRobot.cross(pMarker)[3];
+	double tmp = pMarker.cross(pRobot)[2];
 	
 	if (tmp < 0)
 		angularOffset *= -1;

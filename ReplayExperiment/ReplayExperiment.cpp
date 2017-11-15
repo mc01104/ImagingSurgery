@@ -17,6 +17,14 @@
 
 #include "OpenCVClock.h"
 
+#include <vtkSmartPointer.h>
+#include <vtkActor.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <thread>
+#include "TubeVisualizer.h"
+
 void testVectorOperations();
 void testBuildingModel();
 void testJointConversion();
@@ -28,6 +36,8 @@ void testIncrementalModel();
 int testReplayEngine();
 void testRegistration();
 void testClock();
+void testArrow();
+void testTube();
 
 #define __NEW_VERSION__
 
@@ -48,8 +58,112 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testIncrementalModel();
 	//testRegistration();
 	//testClock();
+
+	//testArrow();
+	//testTube();
 }
 
+void testArrow()
+{
+	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+
+	double startPoint[3] = {0, 0, 0}, endPoint[3] = {0, 0, 1}, color[3] = {1, 0, 0};
+	ArrowVisualizer arrow(startPoint, endPoint, color);
+
+	vtkSmartPointer<vtkRenderWindow> renWindow = vtkSmartPointer<vtkRenderWindow>::New();
+	renWindow->AddRenderer(renderer);
+
+	vtkSmartPointer<vtkRenderWindowInteractor> iRen = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	iRen->SetRenderWindow(renWindow);
+
+	renderer->AddActor(arrow.getActor());
+	
+	iRen->Initialize();
+	renWindow->Render();
+
+}
+
+void testTube()
+{
+	CTR* robot = CTRFactory::buildCTR("");
+	MechanicsBasedKinematics* kinematics = new MechanicsBasedKinematics(robot, 100);
+	kinematics->ActivateIVPJacobian();
+
+	double configuration[5] = {0, 0, 35, 0, 0};
+	double rotation[3] = {0};
+	double translation[3] = {0};
+	MechanicsBasedKinematics::RelativeToAbsolute(robot, configuration, rotation, translation);
+
+	kinematics->ComputeKinematics(rotation, translation);
+
+	int numOfPoints = 100;
+	::std::vector<double> s = linspace(0, robot->GetLength(), numOfPoints);
+	::std::vector<SE3> frames(s.size());
+	kinematics->GetBishopFrame(s, frames);
+
+	::std::vector<double> point(3);
+	::std::vector<::std::vector<double>> points;
+	for (int i = 0; i < frames.size(); ++i)
+	{
+		point[0] = frames[i].GetPosition()[0];
+		point[1] = frames[i].GetPosition()[1];
+		point[2] = frames[i].GetPosition()[2];
+		points.push_back(point);
+	}
+
+	point[0] = frames.back().GetPosition()[0] + frames.back().GetZ()[0] * 20;
+	point[1] = frames.back().GetPosition()[1] + frames.back().GetZ()[1] * 20;
+	point[2] = frames.back().GetPosition()[2] + frames.back().GetZ()[2] * 20;
+
+	points.push_back(point);
+	double color[3] = {45.0/255.0, 98.0/255.0, 183.0/255.0};
+	double radius = 1.0;
+	TubeVisualizer tube(color, radius);
+
+	tube.update(points);
+
+	double colorOuter[3] = {94.0/255.0, 116.0/255.0, 150.0/255.0};
+	double outerRadius = 2;
+	TubeVisualizer outerTube(colorOuter, outerRadius);
+
+	::std::vector<::std::vector<double>> outerPoints;
+
+	s = linspace(0, robot->GetLength(), 100);
+
+	::std::vector<bool> mask(3); 
+	
+	for (int i = 0; i < frames.size(); ++i)
+	{
+		for (int j = 0; j < 3; ++j)
+			mask[j] = false;
+
+		point[0] = frames[i].GetPosition()[0];
+		point[1] = frames[i].GetPosition()[1];
+		point[2] = frames[i].GetPosition()[2];
+		outerPoints.push_back(point);
+
+		robot->GetExistingTubes(s[i], mask);
+
+		if (!mask[1])
+			break;
+	}
+	outerTube.update(outerPoints);
+
+	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+	vtkSmartPointer<vtkRenderWindow> renWindow = vtkSmartPointer<vtkRenderWindow>::New();
+	renWindow->AddRenderer(renderer);
+
+	vtkSmartPointer<vtkRenderWindowInteractor> iRen = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	iRen->SetRenderWindow(renWindow);
+
+	renderer->AddActor(tube.getActor());
+	renderer->AddActor(outerTube.getActor());
+
+	iRen->Initialize();
+	renWindow->Render();
+	iRen->Start();
+
+}
 
 void testClock()
 {
@@ -162,8 +276,9 @@ int testReplayEngine()
 	// switching directions
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-39-12";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_15-11-37";
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_14-04-54";
-	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_14-04-54";
+
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_12-14-23";
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;

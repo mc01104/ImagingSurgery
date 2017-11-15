@@ -22,6 +22,7 @@ class RegistrationHandler
 	::std::vector<int> visitedMarkers;
 
 	bool isInitialized;
+	bool regDetected;
 
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -45,7 +46,7 @@ class RegistrationHandler
 		void setWorkingChannel(::Eigen::Vector2d& workingChannel) {this->workingChannel = workingChannel;};
 
 		void reset();
-
+		bool getRegDetected(){return this->regDetected;};
 	protected:
 		bool threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg);
 

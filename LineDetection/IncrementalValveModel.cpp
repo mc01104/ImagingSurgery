@@ -6,12 +6,12 @@
 
 IncrementalValveModel::IncrementalValveModel()
 	: radius(9.0), center(0, 0, 0), normal(0, 0, 1), referencePosition(0, 1, 0), initialized(false), maxNPoints(200), registrationRotation(0),
-	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(0)
+	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(0), totalOffset(0)
 {
 	errorJacobian.setZero();
 	x.setZero();
 	x(5) = this->radius/10.0;
-	center /= 100;
+	//center /= 100;
 }
 
 IncrementalValveModel::~IncrementalValveModel()
@@ -42,6 +42,7 @@ IncrementalValveModel::addPoint(double x, double y, double z)
 		this->initializeCircleCenter();
 		this->center(2) = z;
 
+		this->x.segment(0, 3) = center/100.0;
 		this->initialized = true;
 	}
 }
@@ -67,7 +68,7 @@ IncrementalValveModel::initializeCircleCenter()
 		break;
 	}
 	
-	this->x.segment(0, 3) = center/100.0;
+	
 }
 
 void 
@@ -86,7 +87,7 @@ void IncrementalValveModel::setRegistrationRotation(double rotation)
 	//	return;
 	::std::cout << "registration offset:" << rotation << ::std::endl;
 	this->registrationRotation = rotation;
-
+	this->totalOffset = rotation;
 	::Eigen::Matrix3d rot = RotateZ(this->registrationRotation * M_PI/180.0);
 	this->referencePosition = rot * this->referencePosition;
 
@@ -159,8 +160,8 @@ IncrementalValveModel::getClockfacePosition(double x, double y, double z, double
 void 
 IncrementalValveModel::clockfaceToWorldPosition(double time, ::Eigen::Vector3d& point)
 {
-	double angle = 0.5*  60 * time + this->registrationRotation;        // not sure if the registration is correct
-	getNearestPointOnCircle(this->center[0] + cos(angle*M_PI/180.0), this->center[1] + sin(angle*M_PI/180.0), this->center[2], point);
+	double angle = 0.5*  60 * time + this->totalOffset;        // not sure if the registration is correct
+	getNearestPointOnCircle(this->center[0] + this->radius * cos(angle*M_PI/180.0), this->center[1] + this->radius * (angle*M_PI/180.0), this->center[2], point);
 }
 
 // ---------- TESTED -----------//

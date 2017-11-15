@@ -80,8 +80,9 @@ public:
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
-	lineDetected(false), robot_rotation(0), imageInitRotation(+90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(20), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0)
+	lineDetected(false), robot_rotation(0), imageInitRotation(90), lineDetector(), wallDetector(), wallDetected(false),
+	filter(5), theta_filter_complex(20), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
+	m_registrationHandler(&iModel), m_clock(), reg_detected(false)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -90,7 +91,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 1000;
+	this->offset = 1;
 
 	for (int i = this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -126,6 +127,8 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	counter = 0;
 
 	this->initializeRobotAxis();
+
+
 }
 
 ReplayEngine::~ReplayEngine()
@@ -209,8 +212,6 @@ void ReplayEngine::simulate(void* tData)
 		{
 			case LINE_DETECTION:
 				tDataSim->detectLine(tmpImage);
- 				if (tDataSim->counter == 100)
-					tDataSim->iModel.setRegistrationRotation(60);
 				break;
 			case WALL_DETECTION:
 				tDataSim->detectWall(tmpImage);
@@ -221,8 +222,23 @@ void ReplayEngine::simulate(void* tData)
 				tDataSim->detectLeak(tmpImage);
 				break;
 		}
-		//::std::cout << tDataSim->counter << ::std::endl;
+
 		tDataSim->counter++;
+		double clockfacePosition = -1;
+		::Eigen::Vector3d point;
+		if (tDataSim->iModel.isInitialized())
+		{
+			tDataSim->iModel.getClockfacePosition(tDataSim->actualPosition[0], tDataSim->actualPosition[1], tDataSim->actualPosition[2], clockfacePosition, point);
+			tDataSim->m_clock.update(tmpImage, clockfacePosition);
+		}
+
+		double width = 50, height = 50;
+		::cv::Rect rec = ::cv::Rect(tDataSim->regPointCV.x - 0.5 * width, tDataSim->regPointCV.y - 0.5 * height, width, height);
+		if (tDataSim->reg_detected)
+			::cv::rectangle(tmpImage, rec, ::cv::Scalar(0, 0, 255), 2);
+			
+		tDataSim->reg_detected = false;
+
 		::cv::imshow("Display", tmpImage);
 		//video.write(tmpImage);
 		::cv::waitKey(1);  
@@ -238,12 +254,15 @@ void ReplayEngine::displayRobot(void* tData)
 
 	ReplayEngine* tDataDisplayRobot = reinterpret_cast<ReplayEngine*> (tData);
 
+	// initialize valve normal
+	double start3[3] = {0, 0, 0}, end[3] = {0, 0, 1}, color[3] = {1, 0, 0};
+	tDataDisplayRobot->valveNormal = new ArrowVisualizer(start3, end, color);
+
 	// populate Points with dummy data for initialization
 	unsigned int npts = 1;
 	vtkSmartPointer<vtkPolyLineSource> lineSource = vtkSmartPointer<vtkPolyLineSource>::New();
 	for (unsigned int i=0;i<npts;i++)
 		lineSource->SetPoint(i, i,i,i);
-
 
 	vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
 	tubeFilter->SetInputConnection(lineSource->GetOutputPort());
@@ -258,6 +277,7 @@ void ReplayEngine::displayRobot(void* tData)
 	tubeActor->SetMapper(tubeMapper);
 	
 	renDisplay3D->AddActor(tubeActor);
+	renDisplay3D->AddActor(tDataDisplayRobot->valveNormal->getActor());
 
 	auto start = std::chrono::high_resolution_clock::now();
 	::Eigen::Vector3d tmp;
@@ -313,6 +333,11 @@ void ReplayEngine::displayRobot(void* tData)
 				tDataDisplayRobot->circleSource->SetCenter(center);
 				tDataDisplayRobot->circleSource->SetRadius(radius);
 				tDataDisplayRobot->circleSource->SetNormal(normal);
+
+				double endPoint[3] = {0};
+				for (int i = 0; i < 3; ++i)
+					endPoint[i] = center[i] - normal[i] * 10;
+				tDataDisplayRobot->valveNormal->updateArrow(center, endPoint);
 
 				tDataDisplayRobot->iModel.getNearestPointOnCircle(tDataDisplayRobot->actualPosition, center);
 				tDataDisplayRobot->pointOnCircleSource->SetCenter(center);
@@ -687,41 +712,55 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 		double innerTubeRotation = 0;
 		this->getInnerTubeRotation(innerTubeRotation);
-
-		double velocity[3];
-		double p1[3];
-		double p2[3];
-		memcpy(velocity, velocityCommand, 2 * sizeof(double));
-		velocity[2] = 0;
-		bool predictedLineDetected = false;
-		::Eigen::Vector2d centroidEig, tangentEig, velCommand,  tangentEig2, tangentEigFiltered;
-		::cv::Vec4f line, line2;
-		::Eigen::Vector3d centroidOnValve(0, 0, 0);
-		::Eigen::Vector2d channelCenter(125, 230);
+		
 		::Eigen::Vector3d normal(0, 0, 1);
 		double normal_[3], center_[3];
 		iModel.getNormal(normal_);
 		iModel.getCenter(center_);
 		normal = ::Eigen::Map<::Eigen::Vector3d> (normal_, 3);
 
+		double regError = 0;
+		::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->actualPosition, 3);
+
+		::Eigen::Vector2d regCentroid;
+		if (this->m_registrationHandler.processImage(img, robot_positionEig , innerTubeRotation, this->imageInitRotation, normal, regError))
+		{
+			::std::cout << "in registration" << ::std::endl;
+
+			this->m_clock.setRegistrationOffset(regError/30.0);
+
+			this->iModel.setRegistrationRotation(regError);
+		}
+
+		this->reg_detected = m_registrationHandler.getRegDetected();
+
+		if (this->reg_detected)
+		{
+			this->m_registrationHandler.getCentroid(regCentroid);
+			regPointCV.x = regCentroid(0);
+			regPointCV.y = regCentroid(1);
+			this->cameraToImage(regPointCV);
+
+		}
+
+		::cv::Vec4f line;
+		::Eigen::Vector2d centroidEig, centroidEig2, tangentEig, velCommand,  tangentEigFiltered;
 		if (response == 1)
 		{
 
 			::cv::Vec2f centroid, centroid2;
-			this->lineDetected = this->lineDetector.processImage(img,line, centroid, true, 5, LineDetector::MODE::CIRCUM);
+			this->lineDetected = this->lineDetector.processImage(img, line, centroid, true, 2, LineDetector::MODE::CIRCUM);
 
 			centroidEig2(0) = line[2];
 			centroidEig2(1) = line[3];
-
-			tangentEig2(0) = line2[1];
-			tangentEig2(1) = line2[0];
-
 
 			if (this->lineDetected)
 				this->processDetectedLine(line, img, centroid, centroidEig, tangentEig, tangentEigFiltered);
 
 		}
-
+		
+		::Eigen::Vector3d centroidOnValve(0, 0, 0);
+		::Eigen::Vector2d channelCenter(125, 230);
 		// store original centroid for adding points to the model
 		if (breakingContact)
 		{
@@ -752,22 +791,6 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*(-100), centroidEig(1)+tangentEigFiltered(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
 
 		}
-		if (predictedLineDetected)
-		{
-			::Eigen::Vector2d v1;
-			v1(0) = line2[0];
-			v1(1) = line2[1];
-			::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
-			::Eigen::Vector2d tangentEigPlot = rot.block(0, 0, 2, 2)* v1;
-
-			::cv::line( img, ::cv::Point(125, 125), ::cv::Point(125+tangentEigPlot(0)*100, 125+tangentEigPlot(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-			::cv::line( img, ::cv::Point(125, 125), ::cv::Point(125+tangentEigPlot(0)*(-100),125+tangentEigPlot(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-
-		}
-
-		::Eigen::Vector3d Dpoint;
-		double angle;
-		iModel.getClockfacePosition(this->actualPosition[0], this->actualPosition[1], this->actualPosition[2], angle, Dpoint);		
 
 }
 
@@ -1152,5 +1175,36 @@ void ReplayEngine::initializeRobotAxis()
 	this->RobotAxisActor->GetProperty()->SetLineWidth(1.5);
 
 	renDisplay3D->AddActor(this->RobotAxisActor);
+
+}
+
+void ReplayEngine::imageToWorldFrame(::cv::Point& point)
+{
+	::Eigen::Vector2d image_center(125, 125); // not general -> fix!
+	::Eigen::Matrix3d rot1 = RotateZ(this->imageInitRotation * M_PI/180.0 - robot_rotation);
+	::Eigen::Vector2d pointEig(point.x, point.y);
+	pointEig = rot1.block(0, 0, 2, 2).transpose()* (pointEig - image_center) + image_center;
+
+	::Eigen::Vector2d displacement(0, 250);   // not general -> fix!
+	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
+
+	pointEig = rot.block(0, 0, 2, 2).transpose() * pointEig - rot.block(0, 0, 2, 2).transpose() * displacement;
+
+	point.x = pointEig(0);
+	point.y = pointEig(1);
+
+}
+
+
+void
+ReplayEngine::cameraToImage(::cv::Point& point)
+{
+	::Eigen::Vector2d image_center(125, 125); // not general -> fix!
+	::Eigen::Matrix3d rot1 = RotateZ(this->imageInitRotation * M_PI/180.0 - robot_rotation);
+	::Eigen::Vector2d pointEig(point.x, point.y);
+	pointEig = rot1.block(0, 0, 2, 2).transpose()* (pointEig - image_center) + image_center;
+
+	point.x = pointEig(0);
+	point.y = pointEig(1);
 
 }
