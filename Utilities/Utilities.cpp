@@ -381,3 +381,34 @@ void distancePointToLine(const ::Eigen::Vector2d& point, ::Eigen::VectorXd& line
     }
     return array;
 }
+
+::std::vector<double> linspace2(double a, double b, int n) 
+{
+    ::std::vector<double> array;
+    double epsilon = 0.0001;
+    double step = (b-a) / (n-1);
+    if (a==b)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            array.push_back(a);
+        }
+    }
+    else if (step >= 0)
+    {
+        while(a <= b + epsilon)
+        {
+            array.push_back(a);
+            a += step;           
+        }       
+    }
+    else
+    {
+        while(a + epsilon >= b )
+        {
+            array.push_back(a);
+            a += step;           
+        }       
+    }
+    return array;
+}

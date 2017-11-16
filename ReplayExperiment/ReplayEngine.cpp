@@ -125,16 +125,17 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 		m_velocity_prev[i] = 0.0;	
 
 	counter = 0;
+	double jointsTmp[5] = {0, 0, 35, 0, 0};
+	this->setJoints(jointsTmp);
 
 	this->initializeRobotAxis();
-
-
 }
 
 ReplayEngine::~ReplayEngine()
 {
 	delete robot;
 	delete kinematics;
+	delete robotVis;
 }
 
 void ReplayEngine::run()
@@ -258,26 +259,36 @@ void ReplayEngine::displayRobot(void* tData)
 	double start3[3] = {0, 0, 0}, end[3] = {0, 0, 1}, color[3] = {1, 0, 0};
 	tDataDisplayRobot->valveNormal = new ArrowVisualizer(start3, end, color);
 
-	// populate Points with dummy data for initialization
-	unsigned int npts = 1;
-	vtkSmartPointer<vtkPolyLineSource> lineSource = vtkSmartPointer<vtkPolyLineSource>::New();
-	for (unsigned int i=0;i<npts;i++)
-		lineSource->SetPoint(i, i,i,i);
+	tDataDisplayRobot->robotVis = new RobotVisualizer(*tDataDisplayRobot->kinematics);
+	double configuration[5] = {0, 0, 35, 0, 0};
+	tDataDisplayRobot->robotVis->update(configuration);
+	tDataDisplayRobot->robotVis->registerVisualizer(renDisplay3D);
+	//::std::vector<vtkSmartPointer<vtkActor>> actors;
+	//tDataDisplayRobot->robotVis->getActors(actors);
 
-	vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
-	tubeFilter->SetInputConnection(lineSource->GetOutputPort());
-	tubeFilter->SetRadius(0.9);                  
-	tubeFilter->SetNumberOfSides(30);
-	tubeFilter->Update();
+	//// populate Points with dummy data for initialization
+	//unsigned int npts = 1;
+	//vtkSmartPointer<vtkPolyLineSource> lineSource = vtkSmartPointer<vtkPolyLineSource>::New();
+	//for (unsigned int i=0;i<npts;i++)
+	//	lineSource->SetPoint(i, i,i,i);
 
-	// Create a mapper and actor
-	vtkSmartPointer<vtkPolyDataMapper> tubeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	tubeMapper->SetInputConnection(tubeFilter->GetOutputPort());
-	vtkSmartPointer<vtkActor> tubeActor = vtkSmartPointer<vtkActor>::New();
-	tubeActor->SetMapper(tubeMapper);
-	
-	renDisplay3D->AddActor(tubeActor);
+	//vtkSmartPointer<vtkTubeFilter> tubeFilter = vtkSmartPointer<vtkTubeFilter>::New();
+	//tubeFilter->SetInputConnection(lineSource->GetOutputPort());
+	//tubeFilter->SetRadius(0.9);                  
+	//tubeFilter->SetNumberOfSides(30);
+	//tubeFilter->Update();
+
+	//// Create a mapper and actor
+	//vtkSmartPointer<vtkPolyDataMapper> tubeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+	//tubeMapper->SetInputConnection(tubeFilter->GetOutputPort());
+	//vtkSmartPointer<vtkActor> tubeActor = vtkSmartPointer<vtkActor>::New();
+	//tubeActor->SetMapper(tubeMapper);
+	//
+	//renDisplay3D->AddActor(tubeActor);
 	renDisplay3D->AddActor(tDataDisplayRobot->valveNormal->getActor());
+
+	//for (int i = 0; i < 3; ++i)
+	//	renDisplay3D->AddActor(actors[i]);
 
 	auto start = std::chrono::high_resolution_clock::now();
 	::Eigen::Vector3d tmp;
@@ -304,28 +315,29 @@ void ReplayEngine::displayRobot(void* tData)
 			try
 			{
 				start = std::chrono::high_resolution_clock::now();
+				tDataDisplayRobot->robotVis->update(tDataDisplayRobot->joints);
 
 				tDataDisplayRobot->getFrames(robotFrames);
-				npts = robotFrames.size();
+				//npts = robotFrames.size();
 
-				if (npts>2)
-				{
-					for (int i = 0; i < 3; ++i)
-						error[i] = actualPosition[i] - (robotFrames.back().GetPosition()[i] + 20*robotFrames[npts-1].GetZ()[i]); 
-					s = linspace(0, 1, npts+1);
-					lineSource->SetNumberOfPoints(npts + 1); //  to add the straight segment
-					for (unsigned int i = 0; i < npts; i++)
-						lineSource->SetPoint(i, robotFrames[i].GetPosition()[0] + s[i] * error[0],robotFrames[i].GetPosition()[1]  + s[i] * error[1], robotFrames[i].GetPosition()[2] + s[i] * error[2]);
-					for (int i = 0; i < 3; ++i)
-						tmp[i] = robotFrames[npts-1].GetPosition()[i] + 20*robotFrames[npts-1].GetZ()[i] + s.back() * error[i];  // remove hardcoded 20;
-					lineSource->SetPoint(npts, tmp[0], tmp[1], tmp[2]);
-				}
-				else
-				{
-					lineSource->SetNumberOfPoints(2); // set new data
-					lineSource->SetPoint(0, 0.0,0.0,0.0);
-					lineSource->SetPoint(1, 0.0,0.0,10.0);
-				}
+				//if (npts>2)
+				//{
+				//	for (int i = 0; i < 3; ++i)
+				//		error[i] = actualPosition[i] - (robotFrames.back().GetPosition()[i] + 20*robotFrames[npts-1].GetZ()[i]); 
+				//	s = linspace(0, 1, npts+1);
+				//	lineSource->SetNumberOfPoints(npts + 1); //  to add the straight segment
+				//	for (unsigned int i = 0; i < npts; i++)
+				//		lineSource->SetPoint(i, robotFrames[i].GetPosition()[0] + s[i] * error[0],robotFrames[i].GetPosition()[1]  + s[i] * error[1], robotFrames[i].GetPosition()[2] + s[i] * error[2]);
+				//	for (int i = 0; i < 3; ++i)
+				//		tmp[i] = robotFrames[npts-1].GetPosition()[i] + 20*robotFrames[npts-1].GetZ()[i] + s.back() * error[i];  // remove hardcoded 20;
+				//	lineSource->SetPoint(npts, tmp[0], tmp[1], tmp[2]);
+				//}
+				//else
+				//{
+				//	lineSource->SetNumberOfPoints(2); // set new data
+				//	lineSource->SetPoint(0, 0.0,0.0,0.0);
+				//	lineSource->SetPoint(1, 0.0,0.0,10.0);
+				//}
 				
 				tDataDisplayRobot->iModel.getCenter(center);
 				radius = tDataDisplayRobot->iModel.getRadius();

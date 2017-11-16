@@ -29,6 +29,7 @@
 
 #include "arrowVisualizer.h"
 #include "OpenCVClock.h"
+#include "robotVisualizer.h"
 
 class ReplayEngine
 {
@@ -126,6 +127,8 @@ class ReplayEngine
 
 		::cv::Point regPointCV;
 		bool reg_detected;
+
+		RobotVisualizer* robotVis;
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION, LEAK_DETECTION} status;
 		enum WALL_TO_FOLLOW {LEFT, TOP, BOTTOM};

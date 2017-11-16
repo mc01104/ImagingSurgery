@@ -467,6 +467,9 @@ void MechanicsBasedKinematics::findNearestGridPoint(double s, int* beginIdx, dou
 			*fracFromBegin = (s - arcLengthGrid[i-1]) / (arcLengthGrid[i] - arcLengthGrid[i-1]);
 			return;
 		}
+	
+	*beginIdx = this->arcLengthGrid.size() - 1;
+	fracFromBegin = 0;
 
 }
 
@@ -477,6 +480,12 @@ void MechanicsBasedKinematics::GetBishopFrame(double s, SE3& bishopFrame, std::v
 		int beginIdx;
 		double frac;
 		this->findNearestGridPoint(s, &beginIdx, &frac);
+
+		if (beginIdx == this->arcLengthGrid.size() - 1)
+		{
+			bishopFrame = frames[beginIdx];
+			return;
+		}
 
 		se3 w1 = Log(Inv(frames[beginIdx])*frames[beginIdx+1]);
 		bishopFrame = frames[beginIdx] * Exp(frac*w1);

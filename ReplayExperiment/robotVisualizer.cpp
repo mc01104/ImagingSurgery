@@ -18,6 +18,7 @@ RobotVisualizer::RobotVisualizer(const MechanicsBasedKinematics& kinematics) : k
 
 	colors.push_back(color);
 
+
 	color[0] = 45.0/255.0; color[1] = 98.0/255.0; color[2] = 183.0/255.0;
 
 	colors.push_back(color);
@@ -45,10 +46,21 @@ RobotVisualizer::update(const double* configuration)
 
 	this->kinematics.ComputeKinematics(rotation, translation);
 
-	int numOfPoints = 100;
-	::std::vector<double> s = linspace(0, this->kinematics.getRobot()->GetLength(), numOfPoints);
-	::std::vector<SE3> frames(s.size());
-	kinematics.GetBishopFrame(s, frames);
+	//int numOfPoints = 30;
+	//::std::vector<double> s = linspace(0, this->kinematics.getRobot()->GetLength() - 0.2, numOfPoints);
+
+	double smax = this->kinematics.getRobot()->GetLength();
+	::std::vector<double> arcLength;
+	int nPoints = 300;
+
+	for (int i = 0; i < nPoints; ++i)
+		arcLength.push_back((1.0 * i)/(nPoints-1) * smax);
+
+	//::std::vector<SE3> frames(s.size());
+	//kinematics.GetBishopFrame(s, frames);
+
+	::std::vector<SE3> frames(arcLength.size());
+	kinematics.GetBishopFrame(arcLength, frames);
 
 	::std::vector<double> point(3);
 	::std::vector<::std::vector<double>> points;
@@ -69,21 +81,22 @@ RobotVisualizer::update(const double* configuration)
 
 	points.push_back(point);
 
-	for (int i = 0; i < 3; ++i)
-		indices[i] = points.size();
+	for (int i = 0; i < this->tubes.size(); ++i)
+		indices[i] = points.size() - 1;
 
 	::std::vector<bool> mask(this->tubes.size()); 
 
 	for (int i = 0; i < frames.size(); ++i)
 	{
-		for (int j = 0; j < 3; ++j)
+		for (int j = 0; j < this->tubes.size(); ++j)
 			mask[j] = false;
 
-		this->kinematics.getRobot()->GetExistingTubes(s[i], mask);
+		//this->kinematics.getRobot()->GetExistingTubes(s[i], mask);
+		this->kinematics.getRobot()->GetExistingTubes(arcLength[i], mask);
 		
 		for (int j = 0; j < this->tubes.size(); ++j)
 		{
-			if (!mask[j] && (indices[j] == points.size()))
+			if (!mask[j] && (indices[j] == points.size() - 1))
 				indices[j] = i - 1;
 		}
 
