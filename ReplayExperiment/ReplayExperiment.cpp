@@ -24,6 +24,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <thread>
 #include "TubeVisualizer.h"
+#include "robotVisualizer.h"
 
 void testVectorOperations();
 void testBuildingModel();
@@ -38,6 +39,7 @@ void testRegistration();
 void testClock();
 void testArrow();
 void testTube();
+void testRobotVisulization();
 
 #define __NEW_VERSION__
 
@@ -61,6 +63,33 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//testArrow();
 	//testTube();
+	//testRobotVisulization();
+}
+
+void testRobotVisulization()
+{
+	CTR* robot = CTRFactory::buildCTR("");
+	MechanicsBasedKinematics* kinematics = new MechanicsBasedKinematics(robot, 100);
+	kinematics->ActivateIVPJacobian();
+
+	RobotVisualizer rVis(*kinematics);
+	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+
+	vtkSmartPointer<vtkRenderWindow> renWindow = vtkSmartPointer<vtkRenderWindow>::New();
+	renWindow->AddRenderer(renderer);
+
+	vtkSmartPointer<vtkRenderWindowInteractor> iRen = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	iRen->SetRenderWindow(renWindow);
+
+	rVis.registerVisualizer(renderer);
+
+	double configuration[5] = {0, 0, 35, 0, 0};
+	rVis.update(configuration);
+
+	iRen->Initialize();
+	renWindow->Render();
+
+	iRen->Start();
 }
 
 void testArrow()

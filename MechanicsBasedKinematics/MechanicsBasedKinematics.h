@@ -35,6 +35,7 @@ public:
 	void ActivateIVPJacobian() {this->isUsingIVPJacobian = true;};
 	static void RelativeToAbsolute(const CTR* const robot, const double* const& relativeConf, double* const &rotation, double* const &translation);
 
+	const CTR* const getRobot() {return this->robot;}; 
 private:
 	bool updateConfiguration (double* rotation, double* translation);
 	bool solveBVP (Eigen::MatrixXd& solution);

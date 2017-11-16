@@ -2,6 +2,8 @@
 #include "Registration.h"
 #include "HTransform.h"
 
+
+// this is not making much sense -> refactor (who has the responsibility for updating the model?
 RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
 	markers(12, 4, 8), regDetected(false)
 {
@@ -13,9 +15,9 @@ RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(m
 {
 }
 
+// removed the delete model because it's not owned by this class -> if use the first constructor somebody needs to clean it
 RegistrationHandler::~RegistrationHandler()
 {
-	delete model;
 }
 
 bool
@@ -82,8 +84,10 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
     ::cv::morphologyEx(output, output, ::cv::MORPH_OPEN,kernel);
 
 	::cv::cvtColor(output, thresholdedImg, CV_GRAY2BGR);
+
 	::cv::imshow("marker", output);
 	::cv::imshow("unrotated", img);
+
 	::cv::Mat bin;
 	output.convertTo(bin, CV_8UC1);
 	
@@ -233,12 +237,10 @@ RegistrationHandler::thresholdSynthetic(const ::cv::Mat& img, ::cv::Mat& thresho
 
 	::cv::Mat mask_h1, mask_h2;
 	::cv::inRange(HSV_split[0], l_thres, h_thres, mask_h1);
-	::cv::inRange(HSV_split[0], l_thres_2, l_thres_2, mask_h2);
-
+	::cv::inRange(HSV_split[1], l_thres_2, l_thres_2, mask_h2);
 
 	::cv::Mat output;
 	::cv::bitwise_or(mask_h1, mask_h2, output);
-	//::cv::bitwise_and(output, mask_v, output);
 
     // Apply morphological opening to remove small things
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE, ::cv::Size(5,5));
