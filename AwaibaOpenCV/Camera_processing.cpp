@@ -37,6 +37,7 @@
 // Awaiba includes
 #define _CRTDBG_MAP_ALLOC
 #include "awcorecpp.h"
+
 #include "CImg.h"
 using namespace cimg_library;
 #define cimg_use_png
@@ -320,6 +321,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		m_sensor = sensor1;
 		//m_sensor.DoLineCorrectionChange = true;
 
+
 		m_pipeConfig.BadPixelReplacement.Enable = true;
 		m_pipeConfig.BadPixelReplacement.Threshold = 50;
 		m_pipeConfig.SkipFrames.Enable = true;
@@ -338,7 +340,10 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		m_wall_detected = false;
 		m_state_transition = false;
 		//*** Automatic Exposure Control Registers ***/
-		m_Manager.SetFPGAData(0x00500000,0x02010200);
+		//m_Manager.SetFPGAData(0x00500000,0x02010200);
+		m_Manager.SetFPGAData(0x00500000,0x42010200);
+		
+
 #endif
 		Mat RgbFrame = Mat(250,250,CV_8UC3);
 
