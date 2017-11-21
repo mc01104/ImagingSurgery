@@ -46,7 +46,11 @@ class RegistrationHandler
 		void setWorkingChannel(::Eigen::Vector2d& workingChannel) {this->workingChannel = workingChannel;};
 
 		void reset();
+
 		bool getRegDetected(){return this->regDetected;};
+
+		double getRecentMarker() {return this->visitedMarkers.back();};
+
 	protected:
 		bool threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg);
 

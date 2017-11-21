@@ -1823,6 +1823,14 @@ void Camera_processing::computeCircumnavigationParametersDebug(const ::cv::Mat& 
 void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
 
+	static float contact_prev = 0.0;
+	float	contact = 0.0;
+
+	contact_prev = contact;
+	contact = m_contact_response;
+	bool breakingContact = false;
+	breakingContact = (contact_prev == 1.0) && (contact == 0.0);
+
 	// detect the line on the unrotated frame (edges at the image corners due to rotation mess up the line detection)
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
@@ -1834,7 +1842,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 
 	m_linedetected = false;
-	bool breakingContact = false;
+
 
 	if (m_contact_response == 1)
 	{
@@ -1874,12 +1882,13 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	{
 		if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
 		{
-			//if (!m_valveModel.isRegistered())
-			//{
 			::std::cout << "in registration" << ::std::endl;
-			this->m_clock.setRegistrationOffset(regError/30.0);
+
+			double marker = this->m_registrationHandler.getRecentMarker();
+			this->m_clock.setRegistrationOffset(regError/30.0, marker);
+
 			this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
-			//}
+
 		}
 
 	}
@@ -1890,8 +1899,10 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	centroidModel = centroidEig;
 	::Eigen::Vector3d centroidOnValve;
-	if (m_contact_response == 1)
+	//if (m_contact_response == 1)
+	if (breakingContact)
 	{
+		::std::cout << "breaking contact" << ::std::endl;
 		centroidOnValve.segment(0, 2) = centroidModel;
 		computePointOnValve(robot_positionEig, centroidOnValve, this->m_channel_center, this->inner_tube_rotation, this->rotation, normal);
 		robot_positionEig(2) = this->m_model_robot_position[2];

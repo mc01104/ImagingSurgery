@@ -212,11 +212,11 @@ void testClock()
 
 		time = i * 0.01;
 		if (i == 100)
-			clockCV.setRegistrationOffset(1);
+			clockCV.setRegistrationOffset(1, 0);
 		if (i == 200)
-			clockCV.setRegistrationOffset(1);
+			clockCV.setRegistrationOffset(1, 0);
 		if (i == 300)
-			clockCV.setRegistrationOffset(1);
+			clockCV.setRegistrationOffset(1, 0);
 
 		clockCV.update(img, time);
 
@@ -307,7 +307,8 @@ int testReplayEngine()
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_15-11-37";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_14-04-54";
 
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_12-14-23";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_12-14-23";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_15-19-25";
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;

@@ -21,6 +21,9 @@ class OpenCVClock
 		Tick registrationMark;
 
 		int regCounter;
+
+		::std::vector<int> visited_markers;
+		
 	public:
 
 		OpenCVClock();
@@ -31,7 +34,7 @@ class OpenCVClock
 
 		void setCurrentTime(double time);
 
-		void setRegistrationOffset(double offset);
+		void setRegistrationOffset(double offset, double marker);
 
 		void update(::cv::Mat& img, double time);
 

@@ -40,8 +40,10 @@ OpenCVClock::setCurrentTime(double time)
 }
 
 void 
-OpenCVClock::setRegistrationOffset(double offset)
+OpenCVClock::setRegistrationOffset(double offset, double marker)
 {
+	this->visited_markers.push_back(marker);
+
 	this->registrationOffset += offset;
 
 	this->regCounter++;
@@ -120,14 +122,26 @@ OpenCVClock::renderRegistrationCounter(::cv::Mat& img)
 {
 	double markRadius = 3;
 	if (this->regCounter == 1)
+	{
 		::cv::circle(img, ::cv::Point(this->clockCenter.x + 1.5 * this->radius, this->clockCenter.y - (this->radius - markRadius))
 			, markRadius, ::cv::Scalar(255, 0, 0), -1);
+		::cv::putText(img, ::std::to_string(this->visited_markers[this->regCounter - 1]), 
+			::cv::Point(this->clockCenter.x + 2.0 * this->radius, this->clockCenter.y - (this->radius - 2 * markRadius)),
+			::cv::FONT_HERSHEY_PLAIN, 1.0, ::cv::Scalar(255, 0, 0));
+	}
 	else if (this->regCounter == 2)
 	{
 		::cv::circle(img, ::cv::Point(this->clockCenter.x + 1.5 * this->radius, this->clockCenter.y - (this->radius - markRadius))
 			, markRadius, ::cv::Scalar(255, 0, 0), -1);
-		::cv::circle(img, ::cv::Point(this->clockCenter.x + 1.5 * this->radius, this->clockCenter.y)
+		::cv::circle(img, ::cv::Point(this->clockCenter.x + 1.5 * this->radius, this->clockCenter.y - 2 * markRadius)
 			, markRadius, ::cv::Scalar(255, 0, 0), -1);
+		::cv::putText(img, ::std::to_string(this->visited_markers[this->regCounter - 2]), 
+			::cv::Point(this->clockCenter.x + 2.0 * this->radius, this->clockCenter.y - (this->radius - 2 * markRadius)),
+			::cv::FONT_HERSHEY_PLAIN, 1.0, ::cv::Scalar(255, 0, 0));
+		::cv::putText(img, ::std::to_string(this->visited_markers[this->regCounter - 1]), 
+			::cv::Point(this->clockCenter.x + 2.0 * this->radius, this->clockCenter.y),
+			::cv::FONT_HERSHEY_PLAIN, 1.0, ::cv::Scalar(255, 0, 0));
+
 	}
 	else if (this->regCounter == 3)
 	{
@@ -137,6 +151,17 @@ OpenCVClock::renderRegistrationCounter(::cv::Mat& img)
 			, markRadius, ::cv::Scalar(255, 0, 0), -1);
 		::cv::circle(img, ::cv::Point(this->clockCenter.x + 1.5 * this->radius, this->clockCenter.y + (this->radius - markRadius))
 			, markRadius, ::cv::Scalar(255, 0, 0), -1);
+		::cv::putText(img, ::std::to_string(this->visited_markers[this->regCounter - 3]), 
+			::cv::Point(this->clockCenter.x + 2.0 * this->radius, this->clockCenter.y - (this->radius - 2 * markRadius)),
+			::cv::FONT_HERSHEY_PLAIN, 1.0, ::cv::Scalar(255, 0, 0));
+		::cv::putText(img, ::std::to_string(this->visited_markers[this->regCounter - 2]), 
+			::cv::Point(this->clockCenter.x + 2.0 * this->radius, this->clockCenter.y),
+			::cv::FONT_HERSHEY_PLAIN, 1.0, ::cv::Scalar(255, 0, 0));
+
+		::cv::putText(img, ::std::to_string(this->visited_markers[this->regCounter - 1]), 
+			::cv::Point(this->clockCenter.x + 2.0 * this->radius, this->clockCenter.y + (this->radius - 2 * markRadius)),
+			::cv::FONT_HERSHEY_PLAIN, 1.0, ::cv::Scalar(255, 0, 0));
+
 	}
 }
 

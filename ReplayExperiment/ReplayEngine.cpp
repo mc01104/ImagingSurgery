@@ -80,7 +80,7 @@ public:
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
-	lineDetected(false), robot_rotation(0), imageInitRotation(90), lineDetector(), wallDetector(), wallDetected(false),
+	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
 	filter(5), theta_filter_complex(20), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
 	m_registrationHandler(&iModel), m_clock(), reg_detected(false)
 {
@@ -734,27 +734,6 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		double regError = 0;
 		::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->actualPosition, 3);
 
-		::Eigen::Vector2d regCentroid;
-		if (this->m_registrationHandler.processImage(img, robot_positionEig , innerTubeRotation, this->imageInitRotation, normal, regError))
-		{
-			::std::cout << "in registration" << ::std::endl;
-
-			this->m_clock.setRegistrationOffset(regError/30.0);
-
-			this->iModel.setRegistrationRotation(regError);
-		}
-
-		this->reg_detected = m_registrationHandler.getRegDetected();
-
-		if (this->reg_detected)
-		{
-			this->m_registrationHandler.getCentroid(regCentroid);
-			regPointCV.x = regCentroid(0);
-			regPointCV.y = regCentroid(1);
-			this->cameraToImage(regPointCV);
-
-		}
-
 		::cv::Vec4f line;
 		::Eigen::Vector2d centroidEig, centroidEig2, tangentEig, velCommand,  tangentEigFiltered;
 		if (response == 1)
@@ -774,13 +753,38 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		::Eigen::Vector3d centroidOnValve(0, 0, 0);
 		::Eigen::Vector2d channelCenter(125, 230);
 		// store original centroid for adding points to the model
-		if (breakingContact)
+		if (response == 1)
 		{
 			centroidOnValve.segment(0, 2) = centroidEig2;
 			computePointOnValve(centroidOnValve, channelCenter, innerTubeRotation, imageInitRotation, normal);
 			centroidOnValve(2) = this->actualPosition[2];
 
 			this->iModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2));
+		}
+
+
+		::Eigen::Vector2d regCentroid;
+		if (this->m_registrationHandler.processImage(img, robot_positionEig , innerTubeRotation, this->imageInitRotation, normal, regError))
+		{
+
+			::std::cout << "in registration" << ::std::endl;
+
+			double marker = this->m_registrationHandler.getRecentMarker();
+
+			this->m_clock.setRegistrationOffset(regError/30.0, marker);
+
+			this->iModel.setRegistrationRotation(regError);
+		}
+
+		this->reg_detected = m_registrationHandler.getRegDetected();
+
+		if (this->reg_detected)
+		{
+			this->m_registrationHandler.getCentroid(regCentroid);
+			regPointCV.x = regCentroid(0);
+			regPointCV.y = regCentroid(1);
+			this->cameraToImage(regPointCV);
+
 		}
 
 		this->applyVisualServoingController(centroidEig, tangentEig, velCommand);
