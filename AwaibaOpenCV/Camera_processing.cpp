@@ -26,7 +26,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include "targetver.h"
-#define DEFAULT_BUFLEN 512
+#define DEFAULT_BUFLEN 1024
 #define DEFAULT_PORT "27015"
 #define DEFAULT_PORT_PLOT "27016"
 // OpenCV includes
