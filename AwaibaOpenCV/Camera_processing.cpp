@@ -133,7 +133,7 @@ public:
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 	, m_radius_filter(10), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
-	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock()
+	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -733,6 +733,13 @@ void Camera_processing::displayImages(void)
 				this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
 				this->m_clock.update(frame_rotated, clockfacePosition);
 			}
+
+			double width = 50, height = 50;
+			::cv::Rect rec = ::cv::Rect(this->regPointCV.x - 0.5 * width, this->regPointCV.y - 0.5 * height, width, height);
+			if (this->reg_detected)
+				::cv::rectangle(frame_rotated, rec, ::cv::Scalar(0, 0, 255), 2);
+			
+			this->reg_detected = false;
 
 			cv::imshow( "Display", frame_rotated );
 			key = waitKey(1);
@@ -1911,6 +1918,18 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	}
 
+	this->reg_detected = m_registrationHandler.getRegDetected();
+
+	::Eigen::Vector2d tmpCentroid;
+	if (this->reg_detected)
+	{
+		this->m_registrationHandler.getCentroid(tmpCentroid);
+		regPointCV.x = tmpCentroid(0);
+		regPointCV.y = tmpCentroid(1);
+		this->cameraToImage(regPointCV);
+	}
+
+
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
 	tangentEig[1] = line[1];
@@ -2323,5 +2342,18 @@ Camera_processing::initializeRobotAxis()
 	this->RobotAxisActor->GetProperty()->SetLineWidth(1.5);
 
 	renDisplay3D->AddActor(this->RobotAxisActor);
+
+}
+
+void
+Camera_processing::cameraToImage(::cv::Point& point)
+{
+	::Eigen::Vector2d image_center(125, 125); // not general -> fix!
+	::Eigen::Matrix3d rot1 = RotateZ(this->rotation * M_PI/180.0 - robot_rotation);
+	::Eigen::Vector2d pointEig(point.x, point.y);
+	pointEig = rot1.block(0, 0, 2, 2).transpose()* (pointEig - image_center) + image_center;
+
+	point.x = pointEig(0);
+	point.y = pointEig(1);
 
 }

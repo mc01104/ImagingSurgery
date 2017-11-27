@@ -153,6 +153,8 @@ private:
 	bool m_contactMeasured;
 	std::deque<float> m_contactBuffer;
 	
+	::cv::Point regPointCV;
+	bool reg_detected;
 	// George -> attempting implementation for frequency estimation
 	::std::deque<float> m_contactBufferFiltered;
 	int					m_maxBufferSize;
@@ -228,6 +230,7 @@ private:
 
 	void		updateHeartFrequency();
 	void		parseNetworkMessage(::std::vector<double>& msg);
+	void		cameraToImage(::cv::Point& point);
 
 	vtkSmartPointer<vtkRegularPolygonSource> apexSource;
 	vtkSmartPointer<vtkPolyDataMapper> apexMapper;
