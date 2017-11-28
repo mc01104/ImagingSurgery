@@ -132,7 +132,7 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(10), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
+	, m_radius_filter(3), m_theta_filter(15), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
 	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false)
 {
 	// Animate CRT to dump leaks to console after termination.
@@ -1080,7 +1080,7 @@ bool Camera_processing::networkKinematics(void)
 		else
 			ss << "0";
 		ss << ::std::endl;
-
+		::std::cout << "msg out:" << ss.str().c_str() << ::std::endl;
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
@@ -1871,8 +1871,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 #endif
 	}
 
-	if (!m_linedetected)
-		return;
+
 
 
 	::Eigen::Vector3d normal(0, 0, 1);
@@ -1907,9 +1906,9 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	centroidModel = centroidEig;
 	::Eigen::Vector3d centroidOnValve;
 	//if (m_contact_response == 1)
-	if (breakingContact)
+	if (m_contact_response)
 	{
-		::std::cout << "breaking contact" << ::std::endl;
+		//::std::cout << "breaking contact" << ::std::endl;
 		centroidOnValve.segment(0, 2) = centroidModel;
 		computePointOnValve(robot_positionEig, centroidOnValve, this->m_channel_center, this->inner_tube_rotation, this->rotation, normal);
 		robot_positionEig(2) = this->m_model_robot_position[2];
@@ -1928,7 +1927,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		regPointCV.y = tmpCentroid(1);
 		this->cameraToImage(regPointCV);
 	}
-
+	if (!m_linedetected)
+		return;
 
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
