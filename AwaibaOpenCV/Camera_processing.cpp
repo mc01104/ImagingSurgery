@@ -132,7 +132,7 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(3), m_theta_filter(15), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
+	, m_radius_filter(3), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
 	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false)
 {
 	// Animate CRT to dump leaks to console after termination.
@@ -194,17 +194,17 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 213;
 	//m_channel_center(1) = 102;
 
-	// scope 3
-	m_channel_center(0) = 180;
-	m_channel_center(1) = 70;
+	//// scope 3
+	//m_channel_center(0) = 180;
+	//m_channel_center(1) = 70;
 
 	//// scope 4
 	//m_channel_center(0) = 51;
 	//m_channel_center(1) = 133;
 
-	//// scope 5
-	//m_channel_center(0) = 152;
-	//m_channel_center(1) = 151;
+	// scope 5
+	m_channel_center(0) = 152;
+	m_channel_center(1) = 151;
 
 	//// scope 6
 	//m_channel_center(0) = 120;

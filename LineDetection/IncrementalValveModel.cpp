@@ -6,11 +6,12 @@
 
 IncrementalValveModel::IncrementalValveModel()
 	: radius(9.0), center(0, 0, 0), normal(0, 0, 1), referencePosition(0, 1, 0), initialized(false), maxNPoints(200), registrationRotation(0),
-	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(0), totalOffset(0)
+	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(0)
 {
 	errorJacobian.setZero();
 	x.setZero();
 	x(5) = this->radius/10.0;
+	center /= 100;
 }
 
 IncrementalValveModel::~IncrementalValveModel()
@@ -41,7 +42,6 @@ IncrementalValveModel::addPoint(double x, double y, double z)
 		this->initializeCircleCenter();
 		this->center(2) = z;
 
-		this->x.segment(0, 3) = center/100.0;
 		this->initialized = true;
 	}
 }
@@ -67,6 +67,7 @@ IncrementalValveModel::initializeCircleCenter()
 		break;
 	}
 	
+	this->x.segment(0, 3) = center/100.0;
 }
 
 void 
@@ -79,13 +80,12 @@ IncrementalValveModel::updateCircleBaseVectors()
 	this->v2.normalize();
 }
 
-void 
-IncrementalValveModel::setRegistrationRotation(double rotation)
+void IncrementalValveModel::setRegistrationRotation(double rotation)
 {
+	//if (this->registered)
+	//	return;
 	::std::cout << "registration offset:" << rotation << ::std::endl;
-
 	this->registrationRotation = rotation;
-	this->totalOffset = rotation;				// not sure if that's necessary
 
 	::Eigen::Matrix3d rot = RotateZ(this->registrationRotation * M_PI/180.0);
 	this->referencePosition = rot * this->referencePosition;
@@ -93,11 +93,13 @@ IncrementalValveModel::setRegistrationRotation(double rotation)
 	this->registered = true;
 }
 
+// ---- NOT TESTED YET!! -------- // 
 void 
 IncrementalValveModel::updateReferencePosition()
 {
 	this->referencePosition = this->referencePosition.eval() - this->referencePosition.dot(this->normal) * this->normal;
 	this->referencePosition.normalize();
+
 }
 
 void
@@ -142,6 +144,7 @@ IncrementalValveModel::getModelParameters(double center[3], double normal[3], do
 	radius = this->radius;
 }
 
+// ---------- TESTED -----------//
 void 
 IncrementalValveModel::getClockfacePosition(double x, double y, double z, double& clockfacePosition, ::Eigen::Vector3d& point)
 {
@@ -156,16 +159,11 @@ IncrementalValveModel::getClockfacePosition(double x, double y, double z, double
 void 
 IncrementalValveModel::clockfaceToWorldPosition(double time, ::Eigen::Vector3d& point)
 {
-	double angle = 0.5*  60 * time + this->totalOffset;        // not sure if the registration is correct
-	::Eigen::Vector3d tmpPoint;
-	tmpPoint = this->center + this->radius * this->v1 * cos(angle*M_PI/180.0) + this->radius * this->v2 * sin(angle*M_PI/180.0);
-	getNearestPointOnCircle(tmpPoint(0), tmpPoint(1), tmpPoint(2), point);
-
-	// old implementation
-	//getNearestPointOnCircle(this->center[0] + this->radius * cos(angle*M_PI/180.0), this->center[1] + this->radius * (angle*M_PI/180.0), this->center[2], point);
+	double angle = 0.5*  60 * time + this->registrationRotation;        // not sure if the registration is correct
+	getNearestPointOnCircle(this->center[0] + cos(angle*M_PI/180.0), this->center[1] + sin(angle*M_PI/180.0), this->center[2], point);
 }
 
-
+// ---------- TESTED -----------//
 void
 IncrementalValveModel::angleToClockfacePosition(double angle, double& clockfacePosition)   // counter clockwise angle from horizontal line (3 o'clock)
 {
@@ -276,7 +274,7 @@ IncrementalValveModel::updateCircleOptState()
 void
 IncrementalValveModel::updateCircleParameters()
 {
-	if (this->points.size() < 5)
+	if (this->points.size() < 3)
 		return;
 
 	int counter = 0; 
@@ -346,12 +344,6 @@ IncrementalValveModel::pointExists(double x, double y, double z)
 {
 	double dst = 0;
 	::Eigen::Vector3d point = ::Eigen::Vector3d(x, y, z);
-
-	// project vector on the normal plane of the valve
-	double lambda = (point - this->center).transpose() * this->normal;
-	point = point.eval() - lambda * this->normal;
-	point += this->center;
-
 	for (int i = 0; i < this->points.size(); ++i)
 		if ( (this->points[i] - point).norm() < 3)				// in mm
 			return true;
