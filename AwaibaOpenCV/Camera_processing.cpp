@@ -194,17 +194,17 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 213;
 	//m_channel_center(1) = 102;
 
-	//// scope 3
-	//m_channel_center(0) = 180;
-	//m_channel_center(1) = 70;
+	// scope 3
+	m_channel_center(0) = 180;
+	m_channel_center(1) = 70;
 
 	//// scope 4
 	//m_channel_center(0) = 51;
 	//m_channel_center(1) = 133;
 
-	// scope 5
-	m_channel_center(0) = 152;
-	m_channel_center(1) = 151;
+	//// scope 5
+	//m_channel_center(0) = 152;
+	//m_channel_center(1) = 151;
 
 	//// scope 6
 	//m_channel_center(0) = 120;
@@ -425,8 +425,6 @@ void Camera_processing::setWhiteBalance(float r, float g, float b)
 void Camera_processing::setControlLED(bool LED) { m_ControlLED = LED;}
 
 bool Camera_processing::getControlLED() { return m_ControlLED;}
-
-
 
 bool Camera_processing::createSaveDir()
 {
@@ -1080,7 +1078,7 @@ bool Camera_processing::networkKinematics(void)
 		else
 			ss << "0";
 		ss << ::std::endl;
-		::std::cout << "msg out:" << ss.str().c_str() << ::std::endl;
+		//::std::cout << "msg out:" << ss.str().c_str() << ::std::endl;
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
@@ -1850,7 +1848,6 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	m_linedetected = false;
 
-
 	if (m_contact_response == 1)
 	{
 
@@ -1871,9 +1868,6 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 #endif
 	}
 
-
-
-
 	::Eigen::Vector3d normal(0, 0, 1);
 	double normal_[3];
 	this->m_valveModel.getNormal(normal_);
@@ -1882,6 +1876,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	double regError = 0;
 	::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->m_model_robot_position, 3);
 
+	// registration can happen independently of whether a line is detected
 	if (this->manualRegistration)
 		this->m_valveModel.setRegistrationRotation(this->registrationOffset);
 	else
@@ -1891,29 +1886,11 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 			::std::cout << "in registration" << ::std::endl;
 
 			double marker = this->m_registrationHandler.getRecentMarker();
+
 			this->m_clock.setRegistrationOffset(regError/30.0, marker);
 
-			this->m_valveModel.setRegistrationRotation(regError);						// add sth so that we don't register all the time
-
+			this->m_valveModel.setRegistrationRotation(regError);				
 		}
-
-	}
-
-	::Eigen::Vector2d centroidEig, centroidModel;
-	centroidEig(0) = centroid[0];
-	centroidEig(1) = centroid[1];
-
-	centroidModel = centroidEig;
-	::Eigen::Vector3d centroidOnValve;
-	//if (m_contact_response == 1)
-	if (m_contact_response)
-	{
-		//::std::cout << "breaking contact" << ::std::endl;
-		centroidOnValve.segment(0, 2) = centroidModel;
-		computePointOnValve(robot_positionEig, centroidOnValve, this->m_channel_center, this->inner_tube_rotation, this->rotation, normal);
-		robot_positionEig(2) = this->m_model_robot_position[2];
-
-		this->m_valveModel.updateModel(robot_positionEig(0), robot_positionEig(1),robot_positionEig(2));
 
 	}
 
@@ -1923,12 +1900,35 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	if (this->reg_detected)
 	{
 		this->m_registrationHandler.getCentroid(tmpCentroid);
+
 		regPointCV.x = tmpCentroid(0);
 		regPointCV.y = tmpCentroid(1);
+
 		this->cameraToImage(regPointCV);
 	}
+
+	// if there is no line we don't update control parameters and model
 	if (!m_linedetected)
 		return;
+
+	::Eigen::Vector2d centroidEig, centroidModel;
+	centroidEig(0) = centroid[0];
+	centroidEig(1) = centroid[1];
+
+	centroidModel = centroidEig;		// redundant intermediate variable -> remove
+	::Eigen::Vector3d centroidOnValve;
+
+	if (m_contact_response == 1)
+	{
+		centroidOnValve.segment(0, 2) = centroidModel;
+
+		computePointOnValve(robot_positionEig, centroidOnValve, this->m_channel_center, this->inner_tube_rotation, this->rotation, normal);
+
+		robot_positionEig(2) = this->m_model_robot_position[2];
+
+		this->m_valveModel.updateModel(robot_positionEig(0), robot_positionEig(1), robot_positionEig(2));
+
+	}
 
 	::Eigen::Vector2d tangentEig;
 	tangentEig[0] = line[0];
@@ -2097,7 +2097,7 @@ void	Camera_processing::checkTransitionState()
 void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, double centroid[2], double tangent[2])
 {
 	// compute the two orthogonal velocity components
-
+	// inefficient!!!!
 	::Eigen::Vector2d im_center(125, 125);
 	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
 	::Eigen::Vector2d centroidEig = ::Eigen::Map<::Eigen::Vector2d> (centroid, 2);
@@ -2105,8 +2105,10 @@ void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, double cen
 
 	centroidEig = centroidEig - im_center;
 	centroidEig.normalize();
+
 	double lambda_centering = (centroidEig.transpose() * orig_vel);
 	double plotting_scale = 50;
+
 	::Eigen::Vector2d centering_vel = plotting_scale * lambda_centering * centroidEig;
 
 	double lambda_tangent = (tangentEig.transpose() * orig_vel);
@@ -2125,12 +2127,13 @@ void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img, double cen
 void Camera_processing::plotCommandedVelocities(const ::cv::Mat& img)
 {
 	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
+
 	// change velocities back to image frame
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	orig_vel = rot.block(0, 0, 2, 2) * orig_vel;
-	double kappa = 5.0;
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + kappa *  orig_vel(0), img.cols/2 + kappa * orig_vel(1)), ::cv::Scalar(0, 255, 255), 2);
 
+	double kappa = 20.0;
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + kappa *  orig_vel(0), img.cols/2 + kappa * orig_vel(1)), ::cv::Scalar(0, 255, 255), 2);
 	
 }
 
