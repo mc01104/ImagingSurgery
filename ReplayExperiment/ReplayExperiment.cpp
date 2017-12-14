@@ -22,6 +22,8 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
+#include <vtkSTLReader.h>
+
 #include <thread>
 #include "TubeVisualizer.h"
 #include "robotVisualizer.h"
@@ -40,6 +42,7 @@ void testClock();
 void testArrow();
 void testTube();
 void testRobotVisulization();
+void testHeartVisualization();
 
 #define __NEW_VERSION__
 
@@ -56,7 +59,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testBenchtopDetection();
 	//testLeakDetection();
 	//testMultipleWires();
-	testReplayEngine();
+	//testReplayEngine();
 	//testIncrementalModel();
 	//testRegistration();
 	//testClock();
@@ -64,6 +67,39 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testArrow();
 	//testTube();
 	//testRobotVisulization();
+
+	testHeartVisualization();
+}
+
+void testHeartVisualization()
+{  
+
+	std::string inputFilename = "Zygote_Heart.stl";
+ 
+  vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
+  reader->SetFileName(inputFilename.c_str());
+  reader->Update();
+ 
+  // Visualize
+  vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  mapper->SetInputConnection(reader->GetOutputPort());
+ 
+  vtkSmartPointer<vtkActor> actor =  vtkSmartPointer<vtkActor>::New();
+  actor->SetMapper(mapper);
+ 
+  vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+  vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+  renderWindow->AddRenderer(renderer);
+
+  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  renderWindowInteractor->SetRenderWindow(renderWindow);
+ 
+  renderer->AddActor(actor);
+  renderer->SetBackground(.3, .6, .3); // Background color green
+ 
+  renderWindow->Render();
+  renderWindowInteractor->Start();
+
 }
 
 void testRobotVisulization()

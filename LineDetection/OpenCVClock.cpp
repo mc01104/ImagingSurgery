@@ -173,4 +173,5 @@ void OpenCVClock::reset()
 
 		this->updateRegistration();
 
+		this->visited_markers.clear();
 }

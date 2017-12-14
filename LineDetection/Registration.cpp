@@ -94,9 +94,9 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	::std::vector< ::cv::Point> nonzero;
 	::cv::findNonZero(bin, nonzero);
 
-	//::std::cout << "number of detected points:" << nonzero.size() << ::std::endl;
+	::std::cout << "number of detected points:" << nonzero.size() << ::std::endl;
 
- 	if (nonzero.size() < 500)
+ 	if (nonzero.size() < 150) // used to be 500 - test
 		return false;
 
 	this->computeCentroid(nonzero);
