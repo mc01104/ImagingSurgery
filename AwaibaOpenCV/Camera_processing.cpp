@@ -194,9 +194,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 213;
 	//m_channel_center(1) = 102;
 
-	// scope 3
-	m_channel_center(0) = 180;
-	m_channel_center(1) = 70;
+	//// scope 3
+	//m_channel_center(0) = 180;
+	//m_channel_center(1) = 70;
 
 	//// scope 4
 	//m_channel_center(0) = 51;
@@ -210,9 +210,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 120;
 	//m_channel_center(1) = 110;
 
-	//// scope 7
-	//m_channel_center(0) = 86;
-	//m_channel_center(1) = 118;
+	// scope 7
+	m_channel_center(0) = 86;
+	m_channel_center(1) = 118;
 
 	m_use_original_line_transition = false;
 	m_use_green_line_transition = true;
@@ -1829,13 +1829,16 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
 
 	static float contact_prev = 0.0;
-	float	contact = 0.0;
-
+	static float	contact = 0.0;
+	static int counter_b = 0;
 	contact_prev = contact;
-	contact = m_contact_response;
+	this->m_bof.predict(img, contact);
+	//contact = m_contact_response;
 	bool breakingContact = false;
 	breakingContact = (contact_prev == 1.0) && (contact == 0.0);
-
+	//::std::cout << contact_prev << " " << contact << " " << breakingContact << ::std::endl;
+	//if (breakingContact)
+	//	::std::cout << counter_b++ << " " <<  "break" << ::std::endl;
 	// detect the line on the unrotated frame (edges at the image corners due to rotation mess up the line detection)
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
