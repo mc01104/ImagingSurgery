@@ -1831,15 +1831,14 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	static float contact_prev = 0.0;
 	static float	contact = 0.0;
 	static int counter_b = 0;
+
+	// update contact values
 	contact_prev = contact;
 	this->m_bof.predict(img, contact);
-	//contact = m_contact_response;
+
 	bool breakingContact = false;
 	breakingContact = (contact_prev == 1.0) && (contact == 0.0);
-	//::std::cout << contact_prev << " " << contact << " " << breakingContact << ::std::endl;
-	//if (breakingContact)
-	//	::std::cout << counter_b++ << " " <<  "break" << ::std::endl;
-	// detect the line on the unrotated frame (edges at the image corners due to rotation mess up the line detection)
+
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
 
@@ -1921,7 +1920,9 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	centroidModel = centroidEig;		// redundant intermediate variable -> remove
 	::Eigen::Vector3d centroidOnValve;
 
-	if (m_contact_response == 1)
+	//if (m_contact_response == 1)
+
+	if (breakingContact)
 	{
 		centroidOnValve.segment(0, 2) = centroidModel;
 
