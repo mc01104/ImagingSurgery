@@ -206,13 +206,13 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 152;
 	//m_channel_center(1) = 151;
 
-	//// scope 6
-	//m_channel_center(0) = 120;
-	//m_channel_center(1) = 110;
+	// scope 6
+	m_channel_center(0) = 120;
+	m_channel_center(1) = 110;
 
-	// scope 7
-	m_channel_center(0) = 86;
-	m_channel_center(1) = 118;
+	//// scope 7
+	//m_channel_center(0) = 86;
+	//m_channel_center(1) = 118;
 
 	m_use_original_line_transition = false;
 	m_use_green_line_transition = true;
@@ -1920,9 +1920,10 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	centroidModel = centroidEig;		// redundant intermediate variable -> remove
 	::Eigen::Vector3d centroidOnValve;
 
-	//if (m_contact_response == 1)
 
-	if (breakingContact)
+
+	//if (breakingContact)
+	if (m_contact_response == 1)
 	{
 		centroidOnValve.segment(0, 2) = centroidModel;
 
