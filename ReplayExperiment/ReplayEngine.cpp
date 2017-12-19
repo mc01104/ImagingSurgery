@@ -154,7 +154,7 @@ void ReplayEngine::run()
 
 void ReplayEngine::simulate(void* tData)
 {
-	//::cv::VideoWriter video("line_detection_surgery_switching_20.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
+	::cv::VideoWriter video("registration_debugging.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
 
 	ReplayEngine* tDataSim = reinterpret_cast<ReplayEngine*> (tData);
 
@@ -241,13 +241,13 @@ void ReplayEngine::simulate(void* tData)
 		tDataSim->reg_detected = false;
 
 		::cv::imshow("Display", tmpImage);
-		//video.write(tmpImage);
+		video.write(tmpImage);
 		::cv::waitKey(1);  
 
 	}
 
 	::std::cout << "Exiting Simulation Thread" << ::std::endl;
-	//video.release();
+	video.release();
 }
 
 void ReplayEngine::displayRobot(void* tData)

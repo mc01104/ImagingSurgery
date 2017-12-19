@@ -214,6 +214,8 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	m_channel_center(0) = 86;
 	m_channel_center(1) = 118;
 
+	m_registrationHandler.setWorkingChannel(m_channel_center);
+
 	m_use_original_line_transition = false;
 	m_use_green_line_transition = true;
 

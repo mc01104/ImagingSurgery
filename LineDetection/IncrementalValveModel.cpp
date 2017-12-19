@@ -7,7 +7,7 @@
 // initial value of radius is increased on purpose to reduce clockface uncertainty due to bending in the beginning
 IncrementalValveModel::IncrementalValveModel()
 	: radius(19.0), center(0, 0, 0), normal(0, 0, 1), referencePosition(0, 1, 0), initialized(false), maxNPoints(200), registrationRotation(0),
-	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(0)
+	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(2)
 {
 	errorJacobian.setZero();
 	x.setZero();
