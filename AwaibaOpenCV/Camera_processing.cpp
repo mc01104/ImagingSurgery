@@ -1923,9 +1923,10 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::Eigen::Vector3d centroidOnValve;
 
 
+		
 
 	//if (breakingContact)
-	if (m_contact_response == 1)
+    if (m_contact_response == 1)
 	{
 		centroidOnValve.segment(0, 2) = centroidModel;
 
@@ -2055,7 +2056,7 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 		this->detected_valve.push_back(true);
 				//::std::cout <<"in 2" <<::std::endl;
 	}
-	if (this->detected_valve.size() > 15 && this->m_use_automatic_transition)
+	if (this->detected_valve.size() > 5 && this->m_use_automatic_transition)
 	{
 		::std::cout << "transition" << ::std::endl;
 		this->m_state_transition = true;

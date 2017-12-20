@@ -93,7 +93,7 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	
 	::std::vector< ::cv::Point> nonzero;
 	::cv::findNonZero(bin, nonzero);
-	::std::cout << "num of points:" << nonzero.size() << ::std::endl;
+	//::std::cout << "num of points:" << nonzero.size() << ::std::endl;
 
  	if (nonzero.size() < 150) // used to be 500 - test
 		return false;
