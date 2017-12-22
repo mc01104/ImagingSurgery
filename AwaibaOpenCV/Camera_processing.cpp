@@ -206,13 +206,13 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 152;
 	//m_channel_center(1) = 151;
 
-	// scope 6
-	m_channel_center(0) = 120;
-	m_channel_center(1) = 110;
+	//// scope 6
+	//m_channel_center(0) = 120;
+	//m_channel_center(1) = 110;
 
-	//// scope 7
-	//m_channel_center(0) = 86;
-	//m_channel_center(1) = 118;
+	// scope 7
+	m_channel_center(0) = 86;
+	m_channel_center(1) = 118;
 
 	m_registrationHandler.setWorkingChannel(m_channel_center);
 
