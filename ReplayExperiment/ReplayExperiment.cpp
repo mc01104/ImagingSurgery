@@ -346,7 +346,7 @@ int testReplayEngine()
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_12-14-23";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_15-19-25";
 
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-12-18_exvivo/2017-12-18_16-45-53";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-12-22_white_sutures/2017-12-22_15-29-25";
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;
@@ -567,7 +567,7 @@ void	testMultipleWires()
 	// load images
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-25_16-36-09";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/test_green_wire_detection/2017-09-27_15-43-21";
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/test_green_wire_detection/2017-09-28_15-22-42";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-12-22_white_sutures/2017-12-22_15-24-01";
 	
 	::std::vector<::std::string> imList;
 	int count = getImList(imList, checkPath(img_path + "/" ));

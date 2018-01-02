@@ -154,7 +154,7 @@ void ReplayEngine::run()
 
 void ReplayEngine::simulate(void* tData)
 {
-	::cv::VideoWriter video("registration_debugging.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
+	::cv::VideoWriter video("line_detection_white_stitches_01.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
 
 	ReplayEngine* tDataSim = reinterpret_cast<ReplayEngine*> (tData);
 
@@ -738,7 +738,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		::Eigen::Vector2d centroidEig, centroidEig2, tangentEig, velCommand,  tangentEigFiltered;
 		if (response == 1)
 		{
-
+			::std::cout << "contact" << ::std::endl;
 			::cv::Vec2f centroid, centroid2;
 			this->lineDetected = this->lineDetector.processImage(img, line, centroid, true, 2, LineDetector::MODE::CIRCUM);
 
