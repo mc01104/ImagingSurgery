@@ -47,11 +47,14 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	::std::vector<::cv::Mat> HSV_split;
 	::cv::split(hsv, HSV_split);
 
-	int l_thres = 112;
-	int h_thres = 134;
+	int l_thres = 100; //100
+	int h_thres = 160; //160
 
-	int l_thres_s = 69;
-	int h_thres_s = 172;
+	int l_thres_s = 65;
+	int h_thres_s = 182;
+
+	//int l_thres_s = 69;
+	//int h_thres_s = 172;
 
 	int l_thres_v = 73;
 	int h_thres_v = 255;
@@ -93,9 +96,9 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	
 	::std::vector< ::cv::Point> nonzero;
 	::cv::findNonZero(bin, nonzero);
-	//::std::cout << "num of points:" << nonzero.size() << ::std::endl;
+	::std::cout << "num of points:" << nonzero.size() << ::std::endl;
 
- 	if (nonzero.size() < 150) // used to be 500 - test
+ 	if (nonzero.size() < 100) // used to be 500 - test
 		return false;
 
 	this->computeCentroid(nonzero);
