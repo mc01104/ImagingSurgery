@@ -27,6 +27,10 @@
 #include <vtkSphereSource.h>
 #include <vtkLineSource.h>
 
+#include <vtkWindowToImageFilter.h>
+#include <vtkPNGWriter.h>
+#include <vtkAVIWriter.h>
+
 #include "arrowVisualizer.h"
 #include "OpenCVClock.h"
 #include "robotVisualizer.h"
@@ -52,6 +56,11 @@ class ReplayEngine
 		float				contactCurr;
 		float				contactPrev;
 		::Eigen::Vector2d	centroidEig2;
+
+		::Eigen::Vector2d	centroid;
+		::Eigen::Vector2d	tangent;
+		::Eigen::Vector2d	previous_velocity;
+
 		double				joints[5];
 		::std::vector<SE3>  frames;
 
@@ -113,9 +122,16 @@ class ReplayEngine
 		vtkSmartPointer<vtkPolyDataMapper> robotAxisMapper;
 		vtkSmartPointer<vtkActor> RobotAxisActor;
 
+		vtkSmartPointer<vtkWindowToImageFilter> screenCaptureFilter;
+
+		vtkSmartPointer<vtkImageData>  imgVTK;
+		vtkSmartPointer<vtkPNGWriter> writer;
+
 		int		counter;
 
 		bool	new_version;
+		bool	pausedByUser;
+		bool	readyToView;
 
 		::Eigen::Vector2d tangent_prev;
 
@@ -129,6 +145,9 @@ class ReplayEngine
 		bool reg_detected;
 
 		RobotVisualizer* robotVis;
+
+		double clockPosition;
+		double realClockPosition;
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION, LEAK_DETECTION} status;
 		enum WALL_TO_FOLLOW {LEFT, TOP, BOTTOM};
@@ -230,5 +249,13 @@ public:
 		void imageToWorldFrame(::cv::Point& point);
 
 		void cameraToImage(::cv::Point& point);
+
+		void processKeyboardInput(char key);
+
+		int getInitialPositionOnValve();
+
+		void computeClockfacePosition();
+
+		double computeClockDistance(double c1, double c2);
 
 };

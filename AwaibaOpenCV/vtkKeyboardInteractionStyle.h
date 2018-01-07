@@ -49,7 +49,20 @@ class KeyPressInteractorStyle : public vtkInteractorStyleTrackballCamera
 		  this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
 		  ::std::cout << "change camera view" << ::std::endl;
 	  }
-      vtkInteractorStyleTrackballCamera::OnKeyPress();
+	  else if (key == "r")
+	  {
+			this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
+			vtkCamera* camera = this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->GetActiveCamera();
+
+			camera->SetPosition(-30, 0, -30);
+			camera->SetViewUp(1, 0, 0);
+			camera->Yaw(0);
+			camera->Pitch(-30);
+			this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
+			::std::cout << "change camera view" << ::std::endl;
+	  }
+
+	  vtkInteractorStyleTrackballCamera::OnKeyPress();
     }
  
 };

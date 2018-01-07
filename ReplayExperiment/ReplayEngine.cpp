@@ -22,10 +22,7 @@
 #include <vtkCallbackCommand.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkCubeSource.h>
-
-#include <vtkWindowToImageFilter.h>
-#include <vtkPNGWriter.h>
-#include <vtkAVIWriter.h>
+#include <vtkExtractVOI.h>
 
 #include "vtkAutoInit.h" 
 #include "vtkKeyboardInteractionStyle.h"
@@ -82,7 +79,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
 	filter(5), theta_filter_complex(20), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
-	m_registrationHandler(&iModel), m_clock(), reg_detected(false)
+	m_registrationHandler(&iModel), m_clock(), reg_detected(false), clockPosition(-1.0), realClockPosition(-1)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -91,7 +88,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 1;
+	this->offset = 0;//3200 + 606;
 
 	for (int i = this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -113,6 +110,8 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	pointOnCircleMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 	pointOnCircleActor =  vtkSmartPointer<vtkActor>::New();
 
+	//imgVTK = vtkSmartPointer<vtkImageData>::New();
+
 	this->initializeLeaks();
 
 	for (int i = 0; i < 3; ++i)
@@ -129,6 +128,13 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	this->setJoints(jointsTmp);
 
 	this->initializeRobotAxis();
+
+	pausedByUser = true;
+
+	this->writer =  vtkSmartPointer<vtkPNGWriter>::New();
+
+	readyToView = false;
+	previous_velocity.setOnes();
 }
 
 ReplayEngine::~ReplayEngine()
@@ -140,21 +146,27 @@ ReplayEngine::~ReplayEngine()
 
 void ReplayEngine::run()
 {
+
 	::std::thread simulation_thread(&ReplayEngine::simulate, this);
 	::std::thread robot_display_thread(&ReplayEngine::displayRobot, this);
 	::std::thread rendering_thread(&ReplayEngine::vtkRender, this);
-	//::std::thread network_thread(&ReplayEngine::networkPlot, this);
 	
+	//::std::thread network_thread(&ReplayEngine::networkPlot, this);
+
 	simulation_thread.join();
 	robot_display_thread.join();
 	rendering_thread.join();
+
+
 	//network_thread.join();
 	
 }
 
 void ReplayEngine::simulate(void* tData)
 {
-	::cv::VideoWriter video("line_detection_white_stitches_01.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
+	::std::string filename = GetDateString() + "_reg.avi";
+
+	::cv::VideoWriter video(filename, ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
 
 	ReplayEngine* tDataSim = reinterpret_cast<ReplayEngine*> (tData);
 
@@ -173,9 +185,15 @@ void ReplayEngine::simulate(void* tData)
 	::cv::Mat tmpImage;
 
 	float response = 0;
+	char key;
+
+	::std::string filename_base = "./images/";
+	::std::string counterStr;
 
 	for(it; it != dataStr.end(); ++it)
 	{
+
+
 		if (tDataSim->new_version)
 			tmpData = DoubleVectorFromString(*it, ',');
 		else 
@@ -183,24 +201,26 @@ void ReplayEngine::simulate(void* tData)
 
 		tDataSim->robot_mutex.lock();
 
-	if (tDataSim->new_version)
-	{
-		tDataSim->setJoints(&tmpData.data()[1]);
-		solved = tDataSim->updateRobot(&tmpData.data()[1], frames);
-	}
-	else
-	{
-		tDataSim->setJoints(tmpData.data());
-		solved = tDataSim->updateRobot(tmpData.data(), frames);
-	}
+		if (tDataSim->new_version)
+		{
+			tDataSim->setJoints(&tmpData.data()[1]);
+			solved = tDataSim->updateRobot(&tmpData.data()[1], frames);
+			memcpy(tDataSim->actualPosition, &tmpData.data()[9], 3 * sizeof(double));
+		}
+		else
+		{
+			tDataSim->setJoints(tmpData.data());
+			solved = tDataSim->updateRobot(tmpData.data(), frames);
+			memcpy(tDataSim->actualPosition, &tmpData.data()[8], 3 * sizeof(double));
+		}
 	
-		tDataSim->setFrames(frames);
-		tDataSim->robot_rotation = tDataSim->kinematics->GetInnerTubeRotation();
+			tDataSim->setFrames(frames);
+			tDataSim->robot_rotation = tDataSim->kinematics->GetInnerTubeRotation();
 
-	if (tDataSim->new_version)
-		tDataSim->updateRobotPositionModel(&tmpData.data()[9]);
-	else
-		tDataSim->updateRobotPositionModel(&tmpData.data()[8]);
+		if (tDataSim->new_version)
+			tDataSim->updateRobotPositionModel(&tmpData.data()[9]);
+		else
+			tDataSim->updateRobotPositionModel(&tmpData.data()[8]);
 
 		tDataSim->robot_mutex.unlock();
 
@@ -224,13 +244,16 @@ void ReplayEngine::simulate(void* tData)
 				break;
 		}
 
+		::std::cout << tDataSim->counter << ::std::endl;
 		tDataSim->counter++;
+
 		double clockfacePosition = -1;
 		::Eigen::Vector3d point;
 		if (tDataSim->iModel.isInitialized())
 		{
 			tDataSim->iModel.getClockfacePosition(tDataSim->actualPosition[0], tDataSim->actualPosition[1], tDataSim->actualPosition[2], clockfacePosition, point);
-			tDataSim->m_clock.update(tmpImage, clockfacePosition);
+			tDataSim->computeClockfacePosition();
+			tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
 		}
 
 		double width = 50, height = 50;
@@ -239,10 +262,33 @@ void ReplayEngine::simulate(void* tData)
 			::cv::rectangle(tmpImage, rec, ::cv::Scalar(0, 0, 255), 2);
 			
 		tDataSim->reg_detected = false;
+		tDataSim->plotCommandedVelocities(tmpImage, tDataSim->centroid, tDataSim->tangent);
 
 		::cv::imshow("Display", tmpImage);
+
+		if (tDataSim->pausedByUser)
+			key = ::cv::waitKey();
+		else
+			key = ::cv::waitKey(1);
+
+		tDataSim->processKeyboardInput(key);
+		//counterStr = ::std::to_string(tDataSim->counter);
+		//::cv::imwrite(filename_base + "cv_" + counterStr + ".png", tmpImage);
+
+		////get vtk image and write it on the disk
+		//::std::string vtkFilename = filename_base + "vtk_" + counterStr + ".png";
+		//tDataSim->writer->SetFileName(vtkFilename.c_str());
+
+		//if (tDataSim->readyToView)
+		//{
+		//	tDataSim->robot_mutex.lock();
+		//	tDataSim->writer->Write();
+		//	tDataSim->robot_mutex.unlock();
+		//}
+
+		// write opencv image and vtk snapshot for postprocessing
 		video.write(tmpImage);
-		::cv::waitKey(1);  
+		
 
 	}
 
@@ -306,6 +352,16 @@ void ReplayEngine::displayRobot(void* tData)
 	double error[3] = {0};
 
 	::std::vector<::Eigen::Vector3d> leaks;
+
+	tDataDisplayRobot->screenCaptureFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
+	tDataDisplayRobot->screenCaptureFilter->SetInput(renderwindowDisplay3D);
+	tDataDisplayRobot->screenCaptureFilter->SetInputBufferTypeToRGBA();
+	tDataDisplayRobot->screenCaptureFilter->ReadFrontBufferOff();
+	//tDataDisplayRobot->screenCaptureFilter->Update();
+
+	tDataDisplayRobot->writer->SetInputConnection(tDataDisplayRobot->screenCaptureFilter->GetOutputPort());
+	tDataDisplayRobot->readyToView = true;
+	int counter = 0;
 	while(1)
 	{
 		memcpy(actualPosition, tDataDisplayRobot->actualPosition, 3  * sizeof(double));
@@ -355,15 +411,17 @@ void ReplayEngine::displayRobot(void* tData)
 				tDataDisplayRobot->pointOnCircleSource->SetCenter(center);
 				tDataDisplayRobot->pointOnCircleSource->SetRadius(2);
 
-				tDataDisplayRobot->iModel.getLeakPosition(leaks);
-				tDataDisplayRobot->leakSource1->SetCenter(leaks[0].data());
-				tDataDisplayRobot->leakSource1->SetRadius(2);
+				//tDataDisplayRobot->screenCaptureFilter->Update();
 
-				tDataDisplayRobot->leakSource2->SetCenter(leaks[1].data());
-				tDataDisplayRobot->leakSource2->SetRadius(2);
+				//tDataDisplayRobot->iModel.getLeakPosition(leaks);
+				//tDataDisplayRobot->leakSource1->SetCenter(leaks[0].data());
+				//tDataDisplayRobot->leakSource1->SetRadius(2);
 
-				tDataDisplayRobot->leakSource3->SetCenter(leaks[2].data());
-				tDataDisplayRobot->leakSource3->SetRadius(2);
+				//tDataDisplayRobot->leakSource2->SetCenter(leaks[1].data());
+				//tDataDisplayRobot->leakSource2->SetRadius(2);
+
+				//tDataDisplayRobot->leakSource3->SetCenter(leaks[2].data());
+				//tDataDisplayRobot->leakSource3->SetRadius(2);
 
 				//bool line = tDataDisplayRobot->modelBasedLine.getTangent(p1, p2);
 
@@ -372,8 +430,15 @@ void ReplayEngine::displayRobot(void* tData)
 				//	tDataDisplayRobot->lineSource->SetPoint1(p1);
 				//	tDataDisplayRobot->lineSource->SetPoint2(p2);
 				//}
+						//get vtk image and write it on the disk
+			::std::string counterStr = ::std::to_string(counter++);
+			::std::string vtkFilename = "./images/vtk_" + counterStr + ".png";
+			tDataDisplayRobot->writer->SetFileName(vtkFilename.c_str());
 
-			}
+
+			
+
+		}
 			catch (runtime_error& ex) 
 			{
 				::std::cout << "Exception in vtk display:" <<  ex.what() << ::std::endl;
@@ -395,21 +460,17 @@ void ReplayEngine::vtkRender(void* tData)
 	irenDisplay3D->SetInteractorStyle(irenDisplay3DStyle);
 	irenDisplay3D->SetRenderWindow(renderwindowDisplay3D);
 	irenDisplay3D->Initialize();
-
+	//if (localEngine->readyToView)
+	//	localEngine->writer->Write();
 	renDisplay3D->ResetCamera();
 	renDisplay3D->Render();
 
 	vtkSmartPointer<CommandSubclass2> timerCallback = vtkSmartPointer<CommandSubclass2>::New();
 	irenDisplay3D->AddObserver ( vtkCommand::TimerEvent, timerCallback );
-	irenDisplay3D->CreateRepeatingTimer(100);
+	irenDisplay3D->CreateRepeatingTimer(20);
 
 	localEngine->initializeOrigin();
 	localEngine->initializeValveModel();
-	//vtkSmartPointer<vtkWindowToImageFilter> screenCaptureFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
-	//screenCaptureFilter->SetInput(renderwindowDisplay3D);
-	//screenCaptureFilter->SetInputBufferTypeToRGBA();
-	//screenCaptureFilter->ReadFrontBufferOff();
-	//screenCaptureFilter->Update();
 
 	//vtkSmartPointer<vtkAVIWriter> writer = vtkSmartPointer<vtkAVIWriter>::New();
 	//writer->SetInputConnection(screenCaptureFilter->GetOutputPort());
@@ -686,6 +747,10 @@ void ReplayEngine::applyVisualServoingController(const ::Eigen::Vector2d& centro
 	::Eigen::Vector2d tangentEig = rot.block(0, 0, 2, 2).transpose() * tangent;
 	// --------------------------------------------//
 
+	this->centroid = centroidEig;
+	this->tangent  = tangentEig;
+	this->tangent.normalize();
+
 	this->checkTangentDirection(tangentEig);
 	::Eigen::Vector2d error, imageCenter;
 	imageCenter << 125, 125;
@@ -694,7 +759,7 @@ void ReplayEngine::applyVisualServoingController(const ::Eigen::Vector2d& centro
 	error = imageCenter - centroidEig;
 	error /= 26.27;
 	error *= -gain;
-	error.setZero();
+	//error.setZero();
 	error += gain * tangentEig;
 	
 	commandedVelocity = error;
@@ -738,7 +803,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		::Eigen::Vector2d centroidEig, centroidEig2, tangentEig, velCommand,  tangentEigFiltered;
 		if (response == 1)
 		{
-			::std::cout << "contact" << ::std::endl;
+			//::std::cout << "contact" << ::std::endl;
 			::cv::Vec2f centroid, centroid2;
 			this->lineDetected = this->lineDetector.processImage(img, line, centroid, true, 2, LineDetector::MODE::CIRCUM);
 
@@ -751,7 +816,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		}
 		
 		::Eigen::Vector3d centroidOnValve(0, 0, 0);
-		::Eigen::Vector2d channelCenter(125, 230);
+		::Eigen::Vector2d channelCenter(86, 118);
 		// store original centroid for adding points to the model
 		if (response == 1)
 		{
@@ -1027,6 +1092,30 @@ void ReplayEngine::updateRobotPositionModel(double fourier[3])
 
 void ReplayEngine::checkTangentDirection(::Eigen::Vector2d& tangentEig)
 {
+	m_valve_tangent_prev[0] = m_valve_tangent_prev[1] = 0;
+
+	::Eigen::Vector3d point;
+	double clockPosition = -1.0;
+
+	::Eigen::Vector3d circDirection(0, 0, 1);
+
+	this->iModel.getClockfacePosition(this->actualPosition[0], this->actualPosition[1], this->actualPosition[2], clockPosition, point);
+	this->clockPosition = clockPosition;
+
+	double actualAngle;
+	
+	if (clockPosition > 0)
+		actualAngle = clockPosition * 30.0;
+	else
+		actualAngle = getInitialPositionOnValve() * 30.0;
+
+	// compute unit vectors
+	::Eigen::Vector3d p1(cos(actualAngle * M_PI/180.0), sin(actualAngle * M_PI/180.0), 0);
+
+	// compute direction
+	::Eigen::Vector3d res = circDirection.cross(p1);
+
+	m_valve_tangent_prev = res.segment(0, 2);
 
 	double tmp = m_valve_tangent_prev[0] * tangentEig[0] + m_valve_tangent_prev[1] * tangentEig[1];
 
@@ -1059,45 +1148,38 @@ void ReplayEngine::detectLeak(::cv::Mat& img)
 
 void ReplayEngine::plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::Vector2d& centroid, const ::Eigen::Vector2d& tangent)
 {
-	//// compute the two orthogonal velocity components
-	//double lambda_centering = (centroid.transpose() * m_velocity_prev);
-	//::Eigen::Vector2d centering_vel = lambda_centering * centroid;
-
-	//double lambda_tangent = (centroid.transpose() * m_velocity_prev);
-	//::Eigen::Vector2d tangent_vel = lambda_tangent * tangent;
-
-	//// change velocities back to image frame
-	//::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
-	//centering_vel = rot.block(0, 0, 2, 2) * centering_vel;
-	//tangent_vel = rot.block(0, 0, 2, 2) * tangent_vel;
-
-	//::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(centering_vel[0], centering_vel[1]), ::cv::Scalar(255, 255, 0), 2);
-	//::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(tangent_vel[0], tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
-
-	// compute the two orthogonal velocity components
-	//::std::cout << m_commanded_vel[0] << ", " << m_commanded_vel[1] << ::std::endl;
 	::Eigen::Vector2d im_center(125, 125);
 	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (this->velocityCommand, 2);
-
 	Eigen::Vector2d centroidEig = centroid - im_center;
+
 	centroidEig.normalize();
+
 	double lambda_centering = (centroidEig.transpose() * orig_vel);
 	double plotting_scale = 50;
+
 	::Eigen::Vector2d centering_vel = plotting_scale * lambda_centering * centroidEig;
 
 	double lambda_tangent = (tangent.transpose() * orig_vel);
+	
+
+	
 	::Eigen::Vector2d tangent_vel = plotting_scale * lambda_tangent * tangent;
 
+	tangent_vel = tangent_vel - lambda_centering * orig_vel;
 	// change velocities back to image frame
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
 	centering_vel = rot.block(0, 0, 2, 2) * centering_vel;
 	tangent_vel = rot.block(0, 0, 2, 2) * tangent_vel;
 
-	//::std::cout << "centroid:" << centroidEig.transpose() << ::std::endl;
-	//::std::cout << "tangent: " << tangentEig.transpose() << ::std::endl;
-	//::std::cout << "centering norm: " << centering_vel.norm() << ",   " << "tangent norm:" << tangent_vel.norm() << ::std::endl;
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + centering_vel[0], img.cols/2 + centering_vel[1]), ::cv::Scalar(0, 0, 0), 2);
-	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + tangent_vel[0], img.cols/2 +tangent_vel[1]), ::cv::Scalar(0, 255, 255), 2);
+	double tmp = tangent_vel.transpose() * previous_velocity;
+	if (tmp < 0)
+		::std::cout << "flipped" << ::std::endl;
+
+	previous_velocity = tangent_vel;
+
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + centering_vel[0], img.cols/2 + centering_vel[1]), ::cv::Scalar(48, 237, 255), 2);
+	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + tangent_vel[0], img.cols/2 +tangent_vel[1]), ::cv::Scalar(214, 226, 72), 2);
+
 }
 
 
@@ -1222,5 +1304,72 @@ ReplayEngine::cameraToImage(::cv::Point& point)
 
 	point.x = pointEig(0);
 	point.y = pointEig(1);
+
+}
+
+void 
+ReplayEngine::processKeyboardInput(char key)
+{
+	switch(key)			// we could get away with an 'if' statement but this looks cleaner if more key-events are added
+	{
+		case 'p':
+			this->pausedByUser = !this->pausedByUser;
+			break;
+	}
+}
+
+int
+ReplayEngine::getInitialPositionOnValve()
+{
+	return 9;
+}
+
+
+void 
+ReplayEngine::computeClockfacePosition()
+{
+	if (!this->lineDetected)
+		return;
+
+	//::std::cout << this->tangent.transpose() << ::std::endl;
+
+	double angle = atan2(this->tangent[1], this->tangent[0]);
+
+	(angle < 0 ? angle += 2 * M_PI : angle);
+
+	angle *= 180.0/M_PI;		
+
+	if (angle >= 180)
+		angle -= 180;
+
+
+	double clockAngle1 = 0, clockAngle2 = 0;
+	clockAngle1 = 270.0 + angle;
+	clockAngle2 = 90 + angle;
+
+	double c1 = clockAngle1 / 30.0;
+	double c2 = clockAngle2 / 30.0;
+
+	double d1 = this->computeClockDistance(this->clockPosition, c1);
+	double d2 = this->computeClockDistance(this->clockPosition, c2);
+
+	if (d1 < d2) 
+		this->realClockPosition = c1;
+	else 
+		this->realClockPosition = c2;
+}
+
+
+double
+ReplayEngine::computeClockDistance(double c1, double c2)
+{
+
+	double distance = 0;
+	double d1 = 0, d2 = 0;
+
+	d1 = ::std::abs(c1 - c2);
+	d2 = ::std::abs(12 + (c2 - c1));
+
+	return  ::std::min(d1, d2);
 
 }

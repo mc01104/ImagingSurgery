@@ -394,8 +394,8 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
     ::cv::Mat mask_h, mask_s, mask_v;
 	// in surgery (original)
-	const int min_h = 10, max_h = 110;
-	const int min_s = 1, max_s = 255;
+	const int min_h = 25, max_h = 95;
+	const int min_s = 1, max_s = 125;
 	const int min_v = 1, max_v = 255;
 
 	////new wire

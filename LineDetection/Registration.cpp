@@ -47,17 +47,35 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	::std::vector<::cv::Mat> HSV_split;
 	::cv::split(hsv, HSV_split);
 
-	int l_thres = 100; //100
-	int h_thres = 160; //160
+	int l_thres = 98;
+	int h_thres = 114;
 
-	int l_thres_s = 65;
-	int h_thres_s = 182;
+	int l_thres_s = 85;
+	int h_thres_s = 255;
 
-	//int l_thres_s = 69;
-	//int h_thres_s = 172;
-
-	int l_thres_v = 73;
+	int l_thres_v = 1;
 	int h_thres_v = 255;
+
+	//int l_thres = 110;
+	//int h_thres = 132;
+
+	//int l_thres_s = 38;
+	//int h_thres_s = 136;
+
+	//int l_thres_v = 103;
+	//int h_thres_v = 167;
+
+	//int l_thres = 100; //100
+	//int h_thres = 160; //160
+
+	//int l_thres_s = 65;
+	//int h_thres_s = 182;
+
+	////int l_thres_s = 69;
+	////int h_thres_s = 172;
+
+	//int l_thres_v = 73;
+	//int h_thres_v = 255;
 
 	//int l_thres = 100;
 	//int h_thres = 120;
@@ -96,7 +114,7 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	
 	::std::vector< ::cv::Point> nonzero;
 	::cv::findNonZero(bin, nonzero);
-	::std::cout << "num of points:" << nonzero.size() << ::std::endl;
+	//::std::cout << "num of points:" << nonzero.size() << ::std::endl;
 
  	if (nonzero.size() < 100) // used to be 500 - test
 		return false;
@@ -273,4 +291,15 @@ RegistrationHandler::reset()
 	this->registrationError = 0;
 
 	this->visitedMarkers.clear();
+}
+
+bool 
+RegistrationHandler::processImage(const ::cv::Mat& img, double& registrationError, ::cv::Mat& img_rec)
+{
+	::cv::Mat thresImage;
+	this->regDetected = false;
+	bool success = this->threshold(img, img_rec);
+	registrationError = 0;
+
+	return true;
 }

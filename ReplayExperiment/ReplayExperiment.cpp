@@ -272,22 +272,33 @@ void testRegistration()
 {
 	RegistrationHandler reg;
 
-	::cv::VideoWriter video = ::cv::VideoWriter("registration.avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(500, 250));
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/2017-10-26_15-19-37";
+	::std::string base_folder = "Z:/Public/Data/Cardioscopy_project/Registration mark/";
+
+	::std::string experimentStr = "blue_wire_tip_07";
+	::std::string img_path = base_folder + experimentStr;
+
+	::cv::VideoWriter video = ::cv::VideoWriter("registration_" + experimentStr + ".avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(500, 250));
+
 	::std::vector<::std::string> imList;
 	int num = getImList(imList, img_path);
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
 	double error = 0;
-	int offset = 1300;
-	::cv::Mat img, img_rec;
+	int offset = 0;
+	::cv::Mat img, img_rec, img_double;
 	for (int i = 0; i < imList.size() - offset; ++i)
 	{
 		img = ::cv::imread(checkPath(img_path + "/" + imList[i + offset]));
 
-		//reg.processImage(img, error, img_rec);
-		//video.write(img_rec);
-		//::std::cout << i << ::std::endl;
+		reg.processImage(img, error, img_rec);
+
+		::cv::hconcat(img, img_rec, img_double);
+		::cv::imshow("img", img_double); 
+		::cv::waitKey(1);
+
+		video.write(img_double);
+
+		::std::cout << i << ::std::endl;
 	}
 
 	video.release();
@@ -346,7 +357,9 @@ int testReplayEngine()
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_12-14-23";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_15-19-25";
 
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-12-22_white_sutures/2017-12-22_15-29-25";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_11-35-45";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/Registration mark/blue_wire_tip_07";
+	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;
@@ -567,7 +580,8 @@ void	testMultipleWires()
 	// load images
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-25_16-36-09";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/test_green_wire_detection/2017-09-27_15-43-21";
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-12-22_white_sutures/2017-12-22_15-24-01";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-12-22_white_sutures/2017-12-22_15-24-01";
+	::std::string img_path = "F:/2018-01-03_16-40-19";
 	
 	::std::vector<::std::string> imList;
 	int count = getImList(imList, checkPath(img_path + "/" ));
@@ -585,14 +599,27 @@ void	testMultipleWires()
 	
 	thres = ::cv::Mat::zeros(250, 250, CV_8UC1);
 
+	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
+
+	BagOfFeatures contact_classifier;
+	contact_classifier.load(path_to_classifier);
+
 	::cv::VideoWriter video(GetDateString() + ".avi", ::cv::VideoWriter::fourcc('M','P','E','G'), 30, ::cv::Size(2 * 250, 250));
 	bool lineDetected = false;
+	float response = 0;
+
+	int counter = 0;
+
 	for (auto& t : imList)
 	{
 		lines.clear();
 		
 		img = ::cv::imread(checkPath(img_path + "/" + t));
 		
+		contact_classifier.predict(img, response);
+
+		if (response == 1)
+			::std::cout << "contact detected in frame:" << counter++ << ::std::endl;
 		switch(mode)
 		{
 			case LSQ:
@@ -627,12 +654,14 @@ void	testMultipleWires()
 		::cv::hconcat(img, thres, img_double);
 		::cv::imshow("img", img_double); 
 		video.write(img_double);
-		::cv::waitKey(1);
+		::cv::waitKey();
 	}
 
 	video.release();
 
 }
+
+
 
 void testIncrementalModel()
 {
