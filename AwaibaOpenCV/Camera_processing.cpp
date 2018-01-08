@@ -133,7 +133,7 @@ public:
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 	, m_radius_filter(3), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
-	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false)
+	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false), realClockPosition(-1.0)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -731,7 +731,11 @@ void Camera_processing::displayImages(void)
 			if (this->m_valveModel.isInitialized())
 			{
 				this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
-				this->m_clock.update(frame_rotated, clockfacePosition);
+				
+				this->computeClockfacePosition();
+				
+				//this->m_clock.update(frame_rotated, clockfacePosition);		// this one uses the model
+				this->m_clock.update(frame_rotated, this->realClockPosition);
 			}
 
 			double width = 50, height = 50;
@@ -1071,7 +1075,8 @@ bool Camera_processing::networkKinematics(void)
 		if (this->m_valveModel.isInitialized())
 			this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
 
-		ss << clockfacePosition << " ";
+		//ss << clockfacePosition << " ";    // this one is sending the clock position computed from the nearest point to the model
+		ss << this->realClockPosition << " ";
 
 		ss << this->m_valveModel.isRegistered() << " ";
 
@@ -2366,5 +2371,61 @@ Camera_processing::cameraToImage(::cv::Point& point)
 
 	point.x = pointEig(0);
 	point.y = pointEig(1);
+
+}
+
+
+void 
+Camera_processing::computeClockfacePosition()
+{
+	if (!this->m_linedetected)
+		return;
+
+	double angle = atan2(this->m_tangent[1], this->m_tangent[0]);
+
+	(angle < 0 ? angle += 2 * M_PI : angle);
+
+	angle *= 180.0/M_PI;		
+
+	if (angle >= 180)
+		angle -= 180;
+
+
+	double clockAngle1 = 0, clockAngle2 = 0;
+	clockAngle1 = 270.0 + angle;
+	clockAngle2 = 90 + angle;
+
+	double c1 = clockAngle1 / 30.0;
+	double c2 = clockAngle2 / 30.0;
+	
+	::Eigen::Vector3d point;
+	double clockfacePosition = -1.0;
+	this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
+
+	double d1 = this->computeClockDistance(clockfacePosition, c1);
+	double d2 = this->computeClockDistance(clockfacePosition, c2);
+
+	if (d1 < d2) 
+		this->realClockPosition = c1;
+	else 
+		this->realClockPosition = c2;
+
+}
+
+
+double
+Camera_processing::computeClockDistance(double c1, double c2)
+{
+
+	double distance = 0;
+	double d1 = 0, d2 = 0;
+
+	d1 = ::std::abs(c1 - c2);
+	d2 = ::std::abs(12 + (c2 - c1));
+
+	distance = ::std::min(d1, d2);
+
+	(distance > 12 ? distance -= 12: distance);
+	return  distance;
 
 }

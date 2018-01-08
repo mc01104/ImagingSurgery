@@ -43,6 +43,8 @@ void testArrow();
 void testTube();
 void testRobotVisulization();
 void testHeartVisualization();
+double computeClockDistance(double c1, double c2);
+void testClockDistance();
 
 #define __NEW_VERSION__
 
@@ -59,7 +61,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testBenchtopDetection();
 	//testLeakDetection();
 	//testMultipleWires();
-	testReplayEngine();
+	//testReplayEngine();
+	testClockDistance();
 	//testIncrementalModel();
 	//testRegistration();
 	//testClock();
@@ -69,6 +72,34 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testRobotVisulization();
 
 	//testHeartVisualization();
+}
+
+void testClockDistance()
+{
+	double c1 = 12.8;
+	double c2 = 0.0;
+
+	::std::cout << computeClockDistance(c2, c1) << ::std::endl;
+
+}
+
+
+double
+computeClockDistance(double c1, double c2)
+{
+
+	double distance = 0;
+	double d1 = 0, d2 = 0;
+
+	d1 = ::std::abs(c1 - c2);
+	d2 = ::std::abs(12 + (c2 - c1));
+
+	distance = ::std::min(d1, d2);
+
+	(distance > 12 ? distance -= 12: distance);
+	
+	return  distance;	
+
 }
 
 void testHeartVisualization()

@@ -325,6 +325,8 @@ private:
 
 	::std::vector<bool> detected_valve;
 
+	double	realClockPosition;
+
 	double	registrationOffset;
 public:
 	void updatePoints();
@@ -351,6 +353,10 @@ public:
 	void imageToWorldFrame(::cv::Point& point);
 
 	void initializeRobotAxis();
+
+	void computeClockfacePosition();
+
+	double computeClockDistance(double c1, double c2);
 };
 
 	
