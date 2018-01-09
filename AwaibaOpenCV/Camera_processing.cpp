@@ -488,6 +488,7 @@ void Camera_processing::processInput(char key)
 		this->m_registrationHandler.reset();
 		this->counterLine = 0;
 		this->realClockPosition = -1.0;
+		this->reg_detected = false;
 		::std::cout << "model was reset" << ::std::endl;
 		break;
 	case 'f':
