@@ -23,6 +23,10 @@ RegistrationHandler::~RegistrationHandler()
 bool
 RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError)
 {
+
+	if (!this->model->isInitialized())
+		return false;
+
 	::cv::Mat thresImage;
 	this->regDetected = false;
 	bool success = this->threshold(img, thresImage);
@@ -31,6 +35,28 @@ RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot
 	bool newRegFound = false;
 	if (success)
 		newRegFound = this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
+
+	if (newRegFound)
+		registrationError = this->registrationError;
+
+	return newRegFound;
+}
+
+bool
+RegistrationHandler::processImage(const ::cv::Mat& img, double clockfacePosition, double& registrationError)
+{
+
+	if (!this->model->isInitialized())
+		return false;
+
+	::cv::Mat thresImage;
+	this->regDetected = false;
+	bool success = this->threshold(img, thresImage);
+	this->regDetected = success;
+
+	bool newRegFound = false;
+	if (success)
+		newRegFound = this->computeOffset(clockfacePosition);
 
 	if (newRegFound)
 		registrationError = this->registrationError;

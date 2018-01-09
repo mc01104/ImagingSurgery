@@ -61,8 +61,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	//testBenchtopDetection();
 	//testLeakDetection();
 	//testMultipleWires();
-	//testReplayEngine();
-	testClockDistance();
+	testReplayEngine();
+	//testClockDistance();
 	//testIncrementalModel();
 	//testRegistration();
 	//testClock();
@@ -388,7 +388,10 @@ int testReplayEngine()
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_12-14-23";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_15-19-25";
 
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_11-35-45";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_11-35-45";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_11-46-55";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_12-49-22";
+
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/Registration mark/blue_wire_tip_07";
 	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";

@@ -71,6 +71,8 @@ class IncrementalValveModel
 
 		void setRegistrationRotation(double rotation);
 
+		double getRegistrationOffset() {return this->registrationRotation;};
+
 		void resetRegistration(); 
 
 		void setWallFollowingState(IncrementalValveModel::WALL_FOLLOWED state) {this->wallFollowingState = state;};

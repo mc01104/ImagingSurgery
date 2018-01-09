@@ -37,6 +37,8 @@ class RegistrationHandler
 
 		bool processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError);
 
+		bool processImage(const ::cv::Mat& img, double clockfacePosition, double& registrationError);
+
 		bool processImageSynthetic(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError);
 
 		bool thresholdSynthetic(const ::cv::Mat& img, ::cv::Mat& thresholdedImg);

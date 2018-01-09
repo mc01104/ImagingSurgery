@@ -132,8 +132,9 @@ public:
 
 // Constructor and destructor 
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
-	, m_radius_filter(3), m_theta_filter(20), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
-	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false), realClockPosition(-1.0)
+	, m_radius_filter(3), m_theta_filter(7), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
+	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false), realClockPosition(-1.0), manualRegistered(false),
+	counterLine(0)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -485,6 +486,8 @@ void Camera_processing::processInput(char key)
 		m_valveModel.resetModel();
 		this->m_clock.reset();
 		this->m_registrationHandler.reset();
+		this->counterLine = 0;
+		this->realClockPosition = -1.0;
 		::std::cout << "model was reset" << ::std::endl;
 		break;
 	case 'f':
@@ -691,6 +694,9 @@ void Camera_processing::displayImages(void)
 				this->detected_valve.clear();
 				m_linedetected = false;
 				m_wall_detected = false;
+
+				this->realClockPosition = -1.0;
+				this->counterLine = 0;
 			}
 
 			int x = 0, y = 0;
@@ -731,8 +737,8 @@ void Camera_processing::displayImages(void)
 			if (this->m_valveModel.isInitialized())
 			{
 				this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
-				
-				this->computeClockfacePosition();
+						
+				this->computeClockfacePosition();			// this updates the clock position based on measurements
 				
 				//this->m_clock.update(frame_rotated, clockfacePosition);		// this one uses the model
 				this->m_clock.update(frame_rotated, this->realClockPosition);
@@ -1886,11 +1892,17 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->m_model_robot_position, 3);
 
 	// registration can happen independently of whether a line is detected
-	if (this->manualRegistration)
+
+	if (this->manualRegistration && !this->manualRegistered)
+	{
 		this->m_valveModel.setRegistrationRotation(this->registrationOffset);
+
+		this->manualRegistered = true;
+	}
 	else
 	{
-		if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
+		//if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
+		if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
 		{
 			::std::cout << "in registration" << ::std::endl;
 
@@ -2395,21 +2407,44 @@ Camera_processing::computeClockfacePosition()
 	clockAngle1 = 270.0 + angle;
 	clockAngle2 = 90 + angle;
 
-	double c1 = clockAngle1 / 30.0;
-	double c2 = clockAngle2 / 30.0;
-	
 	::Eigen::Vector3d point;
 	double clockfacePosition = -1.0;
 	this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
+	
+	double offset = 0.0;
+	if (this->m_valveModel.isRegistered())
+		offset = this->m_valveModel.getRegistrationOffset();
 
-	double d1 = this->computeClockDistance(clockfacePosition, c1);
-	double d2 = this->computeClockDistance(clockfacePosition, c2);
+	clockAngle1 -= offset;
+	clockAngle2 -= offset;
+
+	double c1 = clockAngle1 / 30.0;
+	double c2 = clockAngle2 / 30.0;
+	
+	if (c1 > 12) c1 -= 12;
+	if (c2 > 12) c2 -= 12;
+
+	double d1;
+	double d2;
+
+	if (this->counterLine == 0)
+	{
+		d1 = this->computeClockDistance(clockfacePosition, c1);
+		d2 = this->computeClockDistance(clockfacePosition, c2);
+	}
+	else
+	{
+		d1 = this->computeClockDistance(this->realClockPosition, c1);
+		d2 = this->computeClockDistance(this->realClockPosition, c2);
+	}
+
+
+	this->counterLine++;
 
 	if (d1 < d2) 
 		this->realClockPosition = c1;
 	else 
 		this->realClockPosition = c2;
-
 }
 
 
@@ -2418,14 +2453,17 @@ Camera_processing::computeClockDistance(double c1, double c2)
 {
 
 	double distance = 0;
-	double d1 = 0, d2 = 0;
+	double d1 = 0, d2 = 0, d3 = 0;
 
 	d1 = ::std::abs(c1 - c2);
 	d2 = ::std::abs(12 + (c2 - c1));
+	d3 = ::std::abs(12 + (c1 - c2));
 
 	distance = ::std::min(d1, d2);
+	distance = ::std::min(distance, d3);
 
 	(distance > 12 ? distance -= 12: distance);
+
 	return  distance;
 
 }

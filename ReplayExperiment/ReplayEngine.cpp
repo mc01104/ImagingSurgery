@@ -78,7 +78,7 @@ public:
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(20), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
+	filter(5), theta_filter_complex(3), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
 	m_registrationHandler(&iModel), m_clock(), reg_detected(false), clockPosition(-1.0), realClockPosition(-1)
 {
 	robot = CTRFactory::buildCTR("");
@@ -88,7 +88,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 0;//3200 + 606;
+	this->offset = 0;
 
 	for (int i = this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -244,7 +244,7 @@ void ReplayEngine::simulate(void* tData)
 				break;
 		}
 
-		::std::cout << tDataSim->counter << ::std::endl;
+		//::std::cout << tDataSim->counter << ::std::endl;
 		tDataSim->counter++;
 
 		double clockfacePosition = -1;
@@ -254,6 +254,8 @@ void ReplayEngine::simulate(void* tData)
 			tDataSim->iModel.getClockfacePosition(tDataSim->actualPosition[0], tDataSim->actualPosition[1], tDataSim->actualPosition[2], clockfacePosition, point);
 			tDataSim->computeClockfacePosition();
 			tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
+
+			::std::cout << "model position:" << clockfacePosition << "    measure position:"  << tDataSim->realClockPosition << ::std::endl;
 		}
 
 		double width = 50, height = 50;
@@ -263,7 +265,7 @@ void ReplayEngine::simulate(void* tData)
 			
 		tDataSim->reg_detected = false;
 		tDataSim->plotCommandedVelocities(tmpImage, tDataSim->centroid, tDataSim->tangent);
-
+		::cv::putText(tmpImage, ::std::to_string(tDataSim->counter), ::cv::Point(170, 60), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 255, 255), 2);
 		::cv::imshow("Display", tmpImage);
 
 		if (tDataSim->pausedByUser)
@@ -725,6 +727,8 @@ void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img ,
 	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
 
 	tangentEigFiltered = rot1.block(0, 0, 2, 2).transpose()* tangentEigFiltered;
+	centroid[0] = centroidEig[0];
+	centroid[1] = centroidEig[1];
 	//::std::cout << (centroidEig - image_center).transpose() * tangentEig << ::std::endl;;
 	
 }
@@ -757,6 +761,10 @@ void ReplayEngine::applyVisualServoingController(const ::Eigen::Vector2d& centro
 
 	double gain = 1;
 	error = imageCenter - centroidEig;
+	
+	if (error.norm() < 50)
+		error.setZero();
+
 	error /= 26.27;
 	error *= -gain;
 	//error.setZero();
@@ -776,7 +784,7 @@ void ReplayEngine::applyVisualServoingController(const ::Eigen::Vector2d& centro
 void ReplayEngine::detectLine(::cv::Mat& img)
 {
 		bool breakingContact = false;
-		this->contactPrev = this->contactCurr;
+		this->contactPrev = this->contactCurr;		
 
 		float response = 0;
 		this->bof.predict(img, response);
@@ -801,7 +809,8 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 		::cv::Vec4f line;
 		::Eigen::Vector2d centroidEig, centroidEig2, tangentEig, velCommand,  tangentEigFiltered;
-		if (response == 1)
+		//if (response == 1)
+
 		{
 			//::std::cout << "contact" << ::std::endl;
 			::cv::Vec2f centroid, centroid2;
@@ -825,6 +834,15 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			centroidOnValve(2) = this->actualPosition[2];
 
 			this->iModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2));
+
+			static bool reg_set = false;
+			double reg_error = 60;
+			if (!reg_set)
+			{
+				iModel.setRegistrationRotation(reg_error);
+				this->m_clock.setRegistrationOffset(reg_error/30.0, 4);
+				reg_set = true;
+			}
 		}
 
 
@@ -841,6 +859,8 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			this->iModel.setRegistrationRotation(regError);
 		}
 
+
+
 		this->reg_detected = m_registrationHandler.getRegDetected();
 
 		if (this->reg_detected)
@@ -852,7 +872,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 		}
 
-		this->applyVisualServoingController(centroidEig, tangentEig, velCommand);
+		this->applyVisualServoingController(centroidEig, tangentEigFiltered, velCommand);
 
 		this->robot_mutex.lock();
 		memcpy(this->velocityCommand, velCommand.data(), 2 * sizeof(double));
@@ -870,6 +890,10 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*100, centroidEig(1)+tangentEigFiltered(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*(-100), centroidEig(1)+tangentEigFiltered(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+
+			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+
 
 		}
 
@@ -1097,7 +1121,7 @@ void ReplayEngine::checkTangentDirection(::Eigen::Vector2d& tangentEig)
 	::Eigen::Vector3d point;
 	double clockPosition = -1.0;
 
-	::Eigen::Vector3d circDirection(0, 0, 1);
+	::Eigen::Vector3d circDirection(0, 0, -1);
 
 	this->iModel.getClockfacePosition(this->actualPosition[0], this->actualPosition[1], this->actualPosition[2], clockPosition, point);
 	this->clockPosition = clockPosition;
@@ -1105,7 +1129,10 @@ void ReplayEngine::checkTangentDirection(::Eigen::Vector2d& tangentEig)
 	double actualAngle;
 	
 	if (clockPosition > 0)
-		actualAngle = clockPosition * 30.0;
+	{
+		//actualAngle = clockPosition * 30.0;
+		actualAngle = this->realClockPosition * 30;
+	}
 	else
 		actualAngle = getInitialPositionOnValve() * 30.0;
 
@@ -1164,7 +1191,7 @@ void ReplayEngine::plotCommandedVelocities(const ::cv::Mat& img, const ::Eigen::
 
 	
 	::Eigen::Vector2d tangent_vel = plotting_scale * lambda_tangent * tangent;
-
+	centering_vel = centering_vel - lambda_tangent * orig_vel;
 	tangent_vel = tangent_vel - lambda_centering * orig_vel;
 	// change velocities back to image frame
 	::Eigen::Matrix3d rot = RotateZ( -90 * M_PI/180.0);
@@ -1321,13 +1348,14 @@ ReplayEngine::processKeyboardInput(char key)
 int
 ReplayEngine::getInitialPositionOnValve()
 {
-	return 9;
+	return 12;
 }
 
 
 void 
 ReplayEngine::computeClockfacePosition()
 {
+
 	if (!this->lineDetected)
 		return;
 
@@ -1347,11 +1375,40 @@ ReplayEngine::computeClockfacePosition()
 	clockAngle1 = 270.0 + angle;
 	clockAngle2 = 90 + angle;
 
+	double offset = 0.0;
+	if (this->iModel.isRegistered())
+		offset = this->iModel.getRegistrationOffset();
+
+	clockAngle1 -= offset;
+	clockAngle2 -= offset;
+
+
 	double c1 = clockAngle1 / 30.0;
 	double c2 = clockAngle2 / 30.0;
 
-	double d1 = this->computeClockDistance(this->clockPosition, c1);
-	double d2 = this->computeClockDistance(this->clockPosition, c2);
+	if (c1 > 12) c1 -= 12;
+	if (c2 > 12) c2 -= 12;
+
+	static int counterLine = 0;
+
+	double d1;
+	double d2;
+
+	if (counterLine == 0)
+	{
+		d1 = this->computeClockDistance(this->clockPosition, c1);
+		d2 = this->computeClockDistance(this->clockPosition, c2);
+	}
+	else
+	{
+		d1 = this->computeClockDistance(this->realClockPosition, c1);
+		d2 = this->computeClockDistance(this->realClockPosition, c2);
+	}
+
+
+	counterLine++;
+
+
 
 	if (d1 < d2) 
 		this->realClockPosition = c1;
@@ -1365,11 +1422,18 @@ ReplayEngine::computeClockDistance(double c1, double c2)
 {
 
 	double distance = 0;
-	double d1 = 0, d2 = 0;
+	double d1 = 0, d2 = 0, d3 = 0;
 
 	d1 = ::std::abs(c1 - c2);
 	d2 = ::std::abs(12 + (c2 - c1));
+	d3 = ::std::abs(12 + (c1 - c2));
 
-	return  ::std::min(d1, d2);
+	distance = ::std::min(d1, d2);
+	distance = ::std::min(distance, d3);
+
+	(distance > 12 ? distance -= 12: distance);
+
+	return  distance;
+
 
 }

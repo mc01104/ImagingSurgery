@@ -164,6 +164,7 @@ private:
 	double				m_cameraFrameRate;
 	RecursiveFilter::Filter*				m_freqFilter;
 
+	int counterLine;
 
 	double	m_commanded_vel[2];
 
@@ -320,13 +321,14 @@ private:
 	double			m_contact_desired_ratio;
 	int				m_is_control_active;
 	int				m_breathing;
-	bool			manualRegistration;
+	bool			manualRegistered;
 	::Eigen::Vector2d m_channel_center;
 
 	::std::vector<bool> detected_valve;
 
 	double	realClockPosition;
 
+	bool manualRegistration;
 	double	registrationOffset;
 public:
 	void updatePoints();
