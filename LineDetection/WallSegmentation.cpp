@@ -31,7 +31,7 @@ bool WallSegmentation::processImage(::cv::Mat img, int& x, int& y, bool display,
     if (display)
     {
         ::cv::imshow("Thresholded mask", thresholded_mask);
-        ::cv::imshow("Input image", img);
+        //::cv::imshow("Input image", img);
 
         ::cv::waitKey(1);
     }

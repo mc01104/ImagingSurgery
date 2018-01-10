@@ -699,10 +699,19 @@ void Camera_processing::displayImages(void)
 				this->realClockPosition = -1.0;
 				this->counterLine = 0;
 
-				::cv::destroyWindow("marker");
-				::cv::destroyWindow("unrotated");
-				::cv::destroyWindow("thresholded");
-				::cv::destroyWindow("line detection");
+				//::cv::destroyWindow("marker");
+				//::cv::destroyWindow("unrotated");
+				//::cv::destroyWindow("thresholded");
+				//::cv::destroyWindow("line detection");
+
+				//::cv::destroyWindow("thresholded");
+				//::cv::destroyWindow("line detection");
+
+				//::cv::destroyWindow("line thresholds");
+				//::cv::destroyWindow("line thresholds");
+
+				//::cv::destroyWindow("Thresholded mask");
+
 			}
 
 			int x = 0, y = 0;
