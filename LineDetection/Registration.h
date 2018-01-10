@@ -22,9 +22,28 @@ class RegistrationHandler
 	::std::vector<int> visitedMarkers;
 
 	bool isInitialized;
+
 	bool regDetected;
 
-	public:
+	int sliderValueHueMin;
+	int sliderValueHueMax;
+
+	int sliderValueSatMin;
+	int sliderValueSatMax;
+
+	int sliderValueValMin;
+	int sliderValueValMax;
+
+	int l_thres;
+	int h_thres;
+
+	int l_thres_s;
+	int h_thres_s;
+
+	int l_thres_v;
+	int h_thres_v;
+
+public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
 		RegistrationHandler();
@@ -63,5 +82,18 @@ class RegistrationHandler
 		void computePointOnValve(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 
 		bool computeOffset(double clockPosition);
+
+		// threshold callbacks
+		// Hue
+		static void onTrackbarChangeHL(int newValue, void * object);
+		static void onTrackbarChangeHH(int newValue, void * object);
+
+		// Saturation
+		static void onTrackbarChangeSL(int newValue, void * object);
+		static void onTrackbarChangeSH(int newValue, void * object);
+
+		// Value
+		static void onTrackbarChangeVL(int newValue, void * object);
+		static void onTrackbarChangeVH(int newValue, void * object);
 
 };

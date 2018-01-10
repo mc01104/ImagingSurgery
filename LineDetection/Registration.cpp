@@ -5,14 +5,34 @@
 
 // this is not making much sense -> refactor (who has the responsibility for updating the model?
 RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
-	markers(12, 4, 8), regDetected(false)
+	markers(12, 4, 8), regDetected(false) 
 {
 	model = new IncrementalValveModel();
+
+	/// Initialize values
+    l_thres = 98;
+	h_thres = 114;
+
+    l_thres_s = 85;
+	h_thres_s = 255;
+
+	l_thres_v = 1;
+	h_thres_v = 255;
+
 }
 
 RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model), centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
 	markers(12, 4, 8), regDetected(false)
 {
+    l_thres = 98;
+	h_thres = 114;
+
+    l_thres_s = 85;
+	h_thres_s = 255;
+
+	l_thres_v = 1;
+	h_thres_v = 255;
+
 }
 
 // removed the delete model because it's not owned by this class -> if use the first constructor somebody needs to clean it
@@ -67,50 +87,33 @@ RegistrationHandler::processImage(const ::cv::Mat& img, double clockfacePosition
 bool
 RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 {
+	sliderValueHueMin = l_thres;
+	sliderValueHueMax = h_thres;
+
+	sliderValueSatMin = l_thres_s;
+	sliderValueSatMax = h_thres_s;
+
+	sliderValueValMin = l_thres_v;
+	sliderValueValMax = h_thres_v;
+
+    /// Create Windows
+    ::cv::namedWindow("registration", 1);
+
+    /// Create Trackbars
+    ::cv::createTrackbar("Hue_min", "registration", &sliderValueHueMin, 180, &RegistrationHandler::onTrackbarChangeHL, this);
+	::cv::createTrackbar("Hue_max", "registration", &sliderValueHueMax, 180, &RegistrationHandler::onTrackbarChangeHH, this);
+
+    ::cv::createTrackbar("Sat_min", "registration", &sliderValueSatMin, 255, &RegistrationHandler::onTrackbarChangeSL, this);
+	::cv::createTrackbar("Sat_max", "registration", &sliderValueSatMax, 255, &RegistrationHandler::onTrackbarChangeSH, this);
+
+	::cv::createTrackbar("Val_min", "registration", &sliderValueValMin, 255, &RegistrationHandler::onTrackbarChangeVL, this);
+	::cv::createTrackbar("Val_max", "registration", &sliderValueValMax, 255, &RegistrationHandler::onTrackbarChangeVH, this);
+
 	::cv::Mat hsv;
 	::cv::cvtColor(img, hsv, ::cv::COLOR_BGR2HSV);
 
 	::std::vector<::cv::Mat> HSV_split;
 	::cv::split(hsv, HSV_split);
-
-	int l_thres = 98;
-	int h_thres = 114;
-
-	int l_thres_s = 85;
-	int h_thres_s = 255;
-
-	int l_thres_v = 1;
-	int h_thres_v = 255;
-
-	//int l_thres = 110;
-	//int h_thres = 132;
-
-	//int l_thres_s = 38;
-	//int h_thres_s = 136;
-
-	//int l_thres_v = 103;
-	//int h_thres_v = 167;
-
-	//int l_thres = 100; //100
-	//int h_thres = 160; //160
-
-	//int l_thres_s = 65;
-	//int h_thres_s = 182;
-
-	////int l_thres_s = 69;
-	////int h_thres_s = 172;
-
-	//int l_thres_v = 73;
-	//int h_thres_v = 255;
-
-	//int l_thres = 100;
-	//int h_thres = 120;
-
-	//int l_thres_s = 80;
-	//int h_thres_s = 255;
-
-	//int l_thres_v = 136;
-	//int h_thres_v = 255;
 
 	::cv::Mat mask_h, mask_s, mask_v;
 	::cv::inRange(HSV_split[0], l_thres, h_thres, mask_h);
@@ -328,4 +331,52 @@ RegistrationHandler::processImage(const ::cv::Mat& img, double& registrationErro
 	registrationError = 0;
 
 	return true;
+}
+
+void RegistrationHandler::onTrackbarChangeHL(int newValue, void * object)
+{
+	RegistrationHandler* localObj = reinterpret_cast<RegistrationHandler*> (object);
+
+	localObj->l_thres = newValue;
+
+}
+
+void RegistrationHandler::onTrackbarChangeHH(int newValue, void * object)
+{
+	RegistrationHandler* localObj = reinterpret_cast<RegistrationHandler*> (object);
+
+	localObj->h_thres = newValue;
+
+}
+
+void RegistrationHandler::onTrackbarChangeSL(int newValue, void * object)
+{
+	RegistrationHandler* localObj = reinterpret_cast<RegistrationHandler*> (object);
+
+	localObj->l_thres_s = newValue;
+
+}
+
+void RegistrationHandler::onTrackbarChangeSH(int newValue, void * object)
+{
+	RegistrationHandler* localObj = reinterpret_cast<RegistrationHandler*> (object);
+
+	localObj->h_thres_s = newValue;
+
+}
+
+void RegistrationHandler::onTrackbarChangeVL(int newValue, void * object)
+{
+	RegistrationHandler* localObj = reinterpret_cast<RegistrationHandler*> (object);
+
+	localObj->l_thres_v = newValue;
+
+}
+
+void RegistrationHandler::onTrackbarChangeVH(int newValue, void * object)
+{
+	RegistrationHandler* localObj = reinterpret_cast<RegistrationHandler*> (object);
+
+	localObj->h_thres_v = newValue;
+
 }

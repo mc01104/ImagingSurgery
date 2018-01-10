@@ -9,6 +9,38 @@ const double pi = 3.1415926535897;
 LineDetector::LineDetector()
 {
 	mode = MODE::CIRCUM;
+
+	/// Initialize values
+    min_h = 25;
+	max_h = 95;
+
+    min_s = 1;
+	max_s = 125;
+
+	min_v = 1;
+	max_v = 255;
+
+	sliderValueHueMin = min_h;
+	sliderValueHueMax = max_h;
+
+	sliderValueSatMin = min_s;
+	sliderValueSatMax = max_s;
+
+	sliderValueValMin = min_v;
+	sliderValueValMax = max_v;
+
+    /// Create Windows
+    /*::cv::namedWindow("line thresholds", 1);*/
+
+ //   /// Create Trackbars
+ //   ::cv::createTrackbar("Hue_min", "line thresholds", &sliderValueHueMin, 180, &LineDetector::onTrackbarChangeHL, this);
+	//::cv::createTrackbar("Hue_max", "line thresholds", &sliderValueHueMax, 180, &LineDetector::onTrackbarChangeHH, this);
+
+ //   ::cv::createTrackbar("Sat_min", "line thresholds", &sliderValueSatMin, 255, &LineDetector::onTrackbarChangeSL, this);
+	//::cv::createTrackbar("Sat_max", "line thresholds", &sliderValueSatMax, 255, &LineDetector::onTrackbarChangeSH, this);
+
+	//::cv::createTrackbar("Val_min", "line thresholds", &sliderValueValMin, 255, &LineDetector::onTrackbarChangeVL, this);
+	//::cv::createTrackbar("Val_max", "line thresholds", &sliderValueValMax, 255, &LineDetector::onTrackbarChangeVH, this);
 }
 
 LineDetector::~LineDetector()
@@ -17,6 +49,7 @@ LineDetector::~LineDetector()
 
 bool LineDetector::processImage(::cv::Mat img, bool display, int crop)
 {
+
 
     ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
 
@@ -253,7 +286,19 @@ bool LineDetector::detectLineSynthetic(const ::cv::Mat img, ::cv::Vec4f &line, :
 
 bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid)
 {
-    ::cv::Mat thresholded;
+	::cv::namedWindow("line thresholds", 1);
+
+    /// Create Trackbars
+    ::cv::createTrackbar("Hue_min", "line thresholds", &sliderValueHueMin, 180, &LineDetector::onTrackbarChangeHL, this);
+	::cv::createTrackbar("Hue_max", "line thresholds", &sliderValueHueMax, 180, &LineDetector::onTrackbarChangeHH, this);
+
+    ::cv::createTrackbar("Sat_min", "line thresholds", &sliderValueSatMin, 255, &LineDetector::onTrackbarChangeSL, this);
+	::cv::createTrackbar("Sat_max", "line thresholds", &sliderValueSatMax, 255, &LineDetector::onTrackbarChangeSH, this);
+
+	::cv::createTrackbar("Val_min", "line thresholds", &sliderValueValMin, 255, &LineDetector::onTrackbarChangeVL, this);
+	::cv::createTrackbar("Val_max", "line thresholds", &sliderValueValMax, 255, &LineDetector::onTrackbarChangeVH, this);
+
+	::cv::Mat thresholded;
 	
     ::cv::Mat thresholded_binary(img.size(),CV_8UC1);
 
@@ -394,9 +439,9 @@ void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 
     ::cv::Mat mask_h, mask_s, mask_v;
 	// in surgery (original)
-	const int min_h = 25, max_h = 95;
-	const int min_s = 1, max_s = 125;
-	const int min_v = 1, max_v = 255;
+	//const int min_h = 25, max_h = 95;
+	//const int min_s = 1, max_s = 125;
+	//const int min_v = 1, max_v = 255;
 
 	////new wire
 	//const int min_h = 124, max_h = 174;
@@ -814,5 +859,54 @@ LineDetector::getCentroid(const ::cv::Mat& img, ::cv::Point& centroid)
 	centroid.y = tmp[1];
 
 	return true;
+
+}
+
+
+void LineDetector::onTrackbarChangeHL(int newValue, void * object)
+{
+	LineDetector* localObj = reinterpret_cast<LineDetector*> (object);
+
+	localObj->min_h = newValue;
+
+}
+
+void LineDetector::onTrackbarChangeHH(int newValue, void * object)
+{
+	LineDetector* localObj = reinterpret_cast<LineDetector*> (object);
+
+	localObj->max_h = newValue;
+
+}
+
+void LineDetector::onTrackbarChangeSL(int newValue, void * object)
+{
+	LineDetector* localObj = reinterpret_cast<LineDetector*> (object);
+
+	localObj->min_s = newValue;
+
+}
+
+void LineDetector::onTrackbarChangeSH(int newValue, void * object)
+{
+	LineDetector* localObj = reinterpret_cast<LineDetector*> (object);
+
+	localObj->max_s = newValue;
+
+}
+
+void LineDetector::onTrackbarChangeVL(int newValue, void * object)
+{
+	LineDetector* localObj = reinterpret_cast<LineDetector*> (object);
+
+	localObj->min_v = newValue;
+
+}
+
+void LineDetector::onTrackbarChangeVH(int newValue, void * object)
+{
+	LineDetector* localObj = reinterpret_cast<LineDetector*> (object);
+
+	localObj->max_v = newValue;
 
 }

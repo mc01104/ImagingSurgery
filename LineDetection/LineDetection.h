@@ -10,6 +10,24 @@
 
 class LineDetector
 {
+	int sliderValueHueMin;
+	int sliderValueHueMax;
+
+	int sliderValueSatMin;
+	int sliderValueSatMax;
+
+	int sliderValueValMin;
+	int sliderValueValMax;
+
+	int min_h;
+	int max_h;
+
+	int min_s;
+	int max_s;
+
+	int min_v;
+	int max_v;
+
 	public:
 		enum MODE
 		{
@@ -57,6 +75,19 @@ private:
 
 		void averageTangent(::std::vector<::cv::Vec4i>& lines, ::cv::Vec4f& line);
 		void averageTangentPCA(::std::vector<::cv::Vec4i>& lines, ::cv::Vec4f& line);
+
+		// threshold callbacks
+		// Hue
+		static void onTrackbarChangeHL(int newValue, void * object);
+		static void onTrackbarChangeHH(int newValue, void * object);
+
+		// Saturation
+		static void onTrackbarChangeSL(int newValue, void * object);
+		static void onTrackbarChangeSH(int newValue, void * object);
+
+		// Value
+		static void onTrackbarChangeVL(int newValue, void * object);
+		static void onTrackbarChangeVH(int newValue, void * object);
 };
 
 
