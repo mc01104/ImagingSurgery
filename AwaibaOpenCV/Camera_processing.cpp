@@ -683,6 +683,10 @@ void Camera_processing::displayImages(void)
 
 		if (display)
 		{
+
+			if (this->m_sendContact)
+				::std::cout << "contact measurements:" << this->m_contact_response << " (raw), " << this->m_contact_filtered << " (filtered)" << ::std::endl; 
+
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
@@ -1865,12 +1869,12 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	if (this->wall_followed == IncrementalValveModel::WALL_FOLLOWED::USER)
 		this->m_valveModel.setFollowedClockPosition(this->clockFollowed);
 
-	if (this->m_sendContact)
-		::std::cout << "contact measurements:" << this->m_contact_response << " (raw), " << this->m_contact_filtered << " (filtered)" << ::std::endl; 
+	//if (this->m_sendContact)
+	//	::std::cout << "contact measurements:" << this->m_contact_response << " (raw), " << this->m_contact_filtered << " (filtered)" << ::std::endl; 
 
 	m_linedetected = false;
 
-	if (m_contact_response == 1)
+	if (m_contact_filtered == 1)
 	{
 
 #ifdef __BENCHTOP__
@@ -1889,6 +1893,9 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		}
 #endif
 	}
+	// if there is no line we don't update control parameters and model
+	if (!m_linedetected)
+		return;
 
 	::Eigen::Vector3d normal(0, 0, 1);
 	double normal_[3];
@@ -1934,9 +1941,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		this->cameraToImage(regPointCV);
 	}
 
-	// if there is no line we don't update control parameters and model
-	if (!m_linedetected)
-		return;
+
 
 	::Eigen::Vector2d centroidEig, centroidModel;
 	centroidEig(0) = centroid[0];
@@ -1949,7 +1954,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		
 
 	//if (breakingContact)
-    if (m_contact_response == 1)
+    if (m_contact_filtered == 1)
 	{
 		centroidOnValve.segment(0, 2) = centroidModel;
 
