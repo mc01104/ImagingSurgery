@@ -390,8 +390,16 @@ int testReplayEngine()
 
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_11-35-45";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_11-46-55";
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_12-49-22";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_12-49-22";
+	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-19-31";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-21-04";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-26-46";
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-34-51";
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_13-09-06";
 
+
+	
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/Registration mark/blue_wire_tip_07";
 	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";

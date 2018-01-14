@@ -78,8 +78,8 @@ public:
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(3), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
-	m_registrationHandler(&iModel), m_clock(), reg_detected(false), clockPosition(-1.0), realClockPosition(-1)
+	filter(5), theta_filter_complex(4), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
+	m_registrationHandler(&iModel), m_clock(), reg_detected(false), clockPosition(-1.0), realClockPosition(-1), contact_ratio(0)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -150,7 +150,6 @@ void ReplayEngine::run()
 	::std::thread simulation_thread(&ReplayEngine::simulate, this);
 	::std::thread robot_display_thread(&ReplayEngine::displayRobot, this);
 	::std::thread rendering_thread(&ReplayEngine::vtkRender, this);
-	
 	//::std::thread network_thread(&ReplayEngine::networkPlot, this);
 
 	simulation_thread.join();
@@ -206,12 +205,15 @@ void ReplayEngine::simulate(void* tData)
 			tDataSim->setJoints(&tmpData.data()[1]);
 			solved = tDataSim->updateRobot(&tmpData.data()[1], frames);
 			memcpy(tDataSim->actualPosition, &tmpData.data()[9], 3 * sizeof(double));
+			tDataSim->contactCurr = tmpData[8];
+			tDataSim->contact_ratio = tmpData[7];
 		}
 		else
 		{
 			tDataSim->setJoints(tmpData.data());
 			solved = tDataSim->updateRobot(tmpData.data(), frames);
 			memcpy(tDataSim->actualPosition, &tmpData.data()[8], 3 * sizeof(double));
+			tDataSim->contact_ratio = tmpData[6];
 		}
 	
 			tDataSim->setFrames(frames);
@@ -259,13 +261,16 @@ void ReplayEngine::simulate(void* tData)
 		}
 
 		double width = 50, height = 50;
+		if (tDataSim->contactCurr)
+			::cv::putText(tmpImage, "contact", ::cv::Point(170, 180), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 255, 255), 2);
+
 		::cv::Rect rec = ::cv::Rect(tDataSim->regPointCV.x - 0.5 * width, tDataSim->regPointCV.y - 0.5 * height, width, height);
 		if (tDataSim->reg_detected)
 			::cv::rectangle(tmpImage, rec, ::cv::Scalar(0, 0, 255), 2);
 			
 		tDataSim->reg_detected = false;
 		tDataSim->plotCommandedVelocities(tmpImage, tDataSim->centroid, tDataSim->tangent);
-		::cv::putText(tmpImage, ::std::to_string(tDataSim->counter), ::cv::Point(170, 60), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 255, 255), 2);
+		::cv::putText(tmpImage, ::std::to_string(tDataSim->counter) + "/" + ::std::to_string(dataStr.size()), ::cv::Point(170, 40), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 255, 255), 2);
 		::cv::imshow("Display", tmpImage);
 
 		if (tDataSim->pausedByUser)
@@ -563,14 +568,16 @@ void ReplayEngine::networkPlot(void* tData)
     closesocket(ListenSocket);
 	int counter = 0;
 	double localVel[2] = {0};
+	double contact_ratio = 0;
     do {
 		::std::ostringstream ss;
 		
 		tDataNet->robot_mutex.lock();
 		memcpy(localVel, tDataNet->velocityCommand, 2 * sizeof(double));
+		contact_ratio = tDataNet->contact_ratio;
 		tDataNet->robot_mutex.unlock();
-
-		ss << "vel_x,vel_y," << localVel[0]<< "," << localVel[1];
+		
+		//ss << "vel_x,vel_y,CR," << localVel[0]<< "," << localVel[1] <<","<< contact_ratio;
 
 		iSendResult = send( ClientSocket, ss.str().c_str(),  ss.str().size() + 1, 0 );
         if (iSendResult == SOCKET_ERROR) {
@@ -718,13 +725,13 @@ void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img ,
 	centroidEig += image_center;
 
 	// find closest point from center to line -> we will bring that point to the center of the images
-	double lambda = (image_center - centroidEig).transpose() * tangentEig;
-	centroidEig += lambda * tangentEig;
+	double lambda = (image_center - centroidEig).transpose() * tangentEigFiltered;
+	centroidEig += lambda * tangentEigFiltered;
 
-	tangent_prev = tangentEig;
+	tangent_prev = tangentEigFiltered;
 	::Eigen::Matrix3d rot1 = RotateZ(this->imageInitRotation * M_PI/180.0 - this->robot_rotation);
 	centroidEig = rot1.block(0, 0, 2, 2).transpose()* (centroidEig - image_center) + image_center;
-	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEig;
+	tangentEig = rot1.block(0, 0, 2, 2).transpose()* tangentEigFiltered;
 
 	tangentEigFiltered = rot1.block(0, 0, 2, 2).transpose()* tangentEigFiltered;
 	centroid[0] = centroidEig[0];
@@ -788,7 +795,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 		float response = 0;
 		this->bof.predict(img, response);
-		this->contactCurr = response;
+		//this->contactCurr = response;
 
 		breakingContact = this->contactPrev && !this->contactCurr;
 		this->lineDetected = false;
@@ -809,8 +816,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 		::cv::Vec4f line;
 		::Eigen::Vector2d centroidEig, centroidEig2, tangentEig, velCommand,  tangentEigFiltered;
-		//if (response == 1)
-
+		if (this->contactCurr == 1)
 		{
 			//::std::cout << "contact" << ::std::endl;
 			::cv::Vec2f centroid, centroid2;
@@ -827,7 +833,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		::Eigen::Vector3d centroidOnValve(0, 0, 0);
 		::Eigen::Vector2d channelCenter(86, 118);
 		// store original centroid for adding points to the model
-		if (response == 1)
+		if (this->contactCurr == 1)
 		{
 			centroidOnValve.segment(0, 2) = centroidEig2;
 			computePointOnValve(centroidOnValve, channelCenter, innerTubeRotation, imageInitRotation, normal);
@@ -835,19 +841,20 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 			this->iModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2));
 
-			static bool reg_set = false;
-			double reg_error = 60;
-			if (!reg_set)
-			{
-				iModel.setRegistrationRotation(reg_error);
-				this->m_clock.setRegistrationOffset(reg_error/30.0, 4);
-				reg_set = true;
-			}
+			//static bool reg_set = false;
+			//double reg_error = 0;
+			//if (!reg_set)
+			//{
+			//	iModel.setRegistrationRotation(reg_error);
+			//	this->m_clock.setRegistrationOffset(reg_error/30.0, 4);
+			//	reg_set = true;
+			//}
 		}
 
 
 		::Eigen::Vector2d regCentroid;
-		if (this->m_registrationHandler.processImage(img, robot_positionEig , innerTubeRotation, this->imageInitRotation, normal, regError))
+		//if (this->m_registrationHandler.processImage(img, robot_positionEig , innerTubeRotation, this->imageInitRotation, normal, regError))
+		if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
 		{
 
 			::std::cout << "in registration" << ::std::endl;
@@ -1121,7 +1128,7 @@ void ReplayEngine::checkTangentDirection(::Eigen::Vector2d& tangentEig)
 	::Eigen::Vector3d point;
 	double clockPosition = -1.0;
 
-	::Eigen::Vector3d circDirection(0, 0, -1);
+	::Eigen::Vector3d circDirection(0, 0, 1);
 
 	this->iModel.getClockfacePosition(this->actualPosition[0], this->actualPosition[1], this->actualPosition[2], clockPosition, point);
 	this->clockPosition = clockPosition;

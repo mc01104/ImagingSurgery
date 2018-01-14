@@ -68,6 +68,8 @@ class ReplayEngine
 		::std::vector<::std::string> imList;
 		::std::deque<::std::string> imQueue;
 
+		double				contact_ratio;
+
 		bool				lineDetected;
 		LineDetector		lineDetector;
 		RecursiveFilter::MovingAverageFilter		r_filter;

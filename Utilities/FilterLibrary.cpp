@@ -206,5 +206,6 @@ DirectionMovingAverageFilter::step(double incomingValue)
 	if (tmpEig.transpose() * tmpEig2 < 0)
 		tmp += M_PI;
 
+	this->data.back() = tmp;
 	return tmp;
 }

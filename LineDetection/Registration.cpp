@@ -208,13 +208,15 @@ bool
 RegistrationHandler::computeOffset(double clockPosition)
 {
 	double min_dist = 1000, distance = 0;
-	double d1 = 0, d2 = 0;
+	double d1 = 0, d2 = 0, d3 = 0;
 	double closest_marker = clockPosition;
 	for (int i = 0; i < this->markers.size(); ++i)
 	{
 		d1 = ::std::abs(this->markers[i] - clockPosition);
 		d2 = ::std::abs(12 + (clockPosition - this->markers[i]));
+		d3 = ::std::abs(12 + (this->markers[i] - clockPosition));
 		distance = ::std::min(d1, d2);
+		distance = ::std::min(distance, d3);
 
 		if (distance < min_dist)
 		{
