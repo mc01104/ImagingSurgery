@@ -134,7 +134,7 @@ public:
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 	, m_radius_filter(3), m_theta_filter(7), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
 	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false), realClockPosition(-1.0), manualRegistered(false),
-	counterLine(0)
+	counterLine(0), m_contact_filtered(0)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -1629,6 +1629,7 @@ void Camera_processing::UpdateForceEstimator(const ::cv::Mat& img)
 			m_contactAvgOverHeartCycle = sum/m_FramesPerHeartCycle;
 
 			m_contact_response = response;
+			m_contact_filtered = m_contactBufferFiltered.back();
 
 			if (m_sendContact) 
 				m_contactAvgOverHeartCycle = response;
@@ -1856,17 +1857,6 @@ void Camera_processing::computeCircumnavigationParametersDebug(const ::cv::Mat& 
 void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
 
-	static float contact_prev = 0.0;
-	static float	contact = 0.0;
-	static int counter_b = 0;
-
-	// update contact values
-	contact_prev = contact;
-	this->m_bof.predict(img, contact);
-
-	bool breakingContact = false;
-	breakingContact = (contact_prev == 1.0) && (contact == 0.0);
-
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
 
@@ -1875,6 +1865,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	if (this->wall_followed == IncrementalValveModel::WALL_FOLLOWED::USER)
 		this->m_valveModel.setFollowedClockPosition(this->clockFollowed);
 
+	if (this->m_sendContact)
+		::std::cout << "contact measurements:" << this->m_contact_response << " (raw), " << this->m_contact_filtered << " (filtered)" << ::std::endl; 
 
 	m_linedetected = false;
 
@@ -1907,7 +1899,6 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->m_model_robot_position, 3);
 
 	// registration can happen independently of whether a line is detected
-
 	if (this->manualRegistration && !this->manualRegistered)
 	{
 		this->m_valveModel.setRegistrationRotation(this->registrationOffset);
