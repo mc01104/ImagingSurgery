@@ -47,6 +47,9 @@ RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot
 	if (!this->model->isInitialized())
 		return false;
 
+	if (clockface < 0)
+		return false;
+
 	this->clockface = clockface;
 
 	::cv::Mat thresImage;
@@ -255,8 +258,8 @@ RegistrationHandler::computeOffset(double clockPosition)
 	::Eigen::Vector3d pRobot(cos(angle1 * M_PI/180.0), sin(angle1 * M_PI/180.0), 1);
 	::Eigen::Vector3d pMarker(cos(angle2 * M_PI/180.0), sin(angle2 * M_PI/180.0), 1);
 
-	//double tmp = pMarker.cross(pRobot)[2];
-	double tmp = pRobot.cross(pMarker)[2];
+	double tmp = pMarker.cross(pRobot)[2];
+	//double tmp = pRobot.cross(pMarker)[2];
 	
 	if (tmp < 0)
 		angularOffset *= -1;

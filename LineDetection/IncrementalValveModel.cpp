@@ -66,7 +66,7 @@ IncrementalValveModel::addPoint(double x, double y, double z, double clockPositi
 	else
 	{
 		d = computeClockDistance(clockPosition, this->prevClockPosition);
-		if (::std::abs(d) < 1.0)
+		if (::std::abs(d) < 0.5)
 			return;
 	}
 

@@ -803,8 +803,10 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		double position[3] = {0, 0, 0};
 
 		double innerTubeRotation = 0;
+		this->robot_mutex.lock();
 		this->getInnerTubeRotation(innerTubeRotation);
-		
+		this->robot_mutex.unlock();
+
 		::Eigen::Vector3d normal(0, 0, 1);
 		double normal_[3], center_[3];
 		iModel.getNormal(normal_);
@@ -833,7 +835,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		::Eigen::Vector3d centroidOnValve(0, 0, 0);
 		::Eigen::Vector2d channelCenter(120, 110);
 		// store original centroid for adding points to the model
-		if (this->contactCurr == 1)
+		if (this->contactCurr == 1 && this->lineDetected)
 		{
 			centroidOnValve.segment(0, 2) = centroidEig2;
 			computePointOnValve(centroidOnValve, channelCenter, innerTubeRotation, imageInitRotation, normal);
