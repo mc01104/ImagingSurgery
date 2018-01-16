@@ -7,7 +7,7 @@
 // initial value of radius is increased on purpose to reduce clockface uncertainty due to bending in the beginning
 IncrementalValveModel::IncrementalValveModel()
 	: radius(19.0), center(0, 0, 0), normal(0, 0, 1), referencePosition(0, 1, 0), initialized(false), maxNPoints(200), registrationRotation(0),
-	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(2)
+	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(9), prevClockPosition(-1)
 {
 	errorJacobian.setZero();
 	x.setZero();
@@ -23,6 +23,16 @@ bool
 IncrementalValveModel::updateModel(double x, double y, double z)
 {
 	this->addPoint(x, y, z);
+
+	this->updateCircleParameters();
+
+	return true;
+}
+
+bool 
+IncrementalValveModel::updateModel(double x, double y, double z, double clockface)
+{
+	this->addPoint(x, y, z, clockface);
 
 	this->updateCircleParameters();
 
@@ -47,6 +57,35 @@ IncrementalValveModel::addPoint(double x, double y, double z)
 	}
 }
 
+void 
+IncrementalValveModel::addPoint(double x, double y, double z, double clockPosition)
+{
+	double d = 0;
+	if (this->prevClockPosition < 0)
+		this->prevClockPosition = clockPosition;
+	else
+	{
+		d = computeClockDistance(clockPosition, this->prevClockPosition);
+		if (::std::abs(d) < 1.0)
+			return;
+	}
+
+	//// if this is the first point initialize the center
+	//if (this->pointExists(x, y, z))
+	//	return;
+
+	this->points.push_back(::Eigen::Vector3d(x, y, z));
+
+	this->prevClockPosition = clockPosition;
+
+	if (this->points.size() == 1)
+	{
+		this->initializeCircleCenter();
+		this->center(2) = z;
+
+		this->initialized = true;
+	}
+}
 void
 IncrementalValveModel::initializeCircleCenter()
 {
@@ -380,3 +419,21 @@ IncrementalValveModel::resetRegistration()
 
 	this->updateReferencePosition();
 };
+
+double 
+IncrementalValveModel::computeClockDistance(double c1, double c2)
+{
+	double distance = 0;
+	double d1 = 0, d2 = 0, d3 = 0;
+
+	d1 = ::std::abs(c1 - c2);
+	d2 = ::std::abs(12 + (c2 - c1));
+	d3 = ::std::abs(12 + (c1 - c2));
+
+	distance = ::std::min(d1, d2);
+	distance = ::std::min(distance, d3);
+
+	(distance > 12 ? distance -= 12: distance);
+
+	return  distance;
+}

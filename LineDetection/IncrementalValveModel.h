@@ -44,6 +44,8 @@ class IncrementalValveModel
 
 		int clockFollowed;
 
+		double prevClockPosition;
+
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -52,6 +54,8 @@ class IncrementalValveModel
 		~IncrementalValveModel();
 
 		bool updateModel(double x, double y, double z);
+
+		bool updateModel(double x, double y, double z, double clockface);
 
 		void resetModel();
 
@@ -91,6 +95,8 @@ class IncrementalValveModel
 	protected:
 
 		void addPoint(double x, double y, double z);
+		void addPoint(double x, double y, double z, double clockPosition);
+
 		void getNearestPointOnCircle(double x, double y, double z, ::Eigen::Vector3d& point);
 		void computeAngle(const ::Eigen::Vector3d& point, double& angle);
 		void angleToClockfacePosition(double angle, double& clockfacePosition);
@@ -105,5 +111,6 @@ class IncrementalValveModel
 		double computeSquaredDistance(const ::Eigen::Vector3d& point);
 		void updateCircleOptState();
 		bool pointExists(double x, double y, double z);
+		double computeClockDistance(double c1, double c2);
 };
 

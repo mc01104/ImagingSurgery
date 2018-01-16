@@ -4,8 +4,8 @@
 
 
 // this is not making much sense -> refactor (who has the responsibility for updating the model?
-RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
-	markers(12, 4, 8), regDetected(false) 
+RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125, 120), regPoint(0, 0, 0), registrationError(0),
+	markers(12, 4, 8), regDetected(false), clockface(-1), offset(0, 0, 1)
 {
 	model = new IncrementalValveModel();
 
@@ -22,7 +22,7 @@ RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125,
 }
 
 RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model), centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
-	markers(12, 4, 8), regDetected(false)
+	markers(12, 4, 8), regDetected(false), clockface(-1), offset(0, 0, 1)
 {
     l_thres = 98;
 	h_thres = 114;
@@ -41,11 +41,13 @@ RegistrationHandler::~RegistrationHandler()
 }
 
 bool
-RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError)
+RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError, double clockface)
 {
-
+	
 	if (!this->model->isInitialized())
 		return false;
+
+	this->clockface = clockface;
 
 	::cv::Mat thresImage;
 	this->regDetected = false;
@@ -170,18 +172,26 @@ void RegistrationHandler::computeCentroid(::std::vector<::cv::Point>& points)
 
 bool RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
 {
-	// convert centroid to world coordinates by accounting also the offset of the marker and the working channel
+
+	//compensate for the offset of the marker and the working channel -> this updates the offset computation
 	this->computePointOnValve(robot_position, innerTubeRotation, imageInitRotation, normal);
-	this->regPoint = robot_position;
 
-	// find the clockface position that corresponds to this point in space
-	double clockfacePosition = 0;
-	::Eigen::Vector3d point;
-	this->model->getClockfacePosition(this->regPoint(0), this->regPoint(1), this->regPoint(2), clockfacePosition, point);
+	this->offset(2) = 0.0;
+	double timeOffset = 360.0/30.0 * this->offset.norm()/(2.0 * M_PI * 9);
 
-	//::std::cout << "marker detected at robot's " << clockfacePosition << " o' clock" << ::std::endl;
-	// compute the error
-	return this->computeOffset(clockfacePosition);
+	double realAngle = this->clockface * 30.0;
+	::Eigen::Vector3d tmp(::std::cos(realAngle * M_PI/180.0), ::std::sin(realAngle * M_PI/180.0), 0);
+
+	this->offset(2) = 0.0;
+	this->offset.normalize();
+
+	::Eigen::Vector3d res = tmp.cross(this->offset);
+
+	double finalMarkerClockPosition = this->clockface;
+	(res(2) > 0 ? finalMarkerClockPosition += timeOffset : finalMarkerClockPosition -= timeOffset);
+
+	return this->computeOffset(finalMarkerClockPosition);
+
 }
 
 void
@@ -201,6 +211,7 @@ RegistrationHandler::computePointOnValve(::Eigen::Vector3d& robot_position, doub
 	tmp(2) = 0;
 	tmp = tmp - tmp.dot(normal) * normal;
 
+	this->offset = tmp;
 	robot_position += tmp;
 }
 
@@ -244,7 +255,8 @@ RegistrationHandler::computeOffset(double clockPosition)
 	::Eigen::Vector3d pRobot(cos(angle1 * M_PI/180.0), sin(angle1 * M_PI/180.0), 1);
 	::Eigen::Vector3d pMarker(cos(angle2 * M_PI/180.0), sin(angle2 * M_PI/180.0), 1);
 
-	double tmp = pMarker.cross(pRobot)[2];
+	//double tmp = pMarker.cross(pRobot)[2];
+	double tmp = pRobot.cross(pMarker)[2];
 	
 	if (tmp < 0)
 		angularOffset *= -1;
@@ -381,4 +393,29 @@ void RegistrationHandler::onTrackbarChangeVH(int newValue, void * object)
 
 	localObj->h_thres_v = newValue;
 
+}
+
+double 
+RegistrationHandler::computeOffset(double clockPosition1, double clockPosition2)
+{
+
+	double d1 = ::std::abs(clockPosition1 - clockPosition2);
+	double d2 = ::std::abs(12 + (clockPosition2 - clockPosition1));
+	double d3 = ::std::abs(12 + (clockPosition1 - clockPosition2));
+	double distance = ::std::min(d1, d2);
+	distance = ::std::min(distance, d3);
+
+	double angle1 = 0.5*  60 * clockPosition1;
+	double angle2 = 0.5*  60 * clockPosition2;
+
+	::Eigen::Vector3d pRobot(cos(angle1 * M_PI/180.0), sin(angle1 * M_PI/180.0), 1);
+	::Eigen::Vector3d pMarker(cos(angle2 * M_PI/180.0), sin(angle2 * M_PI/180.0), 1);
+
+	//double tmp = pMarker.cross(pRobot)[2];
+	double tmp = pRobot.cross(pMarker)[2];
+	
+	if (tmp < 0)
+		distance *= -1;
+
+	return distance;
 }

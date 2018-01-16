@@ -831,7 +831,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		}
 		
 		::Eigen::Vector3d centroidOnValve(0, 0, 0);
-		::Eigen::Vector2d channelCenter(86, 118);
+		::Eigen::Vector2d channelCenter(120, 110);
 		// store original centroid for adding points to the model
 		if (this->contactCurr == 1)
 		{
@@ -839,7 +839,8 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			computePointOnValve(centroidOnValve, channelCenter, innerTubeRotation, imageInitRotation, normal);
 			centroidOnValve(2) = this->actualPosition[2];
 
-			this->iModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2));
+			//this->iModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2));
+			this->iModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2), this->realClockPosition);
 
 			//static bool reg_set = false;
 			//double reg_error = 0;
@@ -853,8 +854,9 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 
 		::Eigen::Vector2d regCentroid;
-		//if (this->m_registrationHandler.processImage(img, robot_positionEig , innerTubeRotation, this->imageInitRotation, normal, regError))
-		if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
+		this->m_registrationHandler.setWorkingChannel(channelCenter);
+		//if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
+		if (this->m_registrationHandler.processImage(img, robot_positionEig , innerTubeRotation, this->imageInitRotation, normal, regError, this->realClockPosition))
 		{
 
 			::std::cout << "in registration" << ::std::endl;

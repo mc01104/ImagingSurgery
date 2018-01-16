@@ -25,6 +25,8 @@ class RegistrationHandler
 
 	bool regDetected;
 
+	double clockface;
+
 	int sliderValueHueMin;
 	int sliderValueHueMax;
 
@@ -43,6 +45,8 @@ class RegistrationHandler
 	int l_thres_v;
 	int h_thres_v;
 
+	::Eigen::Vector3d offset;
+
 public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -54,7 +58,7 @@ public:
 
 		bool processImage(const ::cv::Mat& img, double& registrationError, ::cv::Mat& img_rec);
 
-		bool processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError);
+		bool processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError, double clockface);
 
 		bool processImage(const ::cv::Mat& img, double clockfacePosition, double& registrationError);
 
@@ -82,6 +86,8 @@ public:
 		void computePointOnValve(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 
 		bool computeOffset(double clockPosition);
+
+		double computeOffset(double clockPosition1, double clockPosition2);
 
 		// threshold callbacks
 		// Hue

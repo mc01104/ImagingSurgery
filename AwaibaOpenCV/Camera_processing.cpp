@@ -207,13 +207,13 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 152;
 	//m_channel_center(1) = 151;
 
-	//// scope 6
-	//m_channel_center(0) = 120;
-	//m_channel_center(1) = 110;
+	// scope 6
+	m_channel_center(0) = 120;
+	m_channel_center(1) = 110;
 
-	// scope 7
-	m_channel_center(0) = 86;
-	m_channel_center(1) = 118;
+	//// scope 7
+	//m_channel_center(0) = 86;
+	//m_channel_center(1) = 118;
 
 	m_registrationHandler.setWorkingChannel(m_channel_center);
 
@@ -1914,8 +1914,9 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	}
 	else
 	{
-		//if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError))
-		if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
+
+		//if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
+		if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError, this->realClockPosition))
 		{
 			::std::cout << "in registration" << ::std::endl;
 
@@ -1962,7 +1963,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 		robot_positionEig(2) = this->m_model_robot_position[2];
 
-		this->m_valveModel.updateModel(robot_positionEig(0), robot_positionEig(1), robot_positionEig(2));
+		//this->m_valveModel.updateModel(robot_positionEig(0), robot_positionEig(1), robot_positionEig(2));
+		this->m_valveModel.updateModel(robot_positionEig(0), robot_positionEig(1), robot_positionEig(2), this->realClockPosition);
 
 	}
 
