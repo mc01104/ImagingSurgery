@@ -141,7 +141,7 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 	::cv::cvtColor(output, thresholdedImg, CV_GRAY2BGR);
 
 	::cv::imshow("marker", output);
-	::cv::imshow("unrotated", img);
+	//::cv::imshow("unrotated", img);
 
 	::cv::Mat bin;
 	output.convertTo(bin, CV_8UC1);

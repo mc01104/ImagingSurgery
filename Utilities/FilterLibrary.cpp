@@ -1,6 +1,7 @@
 #include "FilterLibrary.h"
 #include "Utilities.h"
 
+#include <fstream>
 #include <algorithm>
 using namespace RecursiveFilter;
 
@@ -200,12 +201,23 @@ double
 DirectionMovingAverageFilter::step(double incomingValue)
 {
 	double tmp =  MovingAverageFilter::step(incomingValue);
+	
+	//static ::std::ofstream os(GetDateString() + "filter_data.txt");
 
 	::Eigen::Vector2d tmpEig(cos(tmp), sin(tmp));
 	::Eigen::Vector2d tmpEig2(cos(incomingValue), sin(incomingValue));
 	if (tmpEig.transpose() * tmpEig2 < 0)
 		tmp += M_PI;
 
-	this->data.back() = tmp;
+	//if (this->data.size() > 0)
+	//{
+	//	::std::vector<double> tmp3(this->windowSize);
+	//	::std::copy(this->data.begin(), this->data.end(), tmp3.begin());
+	//	for (auto it = tmp3.begin(); it != tmp3.end(); ++it)
+	//		os << *it << " ";
+	//	
+	//	os << tmp << ::std::endl;
+	//}
+	//this->data.back() = tmp;
 	return tmp;
 }

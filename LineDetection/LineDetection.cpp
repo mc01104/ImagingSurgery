@@ -68,7 +68,6 @@ bool LineDetector::processImage(::cv::Mat img, bool display, int crop)
 
 bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &centroid, bool display, int crop, LineDetector::MODE mode)
 {
-
     ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
 
 	bool lineDetected = false;
@@ -89,6 +88,12 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
 		centroid[1] += crop;
 	}
 
+	//::cv::Mat tmpImage;
+	//img.copyTo(tmpImage);
+
+	//::cv::line( tmpImage, ::cv::Point(centroid(0), centroid(1)), ::cv::Point(centroid(0)+line(0)*100, centroid(1)+line(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+	//::cv::line( tmpImage, ::cv::Point(centroid(0), centroid(1)), ::cv::Point(centroid(0)+line(0)*(-100), centroid(1)+line(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+	//::cv::imshow("unrotated", tmpImage);
     return lineDetected;
 
 }
