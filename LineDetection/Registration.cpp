@@ -19,6 +19,32 @@ RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125,
 	l_thres_v = 1;
 	h_thres_v = 255;
 
+	sliderValueHueMin = l_thres;
+	sliderValueHueMax = h_thres;
+
+	sliderValueSatMin = l_thres_s;
+	sliderValueSatMax = h_thres_s;
+
+	sliderValueValMin = l_thres_v;
+	sliderValueValMax = h_thres_v;
+
+    /// Create Windows
+    ::cv::namedWindow("registration", 1);
+
+    /// Create Trackbars
+    ::cv::createTrackbar("Hue_min", "registration", &sliderValueHueMin, 180, &RegistrationHandler::onTrackbarChangeHL, this);
+	::cv::createTrackbar("Hue_max", "registration", &sliderValueHueMax, 180, &RegistrationHandler::onTrackbarChangeHH, this);
+
+    ::cv::createTrackbar("Sat_min", "registration", &sliderValueSatMin, 255, &RegistrationHandler::onTrackbarChangeSL, this);
+	::cv::createTrackbar("Sat_max", "registration", &sliderValueSatMax, 255, &RegistrationHandler::onTrackbarChangeSH, this);
+
+	::cv::createTrackbar("Val_min", "registration", &sliderValueValMin, 255, &RegistrationHandler::onTrackbarChangeVL, this);
+	::cv::createTrackbar("Val_max", "registration", &sliderValueValMax, 255, &RegistrationHandler::onTrackbarChangeVH, this);
+
+    ow_mask = ::cv::Mat::zeros(250, 250, CV_8UC1);
+    ::cv::circle(ow_mask, ::cv::Point(250.0/2, 250.0/2), 250.0/2, 255,-1);
+
+
 }
 
 RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model), centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
@@ -32,6 +58,32 @@ RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(m
 
 	l_thres_v = 1;
 	h_thres_v = 255;
+
+	sliderValueHueMin = l_thres;
+	sliderValueHueMax = h_thres;
+
+	sliderValueSatMin = l_thres_s;
+	sliderValueSatMax = h_thres_s;
+
+	sliderValueValMin = l_thres_v;
+	sliderValueValMax = h_thres_v;
+
+    /// Create Windows
+    ::cv::namedWindow("registration", 1);
+
+    /// Create Trackbars
+    ::cv::createTrackbar("Hue_min", "registration", &sliderValueHueMin, 180, &RegistrationHandler::onTrackbarChangeHL, this);
+	::cv::createTrackbar("Hue_max", "registration", &sliderValueHueMax, 180, &RegistrationHandler::onTrackbarChangeHH, this);
+
+    ::cv::createTrackbar("Sat_min", "registration", &sliderValueSatMin, 255, &RegistrationHandler::onTrackbarChangeSL, this);
+	::cv::createTrackbar("Sat_max", "registration", &sliderValueSatMax, 255, &RegistrationHandler::onTrackbarChangeSH, this);
+
+	::cv::createTrackbar("Val_min", "registration", &sliderValueValMin, 255, &RegistrationHandler::onTrackbarChangeVL, this);
+	::cv::createTrackbar("Val_max", "registration", &sliderValueValMax, 255, &RegistrationHandler::onTrackbarChangeVH, this);
+
+    ow_mask = ::cv::Mat::zeros(250, 250, CV_8UC1);
+    ::cv::circle(ow_mask, ::cv::Point(250.0/2, 250.0/2), 250.0/2, 255,-1);
+
 
 }
 
@@ -52,7 +104,7 @@ RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot
 
 	this->clockface = clockface;
 
-	::cv::Mat thresImage;
+	
 	this->regDetected = false;
 	bool success = this->threshold(img, thresImage);
 	this->regDetected = success;
@@ -92,63 +144,32 @@ RegistrationHandler::processImage(const ::cv::Mat& img, double clockfacePosition
 bool
 RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 {
-	sliderValueHueMin = l_thres;
-	sliderValueHueMax = h_thres;
 
-	sliderValueSatMin = l_thres_s;
-	sliderValueSatMax = h_thres_s;
-
-	sliderValueValMin = l_thres_v;
-	sliderValueValMax = h_thres_v;
-
-    /// Create Windows
-    ::cv::namedWindow("registration", 1);
-
-    /// Create Trackbars
-    ::cv::createTrackbar("Hue_min", "registration", &sliderValueHueMin, 180, &RegistrationHandler::onTrackbarChangeHL, this);
-	::cv::createTrackbar("Hue_max", "registration", &sliderValueHueMax, 180, &RegistrationHandler::onTrackbarChangeHH, this);
-
-    ::cv::createTrackbar("Sat_min", "registration", &sliderValueSatMin, 255, &RegistrationHandler::onTrackbarChangeSL, this);
-	::cv::createTrackbar("Sat_max", "registration", &sliderValueSatMax, 255, &RegistrationHandler::onTrackbarChangeSH, this);
-
-	::cv::createTrackbar("Val_min", "registration", &sliderValueValMin, 255, &RegistrationHandler::onTrackbarChangeVL, this);
-	::cv::createTrackbar("Val_max", "registration", &sliderValueValMax, 255, &RegistrationHandler::onTrackbarChangeVH, this);
-
-	::cv::Mat hsv;
 	::cv::cvtColor(img, hsv, ::cv::COLOR_BGR2HSV);
 
-	::std::vector<::cv::Mat> HSV_split;
 	::cv::split(hsv, HSV_split);
 
-	::cv::Mat mask_h, mask_s, mask_v;
 	::cv::inRange(HSV_split[0], l_thres, h_thres, mask_h);
 	::cv::inRange(HSV_split[1], l_thres_s, h_thres_s, mask_s);
 	::cv::inRange(HSV_split[2], l_thres_v, h_thres_v, mask_v);
 
-	::cv::Mat output;
+
 	::cv::bitwise_and(mask_h, mask_s, output);
 	::cv::bitwise_and(output, mask_v, output);
 
-    ::cv::Mat ow_mask = ::cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
-    ::cv::circle(ow_mask, ::cv::Point(img.rows/2, img.cols/2), img.rows/2, 255,-1);
-	
 	::cv::bitwise_and(output, ow_mask, output);
 
     // Apply morphological opening to remove small things
-    ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE, ::cv::Size(5,5));
+    kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE, ::cv::Size(5,5));
     ::cv::morphologyEx(output, output, ::cv::MORPH_OPEN,kernel);
 
 	::cv::cvtColor(output, thresholdedImg, CV_GRAY2BGR);
 
 	::cv::imshow("marker", output);
-	//::cv::imshow("unrotated", img);
 
-	::cv::Mat bin;
 	output.convertTo(bin, CV_8UC1);
-	
-	::std::vector< ::cv::Point> nonzero;
+
 	::cv::findNonZero(bin, nonzero);
-	//::std::cout << "num of points:" << nonzero.size() << ::std::endl;
 
  	if (nonzero.size() < 100) // used to be 500 - test
 		return false;
@@ -188,7 +209,7 @@ bool RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_posi
 	this->offset(2) = 0.0;
 	this->offset.normalize();
 
-	::Eigen::Vector3d res = tmp.cross(this->offset);
+	res = tmp.cross(this->offset);
 
 	double finalMarkerClockPosition = this->clockface;
 	(res(2) > 0 ? finalMarkerClockPosition += timeOffset : finalMarkerClockPosition -= timeOffset);
@@ -198,24 +219,22 @@ bool RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_posi
 }
 
 void
-RegistrationHandler::computePointOnValve(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+RegistrationHandler::computePointOnValve(const ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
 {
-	::Eigen::Vector2d DP = this->centroid - this->workingChannel;   // in pixels
+	DP = this->centroid - this->workingChannel;   // in pixels
 	DP /= 26.67;
 
-	::Eigen::Matrix3d rotation = RotateZ(imageInitRotation * M_PI/180.0 - innerTubeRotation);
+	rotation = RotateZ(imageInitRotation * M_PI/180.0 - innerTubeRotation);
 	DP = rotation.block(0, 0, 2, 2).transpose()* DP;
 
 	rotation = RotateZ( -90 * M_PI/180.0);
 	DP = rotation.block(0, 0, 2, 2).transpose()* DP; // in world frame in mm
 
-	::Eigen::Vector3d tmp;
 	tmp.segment(0, 2) = DP;
 	tmp(2) = 0;
 	tmp = tmp - tmp.dot(normal) * normal;
 
 	this->offset = tmp;
-	robot_position += tmp;
 }
 
 bool 

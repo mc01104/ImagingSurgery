@@ -45,7 +45,23 @@ class RegistrationHandler
 	int l_thres_v;
 	int h_thres_v;
 
-	::Eigen::Vector3d offset;
+	::Eigen::Vector3d			offset;
+	::cv::Mat					thresImage;
+	::cv::Mat					hsv;
+	::std::vector<::cv::Mat>	HSV_split;
+	::cv::Mat					mask_h;
+	::cv::Mat					mask_s;
+	::cv::Mat					mask_v;
+	::cv::Mat					output;
+	::cv::Mat					ow_mask;
+	::cv::Mat					kernel;
+	::cv::Mat					bin;
+	::std::vector< ::cv::Point> nonzero;
+	::Eigen::Vector2d			DP;
+	::Eigen::Matrix3d			rotation;
+
+	::Eigen::Vector3d			tmp;
+	::Eigen::Vector3d			res;
 
 public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -85,7 +101,7 @@ public:
 
 		bool computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 
-		void computePointOnValve(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
+		void computePointOnValve(const ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 
 		bool computeOffset(double clockPosition);
 
