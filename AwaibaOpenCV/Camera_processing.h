@@ -360,6 +360,7 @@ public:
 	void computeClockfacePosition();
 
 	double computeClockDistance(double c1, double c2);
+	double getInitialClockPosition();
 };
 
 	

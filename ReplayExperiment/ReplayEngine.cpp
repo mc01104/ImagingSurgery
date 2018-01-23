@@ -78,7 +78,7 @@ public:
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
 	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
-	filter(5), theta_filter_complex(8), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
+	filter(5), theta_filter_complex(4), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
 	m_registrationHandler(&iModel), m_clock(), reg_detected(false), clockPosition(-1.0), realClockPosition(-1), contact_ratio(0)
 {
 	robot = CTRFactory::buildCTR("");
@@ -257,7 +257,7 @@ void ReplayEngine::simulate(void* tData)
 			tDataSim->computeClockfacePosition();
 			tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
 
-			//::std::cout << "model position:" << clockfacePosition << "    measure position:"  << tDataSim->realClockPosition << ::std::endl;
+			::std::cout << "model position:" << clockfacePosition << "    measure position:"  << tDataSim->realClockPosition << ::std::endl;
 		}
 
 		double width = 50, height = 50;
@@ -706,7 +706,7 @@ void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img ,
 	// filter
 	r = this->r_filter.step(r);
 	
-	//theta = this->theta_filter_complex.step(theta); 
+	theta = this->theta_filter_complex.step(theta); 
 
 	//::Eigen::Vector2d tmp2(cos(theta_previous), sin(theta_previous));
 	//::Eigen::Vector2d tmp3(cos(theta), sin(theta));
@@ -833,7 +833,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		}
 		
 		::Eigen::Vector3d centroidOnValve(0, 0, 0);
-		::Eigen::Vector2d channelCenter(120, 110);
+		::Eigen::Vector2d channelCenter(82, 132);
 		// store original centroid for adding points to the model
 		//this->iModel.setFollowedClockPosition(4.0);
 		if (this->contactCurr == 1 && this->lineDetected)

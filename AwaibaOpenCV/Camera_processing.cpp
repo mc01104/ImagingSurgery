@@ -650,10 +650,12 @@ void Camera_processing::acquireImages(void )
 
 void Camera_processing::displayImages(void)
 {
-	Mat frame = Mat(250,250,CV_8UC3);
-	Mat frame_rotated = Mat(250,250,CV_8UC3);
-	char key;
 	::std::cout << "Start Display" << ::std::endl;
+
+	Mat frame = Mat(250, 250, CV_8UC3);
+	Mat frame_rotated = Mat(250, 250, CV_8UC3);
+
+	char key;
 	namedWindow( "Display", 0 );
 
 	bool display = false;
@@ -676,14 +678,12 @@ void Camera_processing::displayImages(void)
 		}
 		m_mutex_sharedImg.readUnLock();
 		
-
 		mutex_teleop.lock();
 		teleop = m_teleop;
 		mutex_teleop.unlock();
 
 		if (display)
 		{
-
 			if (this->m_sendContact)
 				::std::cout << "contact measurements:" << this->m_contact_response << " (raw), " << this->m_contact_filtered << " (filtered)" << ::std::endl; 
 
@@ -695,26 +695,15 @@ void Camera_processing::displayImages(void)
 			{
 				m_theta_filter.resetFilter();							// this is not the proper place
 				m_radius_filter.resetFilter();
+
 				m_state_transition = false;
 				this->detected_valve.clear();
+
 				m_linedetected = false;
 				m_wall_detected = false;
 
 				this->realClockPosition = -1.0;
 				this->counterLine = 0;
-
-				//::cv::destroyWindow("marker");
-				//::cv::destroyWindow("unrotated");
-				//::cv::destroyWindow("thresholded");
-				//::cv::destroyWindow("line detection");
-
-				//::cv::destroyWindow("thresholded");
-				//::cv::destroyWindow("line detection");
-
-				//::cv::destroyWindow("line thresholds");
-				//::cv::destroyWindow("line thresholds");
-
-				//::cv::destroyWindow("Thresholded mask");
 
 			}
 
@@ -724,7 +713,6 @@ void Camera_processing::displayImages(void)
 				leak_detected = this->detectLeaks(frame, x, y);
 			
 
-
 			display = false;
 
 			double rot = robot_rotation;
@@ -732,7 +720,7 @@ void Camera_processing::displayImages(void)
 			if (!m_rotateImage) 
 				rot = 0.0;
 
-			rot_mat = getRotationMatrix2D( center, rotation - rot*180.0/3.141592, 1.0 );
+			rot_mat = getRotationMatrix2D( center, rotation - rot * 180.0/3.141592, 1.0 );
 
 			warpAffine( frame, frame_rotated, rot_mat, frame_rotated.size() );
 
@@ -751,17 +739,9 @@ void Camera_processing::displayImages(void)
 			if (m_circumnavigation)
 				this->plotCommandedVelocities(frame_rotated, m_centroid, m_tangent);
 
-			double clockfacePosition = -1;
-			::Eigen::Vector3d point;
-			if (this->m_valveModel.isInitialized())
-			{
-				this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
-						
-				this->computeClockfacePosition();			// this updates the clock position based on measurements
-				
-				//this->m_clock.update(frame_rotated, clockfacePosition);		// this one uses the model
-				this->m_clock.update(frame_rotated, this->realClockPosition);
-			}
+
+			this->computeClockfacePosition();			// this updates the clock position based on measurements
+			this->m_clock.update(frame_rotated, this->realClockPosition);
 
 			double width = 50, height = 50;
 			::cv::Rect rec = ::cv::Rect(this->regPointCV.x - 0.5 * width, this->regPointCV.y - 0.5 * height, width, height);
@@ -879,7 +859,7 @@ void Camera_processing::recordImages(void)
 					throw std::runtime_error ("Could not write to file !");
 				}
 
-				if (robot_joint.size()>0)
+				if (robot_joint.size() > 0)
 				{
 					ofstream joints_file;
 					joints_file.open (filename_joints);
@@ -888,8 +868,6 @@ void Camera_processing::recordImages(void)
 					}
 					joints_file << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_contact_response << ",";
 					
-					//for (int i = 0; i < 3; ++i)
-					//	joints_file << m_SolutionFrames.back().GetPosition()[i] << ",";
 					for (int i = 0; i < 3; ++i)
 						joints_file << m_model_robot_position[i] << ", ";
 
@@ -2422,7 +2400,11 @@ Camera_processing::computeClockfacePosition()
 
 	::Eigen::Vector3d point;
 	double clockfacePosition = -1.0;
-	this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
+
+	if (this->m_valveModel.isInitialized())
+		this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
+	else
+		clockfacePosition = this->getInitialClockPosition();
 	
 	double offset = 0.0;
 	if (this->m_valveModel.isRegistered())
@@ -2479,4 +2461,25 @@ Camera_processing::computeClockDistance(double c1, double c2)
 
 	return  distance;
 
+}
+
+
+double 
+Camera_processing::getInitialClockPosition()
+{
+	switch (this->wall_followed)
+	{
+		case IncrementalValveModel::WALL_FOLLOWED::LEFT:
+			return 9.0;
+			break;
+		case IncrementalValveModel::WALL_FOLLOWED::TOP:
+			return 12;
+			break;
+		case IncrementalValveModel::WALL_FOLLOWED::BOTTOM:
+			return 6.0;
+			break;
+		default:
+			return this->wall_followed;			
+			break;
+	}
 }
