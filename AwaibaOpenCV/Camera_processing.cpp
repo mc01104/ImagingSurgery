@@ -749,7 +749,14 @@ void Camera_processing::displayImages(void)
 			
 			this->reg_detected = false;
 
+			::cv::Point p1 = ::cv::Point(this->line_to_plot[0] - 50 * this->m_tangent[0], this->line_to_plot[1] - 50 * this->m_tangent[1]);
+			::cv::Point p2 = ::cv::Point(this->line_to_plot[0] + 50 * this->m_tangent[0], this->line_to_plot[1] + 50 * this->m_tangent[1]);
+			::cv::line(frame_rotated, p1, p2, ::cv::Scalar(0, 255, 0), 1);
+
 			cv::imshow( "Display", frame_rotated );
+
+			frame_rotated.copyTo(image_annotated);
+
 			key = waitKey(1);
 			processInput(key);
 		}
@@ -808,6 +815,7 @@ void Camera_processing::recordImages(void)
 	::cv::VideoWriter video;
 
     Mat rot_mat;
+	::cv::Mat video_image;
 	while(m_running)
 	{
 		ImgBuf element;
@@ -894,9 +902,8 @@ void Camera_processing::recordImages(void)
 
 				if (video.isOpened())
 				{
-					rot_mat = getRotationMatrix2D( ::cv::Point(frame.rows/2, frame.cols/2), rotation - robot_rotation*180.0/3.141592, 1.0 );
-					::cv::warpAffine( frame, rotatedFrame, rot_mat, rotatedFrame.size() );
-					video.write(rotatedFrame);
+					this->image_annotated.copyTo(video_image);
+					video.write(video_image);
 				}
 
 			}

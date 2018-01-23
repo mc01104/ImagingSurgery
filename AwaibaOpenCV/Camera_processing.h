@@ -113,6 +113,7 @@ private:
 
 	// OpenCV RGB frame
 	Mat RgbFrame;
+	Mat image_annotated;
 	float g_r, g_g, g_b; // white balance gains
 	float rotation; //initial rotation of the image
 	std::string ipaddress;
