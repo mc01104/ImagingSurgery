@@ -71,7 +71,7 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
     ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
 
 	bool lineDetected = false;
-
+	//::std::cout << "in process image" << ::std::endl;
 	switch (mode)
 	{
 		case MODE::TRANSITION:
@@ -292,7 +292,7 @@ bool LineDetector::detectLineSynthetic(const ::cv::Mat img, ::cv::Vec4f &line, :
 bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid)
 {
 	::cv::namedWindow("line thresholds", 1);
-
+	//::std::cout << "just before trackbars" << ::std::endl;
     /// Create Trackbars
     ::cv::createTrackbar("Hue_min", "line thresholds", &sliderValueHueMin, 180, &LineDetector::onTrackbarChangeHL, this);
 	::cv::createTrackbar("Hue_max", "line thresholds", &sliderValueHueMax, 180, &LineDetector::onTrackbarChangeHH, this);
@@ -306,7 +306,7 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	::cv::Mat thresholded;
 	
     ::cv::Mat thresholded_binary(img.size(),CV_8UC1);
-
+	//::std::cout << "in thresholding" << ::std::endl;
 	//this->thresholdImageAllChannels(img,thresholded);
 	this->thresholdImageWire(img,thresholded);
 
@@ -323,6 +323,7 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	::std::vector<::cv::Vec4i> lines_hough;
 	if (nonzero.size() > 50)
 	{
+		//::std::cout << "more than 50 points" << ::std::endl;
         //::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 20, 20, 10);
 		//::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 5, 3);
@@ -330,7 +331,7 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 			return false;
 
 		this->averageTangentPCA(lines_hough, line);
-
+		//::std::cout << "after average" << ::std::endl;
 		this->computeCentroid(nonzero, centroid);
 
 		return true;
