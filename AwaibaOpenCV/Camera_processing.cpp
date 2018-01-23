@@ -207,13 +207,18 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 152;
 	//m_channel_center(1) = 151;
 
-	// scope 6
-	m_channel_center(0) = 120;
-	m_channel_center(1) = 110;
+	//// scope 6
+	//m_channel_center(0) = 120;
+	//m_channel_center(1) = 110;
 
 	//// scope 7
 	//m_channel_center(0) = 86;
 	//m_channel_center(1) = 118;
+
+	// scope 8
+	m_channel_center(0) = 82;
+	m_channel_center(1) = 132;
+
 
 	m_registrationHandler.setWorkingChannel(m_channel_center);
 
@@ -687,6 +692,8 @@ void Camera_processing::displayImages(void)
 			if (this->m_sendContact)
 				::std::cout << "contact measurements:" << this->m_contact_response << " (raw), " << this->m_contact_filtered << " (filtered)" << ::std::endl; 
 
+			if (m_circumnavigation) 
+				::std::cout << "circumnavigation is on" << ::std::endl;
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
@@ -1841,20 +1848,20 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	::cv::Vec4f line;
 	::cv::Vec2f centroid;
-
+	//::std::cout << "in circumnavigation" << ::std::endl;
 	// make sure the initialized valve is correct based on which wall we followed
 	this->m_valveModel.setWallFollowingState(this->wall_followed);
 	if (this->wall_followed == IncrementalValveModel::WALL_FOLLOWED::USER)
 		this->m_valveModel.setFollowedClockPosition(this->clockFollowed);
-
+	//::std::cout << "1" << ::std::endl;
 	//if (this->m_sendContact)
 	//	::std::cout << "contact measurements:" << this->m_contact_response << " (raw), " << this->m_contact_filtered << " (filtered)" << ::std::endl; 
 
 	m_linedetected = false;
 
-	if (m_contact_filtered == 1)
+	if (m_contact_response == 1)
 	{
-
+		//::std::cout << "2" << ::std::endl;
 #ifdef __BENCHTOP__
 		//m_linedetected = m_linedetector.processImageSynthetic(img, line, centroid, false);
 		m_linedetected = m_modelBasedLine.stepBenchtop(m_model_robot_position, desired_vel, img, inner_tube_rotation, line, centroid);
@@ -1862,8 +1869,9 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		// not sure if I want to keep it like that...
 		if (!this->m_use_online_model)
 		{
+				//::std::cout << "3" << ::std::endl;
 			m_linedetected = m_linedetector.processImage(img, line, centroid, false, 5, LineDetector::MODE::CIRCUM);
-
+				//::std::cout << "4" << ::std::endl;
 		}
 		else
 		{
@@ -1872,9 +1880,10 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 #endif
 	}
 	// if there is no line we don't update control parameters and model
+		//::std::cout << "5" << ::std::endl;
 	if (!m_linedetected)
 		return;
-
+	//::std::cout << " line detected" << ::std::endl;
 	::Eigen::Vector3d normal(0, 0, 1);
 	double normal_[3];
 	this->m_valveModel.getNormal(normal_);
@@ -1890,22 +1899,22 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 		this->manualRegistered = true;
 	}
-	else
-	{
+	//else
+	//{
 
-		//if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
-		if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError, this->realClockPosition))
-		{
-			::std::cout << "in registration" << ::std::endl;
+	//	//if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
+	//	if (this->m_registrationHandler.processImage(img, robot_positionEig , this->inner_tube_rotation, (double) this->rotation, normal, regError, this->realClockPosition))
+	//	{
+	//		::std::cout << "in registration" << ::std::endl;
 
-			double marker = this->m_registrationHandler.getRecentMarker();
+	//		double marker = this->m_registrationHandler.getRecentMarker();
 
-			this->m_clock.setRegistrationOffset(regError/30.0, marker);
+	//		this->m_clock.setRegistrationOffset(regError/30.0, marker);
 
-			this->m_valveModel.setRegistrationRotation(regError);				
-		}
+	//		this->m_valveModel.setRegistrationRotation(regError);				
+	//	}
 
-	}
+	//}
 
 	this->reg_detected = m_registrationHandler.getRegDetected();
 
@@ -1933,7 +1942,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 		
 
 	//if (breakingContact)
-    if (m_contact_filtered == 1)
+    if (m_contact_response == 1)
 	{
 		centroidOnValve.segment(0, 2) = centroidModel;
 
