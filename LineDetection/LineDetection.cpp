@@ -28,19 +28,25 @@ LineDetector::LineDetector()
 
 	sliderValueValMin = min_v;
 	sliderValueValMax = max_v;
+	
+	//img_crop = ::cv::Mat(250, 250, CV_8UC3);
+	//thresholded_binary = ::cv::Mat(img_crop.size(),CV_8UC1)
+	
+	::cv::namedWindow("line thresholds", 1);
 
-    /// Create Windows
-    /*::cv::namedWindow("line thresholds", 1);*/
+    /// Create Trackbars
+    ::cv::createTrackbar("Hue_min", "line thresholds", &sliderValueHueMin, 180, &LineDetector::onTrackbarChangeHL, this);
+	::cv::createTrackbar("Hue_max", "line thresholds", &sliderValueHueMax, 180, &LineDetector::onTrackbarChangeHH, this);
 
- //   /// Create Trackbars
- //   ::cv::createTrackbar("Hue_min", "line thresholds", &sliderValueHueMin, 180, &LineDetector::onTrackbarChangeHL, this);
-	//::cv::createTrackbar("Hue_max", "line thresholds", &sliderValueHueMax, 180, &LineDetector::onTrackbarChangeHH, this);
+    ::cv::createTrackbar("Sat_min", "line thresholds", &sliderValueSatMin, 255, &LineDetector::onTrackbarChangeSL, this);
+	::cv::createTrackbar("Sat_max", "line thresholds", &sliderValueSatMax, 255, &LineDetector::onTrackbarChangeSH, this);
 
- //   ::cv::createTrackbar("Sat_min", "line thresholds", &sliderValueSatMin, 255, &LineDetector::onTrackbarChangeSL, this);
-	//::cv::createTrackbar("Sat_max", "line thresholds", &sliderValueSatMax, 255, &LineDetector::onTrackbarChangeSH, this);
+	::cv::createTrackbar("Val_min", "line thresholds", &sliderValueValMin, 255, &LineDetector::onTrackbarChangeVL, this);
+	::cv::createTrackbar("Val_max", "line thresholds", &sliderValueValMax, 255, &LineDetector::onTrackbarChangeVH, this);
 
-	//::cv::createTrackbar("Val_min", "line thresholds", &sliderValueValMin, 255, &LineDetector::onTrackbarChangeVL, this);
-	//::cv::createTrackbar("Val_max", "line thresholds", &sliderValueValMax, 255, &LineDetector::onTrackbarChangeVH, this);
+	channel_mask = ::cv::Mat::zeros(250, 250, CV_8UC1);
+	::cv::circle(channel_mask, ::cv::Point(125, 125), 125,  255, -1);
+
 }
 
 LineDetector::~LineDetector()
@@ -49,7 +55,6 @@ LineDetector::~LineDetector()
 
 bool LineDetector::processImage(::cv::Mat img, bool display, int crop)
 {
-
 
     ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
 
@@ -61,17 +66,16 @@ bool LineDetector::processImage(::cv::Mat img, bool display, int crop)
     if (this->detectLine(img_crop,line))
 		lineDetected = true;
 
-
     return lineDetected;
 
 }
 
 bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &centroid, bool display, int crop, LineDetector::MODE mode)
 {
-    ::cv::Mat img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
+    img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
 
 	bool lineDetected = false;
-	//::std::cout << "in process image" << ::std::endl;
+
 	switch (mode)
 	{
 		case MODE::TRANSITION:
@@ -88,12 +92,6 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
 		centroid[1] += crop;
 	}
 
-	//::cv::Mat tmpImage;
-	//img.copyTo(tmpImage);
-
-	//::cv::line( tmpImage, ::cv::Point(centroid(0), centroid(1)), ::cv::Point(centroid(0)+line(0)*100, centroid(1)+line(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-	//::cv::line( tmpImage, ::cv::Point(centroid(0), centroid(1)), ::cv::Point(centroid(0)+line(0)*(-100), centroid(1)+line(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-	//::cv::imshow("unrotated", tmpImage);
     return lineDetected;
 
 }
@@ -291,47 +289,28 @@ bool LineDetector::detectLineSynthetic(const ::cv::Mat img, ::cv::Vec4f &line, :
 
 bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid)
 {
-	::cv::namedWindow("line thresholds", 1);
-	//::std::cout << "just before trackbars" << ::std::endl;
-    /// Create Trackbars
-    ::cv::createTrackbar("Hue_min", "line thresholds", &sliderValueHueMin, 180, &LineDetector::onTrackbarChangeHL, this);
-	::cv::createTrackbar("Hue_max", "line thresholds", &sliderValueHueMax, 180, &LineDetector::onTrackbarChangeHH, this);
 
-    ::cv::createTrackbar("Sat_min", "line thresholds", &sliderValueSatMin, 255, &LineDetector::onTrackbarChangeSL, this);
-	::cv::createTrackbar("Sat_max", "line thresholds", &sliderValueSatMax, 255, &LineDetector::onTrackbarChangeSH, this);
-
-	::cv::createTrackbar("Val_min", "line thresholds", &sliderValueValMin, 255, &LineDetector::onTrackbarChangeVL, this);
-	::cv::createTrackbar("Val_max", "line thresholds", &sliderValueValMax, 255, &LineDetector::onTrackbarChangeVH, this);
-
-	::cv::Mat thresholded;
-	
-    ::cv::Mat thresholded_binary(img.size(),CV_8UC1);
-	//::std::cout << "in thresholding" << ::std::endl;
-	//this->thresholdImageAllChannels(img,thresholded);
 	this->thresholdImageWire(img,thresholded);
 
     thresholded.convertTo(thresholded_binary,CV_8UC1);
-	
-    ::std::vector< ::cv::Point> nonzero;
-    ::cv::findNonZero(thresholded_binary, nonzero);
+  
+    ::cv::findNonZero(thresholded_binary, this->nonzero);
 
-	::cv::Mat	 output;
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
+
 	::cv::imshow("thresholded", output);
 	::cv::waitKey(1);
 
-	::std::vector<::cv::Vec4i> lines_hough;
+
 	if (nonzero.size() > 50)
 	{
-		//::std::cout << "more than 50 points" << ::std::endl;
-        //::cv::fitLine(nonzero,line, CV_DIST_L2, 0, 0.01, 0.01);
 		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 20, 20, 10);
-		//::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 5, 3);
+
 		if (lines_hough.size() <= 0)
 			return false;
 
 		this->averageTangentPCA(lines_hough, line);
-		//::std::cout << "after average" << ::std::endl;
+
 		this->computeCentroid(nonzero, centroid);
 
 		return true;
@@ -437,56 +416,22 @@ bool LineDetector::convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, ::cv
 
 void LineDetector::thresholdImageWire(const ::cv::Mat& img, ::cv::Mat& out)
 {
-	::cv::Mat hsv;
-	::std::vector<::cv::Mat> hsv_split;
 
 	::cv::cvtColor(img, hsv, CV_BGR2HSV);
 	::cv::split(hsv, hsv_split);
 
-    ::cv::Mat mask_h, mask_s, mask_v;
-	// in surgery (original)
-	//const int min_h = 25, max_h = 95;
-	//const int min_s = 1, max_s = 125;
-	//const int min_v = 1, max_v = 255;
-
-	////new wire
-	//const int min_h = 124, max_h = 174;
-	//const int min_s = 1, max_s = 20;
-	//const int min_v = 1, max_v = 255;
-
-	//const int min_h = 70, max_h = 115;
-	//const int min_s = 28, max_s = 89;
-	//const int min_v = 185, max_v = 255;
-
-    ::cv::inRange(hsv_split[0] ,min_h,max_h,mask_h);
-    ::cv::inRange(hsv_split[1] ,min_s,max_s,mask_s);
-    ::cv::inRange(hsv_split[2] ,min_v,max_v,mask_v);
+    ::cv::inRange(hsv_split[0], min_h, max_h, mask_h);
+    ::cv::inRange(hsv_split[1], min_s, max_s, mask_s);
+    ::cv::inRange(hsv_split[2], min_v, max_v, mask_v);
 
 	::cv::bitwise_and(mask_s, mask_h, out); 
 	::cv::bitwise_and(mask_v, out, out);
 
-	//::cv::Mat channel_mask = ::cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255;
-
-	::cv::Mat channel_mask = ::cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
-	::cv::circle(channel_mask, ::cv::Point(125, 125), 125,  255, -1);
 	::cv::bitwise_and(out, channel_mask, out); 
 
-	// mask the working channel
-	// mask the working channel
-	//// scope 1
-	//::cv::circle(channel_mask, ::cv::Point(29, 149), 40,  0, -1);
-	//// scope 2
-	//::cv::circle(channel_mask, ::cv::Point(215, 149), 40,  0, -1);
-	//// scope 3
-	//::cv::circle(channel_mask, ::cv::Point(47, 115), 40,  0, -1);
-	// scope 4
-	//::cv::circle(channel_mask, ::cv::Point(43, 116), 46,  0, -1);
-
-	//::cv::bitwise_and(out, channel_mask, out); 
-
     // Apply morphological opening to remove small things
-    ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(5,5));
-    ::cv::morphologyEx(out,out,::cv::MORPH_OPEN,kernel);
+    this->kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE, ::cv::Size(5,5));
+    ::cv::morphologyEx(out, out, ::cv::MORPH_OPEN, this->kernel);
 
 }
 

@@ -223,7 +223,7 @@ private:
 
 	bool detectLeaks(const ::cv::Mat& img, int& x, int& y);
 	void postProcessLeaks(::std::vector<::cv::Point>& leaks, int& x, int& y);
-	void plotCommandedVelocities(const ::cv::Mat& img, double centroid[2], double tangent[2]);
+	void plotCommandedVelocitiesCircum(const ::cv::Mat& img);
 	void plotCommandedVelocities(const ::cv::Mat& img);
 	// camera management functions
 	void changeExposure(float delta);
@@ -331,6 +331,34 @@ private:
 
 	bool manualRegistration;
 	double	registrationOffset;
+
+	::Eigen::Vector3d normal;
+	::Eigen::Vector3d robot_positionEig;
+	::Eigen::Vector2d tmpCentroid;
+	::cv::Vec4f line;
+	::cv::Vec2f centroid;
+
+	::cv::Vec4f line_to_plot;
+	::Eigen::Vector2d centroidEig;
+	::Eigen::Vector2d centroidEigPlot;
+	::Eigen::Vector3d centroidOnValve;
+	::Eigen::Vector2d tangentEig;
+	::Eigen::Vector2d image_center;
+	::Eigen::VectorXd closest_point;
+
+	::cv::Point center;
+	::cv::Mat rot_mat_im_comp;
+	::Eigen::Matrix3d rot1;
+	::Eigen::Vector2d displacement;
+	::Eigen::Matrix3d rot2;
+
+	::Eigen::Vector2d DP;
+	::Eigen::Matrix3d rotation_valve;
+	::Eigen::Vector3d tmp;
+
+	::Eigen::Vector2d centering_vel;
+	::Eigen::Vector2d tangent_vel;
+	::Eigen::Matrix3d rot_plot;
 public:
 	void updatePoints();
 	void addArrow(double normal[3], double center[3]);
@@ -361,6 +389,12 @@ public:
 
 	double computeClockDistance(double c1, double c2);
 	double getInitialClockPosition();
+
+private:
+	void updateRegistration(const ::cv::Mat& img);
+	void updateModel();
+	void postProcessLine();
+	void detectLine(const ::cv::Mat& img);
 };
 
 	

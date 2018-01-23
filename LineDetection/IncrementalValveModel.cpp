@@ -176,6 +176,12 @@ IncrementalValveModel::getNormal(double normal[3])
 	memcpy(normal, this->normal.data(), 3 * sizeof(double));
 }
 
+void
+IncrementalValveModel::getNormal(::Eigen::Vector3d& normal)
+{
+	this->normal = normal;
+}
+
 void 
 IncrementalValveModel::getModelParameters(double center[3], double normal[3], double& radius)
 {
@@ -318,7 +324,6 @@ IncrementalValveModel::updateCircleParameters()
 		return;
 
 	int counter = 0; 
-	::Eigen::VectorXd xPrev;
 
 	double vectorChange = 10000;
 	double errorChange = 10000;

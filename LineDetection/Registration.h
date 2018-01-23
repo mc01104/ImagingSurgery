@@ -68,6 +68,8 @@ public:
 
 		void getCentroid(::Eigen::Vector2d& centroid) {centroid = this->centroid;};
 
+		void getCentroid(::cv::Point& point){point.x = this->centroid[0]; point.y = this->centroid[1];};
+
 		void setWorkingChannel(::Eigen::Vector2d& workingChannel) {this->workingChannel = workingChannel;};
 
 		void reset();

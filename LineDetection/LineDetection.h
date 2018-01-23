@@ -28,6 +28,19 @@ class LineDetector
 	int min_v;
 	int max_v;
 
+	::cv::Mat					img_crop;
+	::cv::Mat					thresholded;
+    ::cv::Mat					thresholded_binary;
+	::std::vector< ::cv::Point> nonzero;
+	::cv::Mat					output;
+	::std::vector<::cv::Vec4i>	lines_hough;
+	::cv::Mat					hsv;
+	::std::vector<::cv::Mat>	hsv_split;
+	::cv::Mat					mask_h;
+	::cv::Mat					mask_s;
+	::cv::Mat					mask_v;
+	::cv::Mat					channel_mask;
+	::cv::Mat					kernel;
 	public:
 		enum MODE
 		{

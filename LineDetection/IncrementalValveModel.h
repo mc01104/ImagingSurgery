@@ -29,6 +29,9 @@ class IncrementalValveModel
 		::std::vector<::Eigen::Vector3d> points;
 		::Eigen::Matrix<double, 6, 1> errorJacobian;
 		::Eigen::Matrix<double, 6, 1> x;							// concatenated circle params for optimization
+
+		::Eigen::VectorXd xPrev;
+
 		double	lambda;
 
 		bool initialized;
@@ -64,6 +67,8 @@ class IncrementalValveModel
 		void getCenter(double center[3]);
 
 		void getNormal(double normal[3]);
+
+		void getNormal(::Eigen::Vector3d& normal);
 
 		double getRadius() {return this->radius;};
 
