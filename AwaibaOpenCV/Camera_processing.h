@@ -360,6 +360,8 @@ private:
 	::Eigen::Vector2d centering_vel;
 	::Eigen::Vector2d tangent_vel;
 	::Eigen::Matrix3d rot_plot;
+
+	::Eigen::Vector2d centroid_unrotated;
 public:
 	void updatePoints();
 	void addArrow(double normal[3], double center[3]);

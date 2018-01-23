@@ -74,7 +74,7 @@ public:
 
 		bool processImage(const ::cv::Mat& img, double& registrationError, ::cv::Mat& img_rec);
 
-		bool processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError, double clockface);
+		bool processImage(const ::cv::Mat& img, ::Eigen::Vector2d& lineCentroid, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double clockface, double& registrationError);
 
 		bool processImage(const ::cv::Mat& img, double clockfacePosition, double& registrationError);
 
@@ -94,12 +94,14 @@ public:
 
 		double getRecentMarker() {return this->visitedMarkers.back();};
 
+		void computeMarkerOffset(const ::Eigen::Vector2d lineCentroid, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
+
 	protected:
 		bool threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg);
 
 		void computeCentroid(::std::vector<::cv::Point>& points);
 
-		bool computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
+		bool computeRegistrationError(const ::Eigen::Vector2d lineCentroid, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 
 		void computePointOnValve(const ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);
 

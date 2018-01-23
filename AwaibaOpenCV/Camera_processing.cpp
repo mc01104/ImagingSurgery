@@ -2325,9 +2325,8 @@ Camera_processing::updateRegistration(const ::cv::Mat& img)
 	}
 	else
 	{
+		if (this->m_registrationHandler.processImage(img, this->centroid_unrotated , this->inner_tube_rotation, (double) this->rotation, this->normal, regError, this->realClockPosition))		{
 
-		if (this->m_registrationHandler.processImage(img, this->robot_positionEig , this->inner_tube_rotation, (double) this->rotation, this->normal, regError, this->realClockPosition))
-		{
 			::std::cout << "in registration" << ::std::endl;
 
 			double marker = this->m_registrationHandler.getRecentMarker();
@@ -2427,4 +2426,7 @@ Camera_processing::detectLine(const ::cv::Mat& img)
 	this->tangentEig[0] = this->line[0];
 	this->tangentEig[1] = this->line[1];
 	this->tangentEig.normalize();
+
+	this->centroid_unrotated(0) = this->centroidEig(0);
+	this->centroid_unrotated(1) = this->centroidEig(1);
 }

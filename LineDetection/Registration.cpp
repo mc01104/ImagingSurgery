@@ -93,7 +93,7 @@ RegistrationHandler::~RegistrationHandler()
 }
 
 bool
-RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError, double clockface)
+RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector2d& lineCentroid, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double clockface, double& registrationError)
 {
 	
 	if (!this->model->isInitialized())
@@ -111,7 +111,7 @@ RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector3d& robot
 
 	bool newRegFound = false;
 	if (success)
-		newRegFound = this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
+		newRegFound = this->computeRegistrationError(lineCentroid, innerTubeRotation, imageInitRotation, normal);
 
 	if (newRegFound)
 		registrationError = this->registrationError;
@@ -194,11 +194,10 @@ void RegistrationHandler::computeCentroid(::std::vector<::cv::Point>& points)
 	this->centroid(1) = sum_y/points.size();
 }
 
-bool RegistrationHandler::computeRegistrationError(::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+bool RegistrationHandler::computeRegistrationError(const ::Eigen::Vector2d lineCentroid, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
 {
 
-	//compensate for the offset of the marker and the working channel -> this updates the offset computation
-	this->computePointOnValve(robot_position, innerTubeRotation, imageInitRotation, normal);
+	this->computeMarkerOffset(lineCentroid, innerTubeRotation, imageInitRotation,normal);
 
 	this->offset(2) = 0.0;
 	double timeOffset = 360.0/30.0 * this->offset.norm()/(2.0 * M_PI * 9);
@@ -291,17 +290,17 @@ RegistrationHandler::computeOffset(double clockPosition)
 bool 
 RegistrationHandler::processImageSynthetic(const ::cv::Mat& img, ::Eigen::Vector3d& robot_position, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double& registrationError)
 {
-	::cv::Mat thresImage;
-	bool success = this->thresholdSynthetic(img, thresImage);
+	//::cv::Mat thresImage;
+	//bool success = this->thresholdSynthetic(img, thresImage);
 
-	bool newRegFound = false;
-	if (success)
-		newRegFound = this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
+	//bool newRegFound = false;
+	//if (success)
+	//	newRegFound = this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
 
-	if (newRegFound)
-		registrationError = this->registrationError;
+	//if (newRegFound)
+	//	registrationError = this->registrationError;
 
-	return newRegFound;
+	//return newRegFound;
 }
 
 
@@ -440,4 +439,22 @@ RegistrationHandler::computeOffset(double clockPosition1, double clockPosition2)
 		distance *= -1;
 
 	return distance;
+}
+
+void 
+RegistrationHandler::computeMarkerOffset(const ::Eigen::Vector2d lineCentroid, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
+{
+	DP = this->centroid - lineCentroid;
+
+	rotation = RotateZ(imageInitRotation * M_PI/180.0 - innerTubeRotation);
+	DP = rotation.block(0, 0, 2, 2).transpose()* DP;
+
+	rotation = RotateZ( -90 * M_PI/180.0);
+	DP = rotation.block(0, 0, 2, 2).transpose()* DP; // in world frame in mm
+
+	tmp.segment(0, 2) = DP;
+	tmp(2) = 0;
+	tmp = tmp - tmp.dot(normal) * normal;
+
+	this->offset = tmp;
 }
