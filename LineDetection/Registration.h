@@ -12,7 +12,7 @@ class RegistrationHandler
 
 	::Eigen::Vector2d workingChannel;
 
-	::Eigen::Vector3d regPoint;
+	//::Eigen::Vector3d regPoint;
 
 	IncrementalValveModel* model;
 
@@ -63,6 +63,7 @@ class RegistrationHandler
 	::Eigen::Vector3d			tmp;
 	::Eigen::Vector3d			res;
 
+	int		iter;
 public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -121,5 +122,7 @@ public:
 		// Value
 		static void onTrackbarChangeVL(int newValue, void * object);
 		static void onTrackbarChangeVH(int newValue, void * object);
+
+		void initializeSliders();
 
 };

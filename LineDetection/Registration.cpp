@@ -4,16 +4,16 @@
 
 
 // this is not making much sense -> refactor (who has the responsibility for updating the model?
-RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125, 120), regPoint(0, 0, 0), registrationError(0),
-	markers(12, 4, 8), regDetected(false), clockface(-1), offset(0, 0, 1)
+RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125, 120), registrationError(0),
+	markers(12, 4, 8), regDetected(false), clockface(-1), offset(0, 0, 1), iter(0)
 {
 	model = new IncrementalValveModel();
 
 	/// Initialize values
-    l_thres = 98;
-	h_thres = 114;
+    l_thres = 100;
+	h_thres = 130;
 
-    l_thres_s = 85;
+    l_thres_s = 78;
 	h_thres_s = 255;
 
 	l_thres_v = 1;
@@ -28,32 +28,18 @@ RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125,
 	sliderValueValMin = l_thres_v;
 	sliderValueValMax = h_thres_v;
 
-    /// Create Windows
-    ::cv::namedWindow("registration", 1);
-
-    /// Create Trackbars
-    ::cv::createTrackbar("Hue_min", "registration", &sliderValueHueMin, 180, &RegistrationHandler::onTrackbarChangeHL, this);
-	::cv::createTrackbar("Hue_max", "registration", &sliderValueHueMax, 180, &RegistrationHandler::onTrackbarChangeHH, this);
-
-    ::cv::createTrackbar("Sat_min", "registration", &sliderValueSatMin, 255, &RegistrationHandler::onTrackbarChangeSL, this);
-	::cv::createTrackbar("Sat_max", "registration", &sliderValueSatMax, 255, &RegistrationHandler::onTrackbarChangeSH, this);
-
-	::cv::createTrackbar("Val_min", "registration", &sliderValueValMin, 255, &RegistrationHandler::onTrackbarChangeVL, this);
-	::cv::createTrackbar("Val_max", "registration", &sliderValueValMax, 255, &RegistrationHandler::onTrackbarChangeVH, this);
-
     ow_mask = ::cv::Mat::zeros(250, 250, CV_8UC1);
     ::cv::circle(ow_mask, ::cv::Point(250.0/2, 250.0/2), 250.0/2, 255,-1);
-
 
 }
 
-RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model), centroid(0, 0), workingChannel(125, 200), regPoint(0, 0, 0), registrationError(0),
-	markers(12, 4, 8), regDetected(false), clockface(-1), offset(0, 0, 1)
+RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model), centroid(0, 0), workingChannel(125, 200), registrationError(0),
+	markers(12, 4, 8), regDetected(false), clockface(-1), offset(0, 0, 1), iter(0)
 {
-    l_thres = 98;
-	h_thres = 114;
+    l_thres = 100;
+	h_thres = 130;
 
-    l_thres_s = 85;
+    l_thres_s = 78;
 	h_thres_s = 255;
 
 	l_thres_v = 1;
@@ -68,23 +54,8 @@ RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(m
 	sliderValueValMin = l_thres_v;
 	sliderValueValMax = h_thres_v;
 
-    /// Create Windows
-    ::cv::namedWindow("registration", 1);
-
-    /// Create Trackbars
-    ::cv::createTrackbar("Hue_min", "registration", &sliderValueHueMin, 180, &RegistrationHandler::onTrackbarChangeHL, this);
-	::cv::createTrackbar("Hue_max", "registration", &sliderValueHueMax, 180, &RegistrationHandler::onTrackbarChangeHH, this);
-
-    ::cv::createTrackbar("Sat_min", "registration", &sliderValueSatMin, 255, &RegistrationHandler::onTrackbarChangeSL, this);
-	::cv::createTrackbar("Sat_max", "registration", &sliderValueSatMax, 255, &RegistrationHandler::onTrackbarChangeSH, this);
-
-	::cv::createTrackbar("Val_min", "registration", &sliderValueValMin, 255, &RegistrationHandler::onTrackbarChangeVL, this);
-	::cv::createTrackbar("Val_max", "registration", &sliderValueValMax, 255, &RegistrationHandler::onTrackbarChangeVH, this);
-
     ow_mask = ::cv::Mat::zeros(250, 250, CV_8UC1);
-    ::cv::circle(ow_mask, ::cv::Point(250.0/2, 250.0/2), 250.0/2, 255,-1);
-
-
+	::cv::circle(ow_mask, ::cv::Point(250.0/2, 250.0/2), 250.0/2, 255,-1);
 }
 
 // removed the delete model because it's not owned by this class -> if use the first constructor somebody needs to clean it
@@ -95,7 +66,11 @@ RegistrationHandler::~RegistrationHandler()
 bool
 RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector2d& lineCentroid, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal, double clockface, double& registrationError)
 {
-	
+	if (this->iter < 1)
+		this->initializeSliders();
+
+	iter++;
+
 	if (!this->model->isInitialized())
 		return false;
 
@@ -103,14 +78,13 @@ RegistrationHandler::processImage(const ::cv::Mat& img, ::Eigen::Vector2d& lineC
 		return false;
 
 	this->clockface = clockface;
-
 	
 	this->regDetected = false;
-	bool success = this->threshold(img, thresImage);
-	this->regDetected = success;
+	this->regDetected = this->threshold(img, thresImage);
+	
 
 	bool newRegFound = false;
-	if (success)
+	if (this->regDetected)
 		newRegFound = this->computeRegistrationError(lineCentroid, innerTubeRotation, imageInitRotation, normal);
 
 	if (newRegFound)
@@ -293,14 +267,14 @@ RegistrationHandler::processImageSynthetic(const ::cv::Mat& img, ::Eigen::Vector
 	//::cv::Mat thresImage;
 	//bool success = this->thresholdSynthetic(img, thresImage);
 
-	//bool newRegFound = false;
+	bool newRegFound = false;
 	//if (success)
 	//	newRegFound = this->computeRegistrationError(robot_position, innerTubeRotation, imageInitRotation, normal);
 
 	//if (newRegFound)
 	//	registrationError = this->registrationError;
 
-	//return newRegFound;
+	return newRegFound;
 }
 
 
@@ -355,6 +329,16 @@ RegistrationHandler::reset()
 	this->registrationError = 0;
 
 	this->visitedMarkers.clear();
+
+	this->clockface = -1;
+
+	this->offset = ::Eigen::Vector3d(0, 0, 1);
+
+	this->iter = 0;
+
+	this->centroid = ::Eigen::Vector2d(0, 0);
+
+	this->regDetected = false;
 }
 
 bool 
@@ -458,3 +442,24 @@ RegistrationHandler::computeMarkerOffset(const ::Eigen::Vector2d lineCentroid, d
 
 	this->offset = tmp;
 }
+
+
+void 
+RegistrationHandler::initializeSliders()
+{
+	
+	::cv::namedWindow("registration", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO | CV_GUI_EXPANDED);
+
+	/// Create Trackbars
+	::cv::createTrackbar("Hue_min", "registration", &sliderValueHueMin, 180, &RegistrationHandler::onTrackbarChangeHL, this);
+	::cv::createTrackbar("Hue_max", "registration", &sliderValueHueMax, 180, &RegistrationHandler::onTrackbarChangeHH, this);
+
+	::cv::createTrackbar("Sat_min", "registration", &sliderValueSatMin, 255, &RegistrationHandler::onTrackbarChangeSL, this);
+	::cv::createTrackbar("Sat_max", "registration", &sliderValueSatMax, 255, &RegistrationHandler::onTrackbarChangeSH, this);
+
+	::cv::createTrackbar("Val_min", "registration", &sliderValueValMin, 255, &RegistrationHandler::onTrackbarChangeVL, this);
+	::cv::createTrackbar("Val_max", "registration", &sliderValueValMax, 255, &RegistrationHandler::onTrackbarChangeVH, this);
+
+	::cv::waitKey(1);
+}
+

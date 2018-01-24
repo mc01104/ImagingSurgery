@@ -77,9 +77,10 @@ public:
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
-	lineDetected(false), robot_rotation(0), imageInitRotation(-90), lineDetector(), wallDetector(), wallDetected(false),
+	lineDetected(false), robot_rotation(0), imageInitRotation(-90), wallDetector(), wallDetected(false),
 	filter(5), theta_filter_complex(4), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
-	m_registrationHandler(&iModel), m_clock(), reg_detected(false), clockPosition(-1.0), realClockPosition(-1), contact_ratio(0)
+	m_clock(), reg_detected(false), clockPosition(-1.0), realClockPosition(-1), contact_ratio(0),
+	lineDetector(), m_registrationHandler(&iModel)
 {
 	robot = CTRFactory::buildCTR("");
 	kinematics = new MechanicsBasedKinematics(robot, 100);
@@ -255,7 +256,7 @@ void ReplayEngine::simulate(void* tData)
 		{
 			tDataSim->iModel.getClockfacePosition(tDataSim->actualPosition[0], tDataSim->actualPosition[1], tDataSim->actualPosition[2], clockfacePosition, point);
 			tDataSim->computeClockfacePosition();
-			tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
+			//tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
 
 			::std::cout << "model position:" << clockfacePosition << "    measure position:"  << tDataSim->realClockPosition << ::std::endl;
 		}
@@ -269,7 +270,7 @@ void ReplayEngine::simulate(void* tData)
 			::cv::rectangle(tmpImage, rec, ::cv::Scalar(0, 0, 255), 2);
 			
 		tDataSim->reg_detected = false;
-		tDataSim->plotCommandedVelocities(tmpImage, tDataSim->centroid, tDataSim->tangent);
+		//tDataSim->plotCommandedVelocities(tmpImage, tDataSim->centroid, tDataSim->tangent);
 		::cv::putText(tmpImage, ::std::to_string(tDataSim->counter) + "/" + ::std::to_string(dataStr.size()), ::cv::Point(170, 40), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 255, 255), 2);
 		::cv::imshow("Display", tmpImage);
 
@@ -859,7 +860,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		::Eigen::Vector2d regCentroid;
 		this->m_registrationHandler.setWorkingChannel(channelCenter);
 		//if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
-		if (this->m_registrationHandler.processImage(img, robot_positionEig , innerTubeRotation, this->imageInitRotation, normal, regError, this->realClockPosition))
+		if (this->m_registrationHandler.processImage(img, regCentroid , innerTubeRotation, this->imageInitRotation, normal, regError, this->realClockPosition))
 		{
 
 			::std::cout << "in registration" << ::std::endl;

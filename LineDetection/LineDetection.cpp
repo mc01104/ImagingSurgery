@@ -6,16 +6,16 @@
 
 const double pi = 3.1415926535897;
 
-LineDetector::LineDetector()
+LineDetector::LineDetector() : counter(0)
 {
 	mode = MODE::CIRCUM;
 
 	/// Initialize values
-    min_h = 25;
+    min_h = 55;
 	max_h = 95;
 
     min_s = 1;
-	max_s = 125;
+	max_s = 255;
 
 	min_v = 1;
 	max_v = 255;
@@ -29,23 +29,12 @@ LineDetector::LineDetector()
 	sliderValueValMin = min_v;
 	sliderValueValMax = max_v;
 	
-	//img_crop = ::cv::Mat(250, 250, CV_8UC3);
-	//thresholded_binary = ::cv::Mat(img_crop.size(),CV_8UC1)
+	int crop = 2;
+	img_crop = ::cv::Mat(250 - 2  * crop, 250 - 2 * crop, CV_8UC3);
+	thresholded_binary = ::cv::Mat(img_crop.size(),CV_8UC1);
 	
-	::cv::namedWindow("line thresholds", 1);
-
-    /// Create Trackbars
-    ::cv::createTrackbar("Hue_min", "line thresholds", &sliderValueHueMin, 180, &LineDetector::onTrackbarChangeHL, this);
-	::cv::createTrackbar("Hue_max", "line thresholds", &sliderValueHueMax, 180, &LineDetector::onTrackbarChangeHH, this);
-
-    ::cv::createTrackbar("Sat_min", "line thresholds", &sliderValueSatMin, 255, &LineDetector::onTrackbarChangeSL, this);
-	::cv::createTrackbar("Sat_max", "line thresholds", &sliderValueSatMax, 255, &LineDetector::onTrackbarChangeSH, this);
-
-	::cv::createTrackbar("Val_min", "line thresholds", &sliderValueValMin, 255, &LineDetector::onTrackbarChangeVL, this);
-	::cv::createTrackbar("Val_max", "line thresholds", &sliderValueValMax, 255, &LineDetector::onTrackbarChangeVH, this);
-
-	channel_mask = ::cv::Mat::zeros(250, 250, CV_8UC1);
-	::cv::circle(channel_mask, ::cv::Point(125, 125), 125,  255, -1);
+	channel_mask = ::cv::Mat::zeros(250 - 2  * crop, 250 - 2 * crop, CV_8UC1);
+	::cv::circle(channel_mask, ::cv::Point(channel_mask.rows/2.0, channel_mask.cols/2.0), channel_mask.rows/2.0,  255, -1);
 
 }
 
@@ -75,6 +64,11 @@ bool LineDetector::processImage(::cv::Mat img, ::cv::Vec4f& line,cv::Vec2f &cent
     img_crop = img(::cv::Rect(crop,crop,img.cols-2*crop, img.rows-2*crop));
 
 	bool lineDetected = false;
+
+	if (this->counter < 1)
+		this->initializeTrackbars();
+
+	this->counter++;
 
 	switch (mode)
 	{
@@ -859,5 +853,21 @@ void LineDetector::onTrackbarChangeVH(int newValue, void * object)
 	LineDetector* localObj = reinterpret_cast<LineDetector*> (object);
 
 	localObj->max_v = newValue;
+
+}
+
+void LineDetector::initializeTrackbars()
+{
+	::cv::namedWindow("line thresholds", 1);
+
+    /// Create Trackbars
+    ::cv::createTrackbar("Hue_min", "line thresholds", &sliderValueHueMin, 180, &LineDetector::onTrackbarChangeHL, this);
+	::cv::createTrackbar("Hue_max", "line thresholds", &sliderValueHueMax, 180, &LineDetector::onTrackbarChangeHH, this);
+
+    ::cv::createTrackbar("Sat_min", "line thresholds", &sliderValueSatMin, 255, &LineDetector::onTrackbarChangeSL, this);
+	::cv::createTrackbar("Sat_max", "line thresholds", &sliderValueSatMax, 255, &LineDetector::onTrackbarChangeSH, this);
+
+	::cv::createTrackbar("Val_min", "line thresholds", &sliderValueValMin, 255, &LineDetector::onTrackbarChangeVL, this);
+	::cv::createTrackbar("Val_max", "line thresholds", &sliderValueValMax, 255, &LineDetector::onTrackbarChangeVH, this);
 
 }

@@ -10,37 +10,39 @@
 
 class LineDetector
 {
-	int sliderValueHueMin;
-	int sliderValueHueMax;
+		int sliderValueHueMin;
+		int sliderValueHueMax;
 
-	int sliderValueSatMin;
-	int sliderValueSatMax;
+		int sliderValueSatMin;
+		int sliderValueSatMax;
 
-	int sliderValueValMin;
-	int sliderValueValMax;
+		int sliderValueValMin;
+		int sliderValueValMax;
 
-	int min_h;
-	int max_h;
+		int min_h;
+		int max_h;
 
-	int min_s;
-	int max_s;
+		int min_s;
+		int max_s;
 
-	int min_v;
-	int max_v;
+		int min_v;
+		int max_v;
 
-	::cv::Mat					img_crop;
-	::cv::Mat					thresholded;
-    ::cv::Mat					thresholded_binary;
-	::std::vector< ::cv::Point> nonzero;
-	::cv::Mat					output;
-	::std::vector<::cv::Vec4i>	lines_hough;
-	::cv::Mat					hsv;
-	::std::vector<::cv::Mat>	hsv_split;
-	::cv::Mat					mask_h;
-	::cv::Mat					mask_s;
-	::cv::Mat					mask_v;
-	::cv::Mat					channel_mask;
-	::cv::Mat					kernel;
+		::cv::Mat					img_crop;
+		::cv::Mat					thresholded;
+		::cv::Mat					thresholded_binary;
+		::std::vector< ::cv::Point> nonzero;
+		::cv::Mat					output;
+		::std::vector<::cv::Vec4i>	lines_hough;
+		::cv::Mat					hsv;
+		::std::vector<::cv::Mat>	hsv_split;
+		::cv::Mat					mask_h;
+		::cv::Mat					mask_s;
+		::cv::Mat					mask_v;
+		::cv::Mat					channel_mask;
+		::cv::Mat					kernel;
+
+		int counter;
 	public:
 		enum MODE
 		{
@@ -101,6 +103,8 @@ private:
 		// Value
 		static void onTrackbarChangeVL(int newValue, void * object);
 		static void onTrackbarChangeVH(int newValue, void * object);
+
+		void initializeTrackbars();
 };
 
 
