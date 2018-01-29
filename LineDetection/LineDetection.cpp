@@ -11,11 +11,11 @@ LineDetector::LineDetector() : counter(0)
 	mode = MODE::CIRCUM;
 
 	/// Initialize values
-    min_h = 55;
-	max_h = 95;
+    min_h = 23;
+	max_h = 110;
 
-    min_s = 1;
-	max_s = 255;
+    min_s = 0;
+	max_s = 80;
 
 	min_v = 1;
 	max_v = 255;

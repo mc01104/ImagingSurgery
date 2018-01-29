@@ -216,8 +216,8 @@ void MechanicsBasedKinematics::solveIVP(Eigen::MatrixXd& solution, const Eigen::
 	for(int i = numGridPoints-1; i > 0; --i)
 	{
 		s = this->arcLengthGrid[i];
-		if (s > this->robot->GetLength() - 0.001)		// HACK
-			s = this->robot->GetLength();
+		if (s > this->robot->GetLength() - 0.01)		// HACK
+			s = this->robot->GetLength() - 0.01;
 
 		// uz, theta
 

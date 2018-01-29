@@ -260,4 +260,6 @@ public:
 
 		double computeClockDistance(double c1, double c2);
 
+		void checkDirection(::Eigen::Matrix<double, 3, 1>& err);
+
 };
