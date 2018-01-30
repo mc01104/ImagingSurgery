@@ -1175,7 +1175,7 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	}
 
 	this->registrationOffset = msg.data()[25];
-
+	this->m_valveModel.setInitialOffset(this->registrationOffset);
 	m_input_plane_received = msg.data()[26];
 	if (m_input_plane_received)
 	{
@@ -2325,12 +2325,11 @@ Camera_processing::updateRegistration(const ::cv::Mat& img)
 
 		this->manualRegistered = true;
 	}
-	else
+	else if(!this->manualRegistration)
 	{
 		bool regFlag = this->m_registrationHandler.processImage(img, this->centroid_unrotated , this->inner_tube_rotation, (double) this->rotation, this->normal, this->realClockPosition, regError);
 		if (regFlag)
 		{
-
 			::std::cout << "in registration" << ::std::endl;
 
 			double marker = this->m_registrationHandler.getRecentMarker();

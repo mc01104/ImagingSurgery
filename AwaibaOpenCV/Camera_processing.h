@@ -167,7 +167,7 @@ private:
 	RecursiveFilter::Filter*				m_freqFilter;
 
 	int counterLine;
-
+	bool		offsetChanged;
 	double	m_commanded_vel[2];
 
 	std::deque<float> m_durations;

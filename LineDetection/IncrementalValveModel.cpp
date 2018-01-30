@@ -7,7 +7,7 @@
 // initial value of radius is increased on purpose to reduce clockface uncertainty due to bending in the beginning
 IncrementalValveModel::IncrementalValveModel()
 	: radius(19.0), center(0, 0, 0), normal(0, 0, 1), referencePosition(0, 1, 0), initialized(false), maxNPoints(200), registrationRotation(0),
-	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(9), prevClockPosition(-1)
+	v1(0, 1, 0), v2(1, 0, 0), lambda(0.0005), wallFollowingState(LEFT), registered(false), clockFollowed(9), prevClockPosition(-1), initialOffset(0)
 {
 	errorJacobian.setZero();
 	x.setZero();
@@ -160,6 +160,8 @@ IncrementalValveModel::resetModel()
 	this->v2 = ::Eigen::Vector3d(1, 0, 0);
 	this->lambda = 0.0005;
 	this->wallFollowingState = ::IncrementalValveModel::LEFT;
+
+	this->resetRegistration();
 
 	this->registered = false;
 }
@@ -422,7 +424,11 @@ IncrementalValveModel::resetRegistration()
 
 	this->referencePosition = ::Eigen::Vector3d(0, 1, 0);
 
+	this->initialOffset = 0;
+
 	this->updateReferencePosition();
+
+
 };
 
 double 
@@ -442,3 +448,14 @@ IncrementalValveModel::computeClockDistance(double c1, double c2)
 
 	return  distance;
 }
+
+void 
+IncrementalValveModel::setInitialOffset(double initialOffset)
+{
+	double tmp = this->initialOffset;
+	this->initialOffset = initialOffset;
+	double diff = initialOffset - tmp;
+
+	::Eigen::Matrix3d rot = RotateZ(diff * M_PI/180.0);
+	this->referencePosition = rot * this->referencePosition;
+};

@@ -40,7 +40,7 @@ class IncrementalValveModel
 
 		double registrationRotation;
 		double totalOffset;
-
+		double initialOffset;
 		bool registered;
 
 		WALL_FOLLOWED wallFollowingState;
@@ -80,7 +80,7 @@ class IncrementalValveModel
 
 		void setRegistrationRotation(double rotation);
 
-		double getRegistrationOffset() {return this->registrationRotation;};
+		double getRegistrationOffset() {return this->registrationRotation + this->initialOffset;};
 
 		void resetRegistration(); 
 
@@ -97,6 +97,9 @@ class IncrementalValveModel
 		void getLeakPosition(::std::vector<::Eigen::Vector3d>& leaks);
 
 		bool isRegistered() {return this->registered;};
+
+		void setInitialOffset(double initialOffset);
+
 	protected:
 
 		void addPoint(double x, double y, double z);
