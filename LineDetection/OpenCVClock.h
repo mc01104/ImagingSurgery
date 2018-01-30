@@ -23,6 +23,8 @@ class OpenCVClock
 		int regCounter;
 
 		::std::vector<int> visited_markers;
+
+		double initialOffset;
 		
 	public:
 
@@ -39,6 +41,8 @@ class OpenCVClock
 		void update(::cv::Mat& img, double time);
 
 		void reset();
+
+		void setInitialOffset(double initialOffset);
 
 	private:
 

@@ -7,7 +7,7 @@
 
 
 OpenCVClock::OpenCVClock() 
-	: clockCenter(50, 50), radius(20), hourClockHand(12), registrationOffset(0), regCounter(0)
+	: clockCenter(50, 50), radius(20), hourClockHand(12), registrationOffset(0), regCounter(0), initialOffset(0)
 {
 	this->updateTicks();
 }
@@ -165,6 +165,17 @@ OpenCVClock::renderRegistrationCounter(::cv::Mat& img)
 	}
 }
 
+void OpenCVClock::setInitialOffset(double initialOffset)
+{
+	double tmp = this->registrationOffset - this->initialOffset;
+	this->initialOffset = initialOffset;
+
+	this->registrationOffset = tmp + this->initialOffset;
+
+	this->updateRegistration();
+
+}
+
 void OpenCVClock::reset()
 {
 		this->registrationOffset = 0;
@@ -174,4 +185,6 @@ void OpenCVClock::reset()
 		this->updateRegistration();
 
 		this->visited_markers.clear();
+
+		this->initialOffset  = 0;
 }
