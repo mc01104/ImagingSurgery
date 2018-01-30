@@ -182,11 +182,11 @@ bool RegistrationHandler::computeRegistrationError(const ::Eigen::Vector2d lineC
 	this->offset.normalize();
 
 	res = tmp.cross(this->offset);
-	::std::cout << "working channel:" << this->clockface << ::std::endl;
+	//::std::cout << "working channel:" << this->clockface << ::std::endl;
 	double finalMarkerClockPosition = this->clockface;
-	::std::cout << timeOffset << ::std::endl;
+	//::std::cout << timeOffset << ::std::endl;
 	(res(2) > 0 ? finalMarkerClockPosition += timeOffset : finalMarkerClockPosition -= timeOffset);
-	::std::cout << "marker's estimated position:" << finalMarkerClockPosition << ::std::endl;
+	//::std::cout << "marker's estimated position:" << finalMarkerClockPosition << ::std::endl;
 	return this->computeOffset(finalMarkerClockPosition);
 
 }

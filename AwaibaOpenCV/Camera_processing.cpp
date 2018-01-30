@@ -1176,6 +1176,8 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 
 	this->registrationOffset = msg.data()[25];
 	this->m_valveModel.setInitialOffset(this->registrationOffset);
+	this->m_clock.setInitialOffset(this->registrationOffset/30.0);
+
 	m_input_plane_received = msg.data()[26];
 	if (m_input_plane_received)
 	{
