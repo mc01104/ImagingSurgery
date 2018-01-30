@@ -175,7 +175,7 @@ bool RegistrationHandler::computeRegistrationError(const ::Eigen::Vector2d lineC
 	this->offset(2) = 0.0;
 	double timeOffset = 360.0/30.0 * this->offset.norm()/(2.0 * M_PI * 9);
 
-	double realAngle = (this->clockface + this->model->getInitialOffset()) * 30.0;
+	double realAngle = this->clockface * 30.0 + this->model->getInitialOffset();
 	::Eigen::Vector3d tmp(::std::cos(realAngle * M_PI/180.0), ::std::sin(realAngle * M_PI/180.0), 0);
 
 	this->offset(2) = 0.0;
