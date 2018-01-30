@@ -1834,7 +1834,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 {
 
 	m_linedetected = false;
-
+	this->m_valveModel.setInitialOffset(this->registrationOffset);
 	// make sure the initialized valve is correct based on which wall we followed
 	this->m_valveModel.setWallFollowingState(this->wall_followed);
 	if (this->wall_followed == IncrementalValveModel::WALL_FOLLOWED::USER)
@@ -2235,7 +2235,7 @@ Camera_processing::computeClockfacePosition()
 		clockfacePosition = this->getInitialClockPosition();
 	
 	double offset = 0.0;
-	if (this->m_valveModel.isRegistered())
+	//if (this->m_valveModel.isRegistered())
 		offset = this->m_valveModel.getRegistrationOffset();
 
 	clockAngle1 -= offset;
@@ -2317,7 +2317,7 @@ void
 Camera_processing::updateRegistration(const ::cv::Mat& img)
 {
 	this->m_valveModel.getNormal(this->normal);
-
+	
 	double regError = 0;
 	if (this->manualRegistration && !this->manualRegistered)
 	{

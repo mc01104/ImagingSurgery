@@ -458,4 +458,6 @@ IncrementalValveModel::setInitialOffset(double initialOffset)
 
 	::Eigen::Matrix3d rot = RotateZ(diff * M_PI/180.0);
 	this->referencePosition = rot * this->referencePosition;
+
+	this->updateReferencePosition();
 };
