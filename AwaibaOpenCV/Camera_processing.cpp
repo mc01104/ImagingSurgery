@@ -149,10 +149,10 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 	clockFollowed = 0;
 
-	image_center(125, 125);
+	image_center = ::Eigen::Vector2d(125, 125);
 	center.x = image_center(0);
 	center.y = image_center(1);
-	displacement(0, 125);
+	displacement = ::Eigen::Vector2d(0, 250);;
 
 	// apex visualization
 	apexSource  = vtkSmartPointer<vtkRegularPolygonSource>::New();
@@ -738,10 +738,11 @@ void Camera_processing::displayImages(void)
 			if (m_circumnavigation)
 				this->plotCommandedVelocitiesCircum(frame_rotated);
 
-
-			this->computeClockfacePosition();			// this updates the clock position based on measurements
-			this->m_clock.update(frame_rotated, this->realClockPosition);
-
+			if (m_circumnavigation)
+			{
+				this->computeClockfacePosition();			// this updates the clock position based on measurements
+				this->m_clock.update(frame_rotated, this->realClockPosition);
+			}
 			double width = 50, height = 50;
 			::cv::Rect rec = ::cv::Rect(this->regPointCV.x - 0.5 * width, this->regPointCV.y - 0.5 * height, width, height);
 			if (this->reg_detected)
@@ -749,9 +750,9 @@ void Camera_processing::displayImages(void)
 			
 			this->reg_detected = false;
 
-			::cv::Point p1 = ::cv::Point(this->line_to_plot[0] - 50 * this->m_tangent[0], this->line_to_plot[1] - 50 * this->m_tangent[1]);
-			::cv::Point p2 = ::cv::Point(this->line_to_plot[0] + 50 * this->m_tangent[0], this->line_to_plot[1] + 50 * this->m_tangent[1]);
-			::cv::line(frame_rotated, p1, p2, ::cv::Scalar(0, 255, 0), 1);
+			//::cv::Point p1 = ::cv::Point(this->line_to_plot[0] - 50 * this->m_tangent[0], this->line_to_plot[1] - 50 * this->m_tangent[1]);
+			//::cv::Point p2 = ::cv::Point(this->line_to_plot[0] + 50 * this->m_tangent[0], this->line_to_plot[1] + 50 * this->m_tangent[1]);
+			//::cv::line(frame_rotated, p1, p2, ::cv::Scalar(0, 255, 0), 1);
 
 			cv::imshow( "Display", frame_rotated );
 
@@ -1095,7 +1096,7 @@ bool Camera_processing::networkKinematics(void)
 		else
 			ss << "0";
 		ss << ::std::endl;
-
+		//::std::cout << ss.str().c_str() << ::std::endl;
 		/*****
 		Acknowledge good reception of data to network for preparing next transmission
 		*****/
@@ -1154,7 +1155,7 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 
 	this->m_commanded_vel[0] = msg.data()[22];
 	this->m_commanded_vel[1] = msg.data()[23];
-
+	//::std::cout << "vels in network: " << this->m_commanded_vel[0] << " " << this->m_commanded_vel[1] << ::std::endl;
 	int tmp = msg.data()[24];
 	switch (tmp)
 	{
@@ -1841,7 +1842,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	this->detectLine(img);
 
-	this->postProcessLine();
+	this->postProcessLine(img);
 
 	this->updateModel();
 
@@ -1945,10 +1946,11 @@ void	Camera_processing::checkTransitionState()
 void Camera_processing::plotCommandedVelocitiesCircum(const ::cv::Mat& img)
 {
 	::Eigen::Vector2d orig_vel = ::Eigen::Map<::Eigen::Vector2d> (m_commanded_vel, 2);
-
-	centroidEigPlot = centroidEig - this->image_center;
+	//::std::cout << "vels: " << this->m_commanded_vel[0] << " " << this->m_commanded_vel[1] << ::std::endl;
+	//::std::cout << " centroid" << this->m_centroid[0] << " " << this->m_centroid[1] << ::std::endl;
+	centroidEigPlot = ::Eigen::Map<::Eigen::Vector2d> (this->m_centroid, 2) - this->image_center;
 	centroidEigPlot.normalize();
-
+	
 	double lambda_centering = (centroidEigPlot.transpose() * orig_vel);
 	double plotting_scale = 50;
 
@@ -1961,7 +1963,7 @@ void Camera_processing::plotCommandedVelocitiesCircum(const ::cv::Mat& img)
 	rot_plot = RotateZ( -90 * M_PI/180.0);
 	centering_vel = rot_plot.block(0, 0, 2, 2) * centering_vel;
 	tangent_vel = rot_plot.block(0, 0, 2, 2) * tangent_vel;
-
+	///::std::cout << tangent_vel.transpose() << " vels" << ::std::endl;
 	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + centering_vel[0], img.cols/2 + centering_vel[1]), ::cv::Scalar(48, 237, 255), 2);
 	::cv::arrowedLine(img, ::cv::Point(img.rows/2, img.cols/2), ::cv::Point(img.rows/2 + tangent_vel[0], img.cols/2 +tangent_vel[1]), ::cv::Scalar(214, 226, 72), 2);
 }
@@ -2116,7 +2118,7 @@ Camera_processing::computePointOnValve(::Eigen::Vector3d& robot_position, ::Eige
 	tmp(2) = 0;
 	tmp = tmp - tmp.dot(normal) * normal;
 
-	centroidOnValve += tmp;
+	centroidOnValve = robot_position + tmp;
 }
 
 void Camera_processing::initializeLeaks()
@@ -2325,7 +2327,9 @@ Camera_processing::updateRegistration(const ::cv::Mat& img)
 	}
 	else
 	{
-		if (this->m_registrationHandler.processImage(img, this->centroid_unrotated , this->inner_tube_rotation, (double) this->rotation, this->normal, regError, this->realClockPosition))		{
+		bool regFlag = this->m_registrationHandler.processImage(img, this->centroid_unrotated , this->inner_tube_rotation, (double) this->rotation, this->normal, this->realClockPosition, regError);
+		if (regFlag)
+		{
 
 			::std::cout << "in registration" << ::std::endl;
 
@@ -2350,9 +2354,9 @@ Camera_processing::updateRegistration(const ::cv::Mat& img)
 void 
 Camera_processing::updateModel()
 {
-	if (m_contact_filtered == 1)
+	if (m_contact_filtered == 1 && m_linedetected)
 	{
-		centroidOnValve.segment(0, 2) = centroidEig;
+		centroidOnValve.segment(0, 2) = this->centroid_unrotated;
 
 		computePointOnValve(robot_positionEig, centroidOnValve, this->m_channel_center, this->inner_tube_rotation, this->rotation, this->normal);
 
@@ -2364,37 +2368,56 @@ Camera_processing::updateModel()
 }
 
 void 
-Camera_processing::postProcessLine()
+Camera_processing::postProcessLine(const ::cv::Mat& img)
 {
-	// bring to polar coordinated to perform filtering and then move back to point + tangent representation
-	double r, theta;	
-	nearestPointToLine(this->image_center, this->centroidEig, this->tangentEig, this->closest_point);
-	cartesian2DPointToPolar(this->closest_point.segment(0, 2) - this->image_center, r, theta);
+	if (m_linedetected)
+	{
+		// bring to polar coordinated to perform filtering and then move back to point + tangent representation
+		double r, theta;	
+		nearestPointToLine(this->image_center, this->centroidEig, this->tangentEig, this->closest_point);
+		cartesian2DPointToPolar(this->closest_point.segment(0, 2) - this->image_center, r, theta);
 
-	// filter
-	r = m_radius_filter.step(r);
-	theta = m_theta_filter.step(theta);			
+		// filter
+		r = m_radius_filter.step(r);
+		//theta = m_theta_filter.step(theta);			
 
-	//bring back to centroid-tangent
-	this->centroidEig(0) = r * cos(theta);
-	this->centroidEig(1) = r * sin(theta);
-	computePerpendicularVector(this->centroidEig, this->tangentEig);
+		//bring back to centroid-tangent
+		this->centroidEig(0) = r * cos(theta);
+		this->centroidEig(1) = r * sin(theta);
+		computePerpendicularVector(this->centroidEig, this->tangentEig);
 
-	this->centroidEig += this->image_center;
+		this->centroidEig += this->image_center;
 
-	// find closest point from center to line -> we will bring that point to the center of the images - I think this is redundant
-	double lambda = (image_center - centroidEig).transpose() * tangentEig;
-	centroidEig += lambda * tangentEig;
+		// find closest point from center to line -> we will bring that point to the center of the images - I think this is redundant
+		double lambda = (image_center - centroidEig).transpose() * tangentEig;
+		centroidEig += lambda * tangentEig;
 
-	this->rot1 = RotateZ(this->rotation * M_PI/180.0 - this->robot_rotation);
-	this->centroidEig = this->rot1.block(0, 0, 2, 2).transpose()* (this->centroidEig - this->image_center) + this->image_center;
-	this->tangentEig = this->rot1.block(0, 0, 2, 2).transpose()* this->tangentEig;
-		
+		this->rot1 = RotateZ(this->rotation * M_PI/180.0 - this->robot_rotation);
+		this->centroidEig = this->rot1.block(0, 0, 2, 2).transpose()* (this->centroidEig - this->image_center) + this->image_center;
+		this->tangentEig = this->rot1.block(0, 0, 2, 2).transpose()* this->tangentEig;
+		}
+
+	// only for visualization -> needs to be in old frame
+	Mat frame_rotated2 = Mat(250,250,CV_8UC3);
+	Point center = Point(img.cols/2, img.rows/2 );
+    Mat rot_mat = getRotationMatrix2D(center,  rotation - robot_rotation * 180.0/3.141592, 1.0 );
+	warpAffine(img, frame_rotated2, rot_mat, frame_rotated2.size() );
+
+	if (m_linedetected)
+	{
+		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		::cv::line( frame_rotated2, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+		::cv::circle(frame_rotated2, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
+	}
+	::cv::imshow("line detection", frame_rotated2);
+	::cv::waitKey(1);
+
 	this->line_to_plot[0] = centroidEig(0);
 	this->line_to_plot[1] = centroidEig(1);
 	this->line_to_plot[2] = tangentEig(0);
 	this->line_to_plot[3] = tangentEig(1);
-
+	if (m_linedetected)
+	{
 	// last transformation to align image frame with robot frame for convenience
 	this->rot2 = RotateZ( -90 * M_PI/180.0);
 	this->centroidEig = this->rot2.block(0, 0, 2, 2).transpose() * this->centroidEig - this->rot2.block(0, 0, 2, 2).transpose() * this->displacement;
@@ -2402,7 +2425,7 @@ Camera_processing::postProcessLine()
 
 	memcpy(m_centroid, centroidEig.data(), 2 * sizeof(double));
 	memcpy(m_tangent, tangentEig.data(), 2 * sizeof(double));
-
+	}
 }
 
 void 
@@ -2426,6 +2449,7 @@ Camera_processing::detectLine(const ::cv::Mat& img)
 	this->tangentEig[0] = this->line[0];
 	this->tangentEig[1] = this->line[1];
 	this->tangentEig.normalize();
+	//::std::cout << " centroid in line detection" << this->centroid[0] << " " << this->centroid[1] << ::std::endl;
 
 	this->centroid_unrotated(0) = this->centroidEig(0);
 	this->centroid_unrotated(1) = this->centroidEig(1);

@@ -9,12 +9,11 @@ RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125,
 {
 	model = new IncrementalValveModel();
 
-	/// Initialize values
-    l_thres = 100;
-	h_thres = 130;
+    l_thres = 32;
+	h_thres = 100;
 
-    l_thres_s = 78;
-	h_thres_s = 255;
+    l_thres_s = 0;
+	h_thres_s = 116;
 
 	l_thres_v = 1;
 	h_thres_v = 255;
@@ -36,11 +35,11 @@ RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125,
 RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model), centroid(0, 0), workingChannel(125, 200), registrationError(0),
 	markers(12, 4, 8), regDetected(false), clockface(-1), offset(0, 0, 1), iter(0)
 {
-    l_thres = 100;
-	h_thres = 130;
+    l_thres = 32;
+	h_thres = 100;
 
-    l_thres_s = 78;
-	h_thres_s = 255;
+    l_thres_s = 0;
+	h_thres_s = 116;
 
 	l_thres_v = 1;
 	h_thres_v = 255;
@@ -183,10 +182,11 @@ bool RegistrationHandler::computeRegistrationError(const ::Eigen::Vector2d lineC
 	this->offset.normalize();
 
 	res = tmp.cross(this->offset);
-
+	::std::cout << "working channel:" << this->clockface << ::std::endl;
 	double finalMarkerClockPosition = this->clockface;
+	::std::cout << timeOffset << ::std::endl;
 	(res(2) > 0 ? finalMarkerClockPosition += timeOffset : finalMarkerClockPosition -= timeOffset);
-
+	::std::cout << "marker's estimated position:" << finalMarkerClockPosition << ::std::endl;
 	return this->computeOffset(finalMarkerClockPosition);
 
 }
@@ -429,6 +429,7 @@ void
 RegistrationHandler::computeMarkerOffset(const ::Eigen::Vector2d lineCentroid, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal)
 {
 	DP = this->centroid - lineCentroid;
+	DP /= 26.67;
 
 	rotation = RotateZ(imageInitRotation * M_PI/180.0 - innerTubeRotation);
 	DP = rotation.block(0, 0, 2, 2).transpose()* DP;

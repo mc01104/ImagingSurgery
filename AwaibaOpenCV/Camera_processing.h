@@ -396,7 +396,7 @@ public:
 private:
 	void updateRegistration(const ::cv::Mat& img);
 	void updateModel();
-	void postProcessLine();
+	void postProcessLine(const ::cv::Mat& img);
 	void detectLine(const ::cv::Mat& img);
 };
 

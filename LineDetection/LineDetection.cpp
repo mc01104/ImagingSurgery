@@ -11,11 +11,11 @@ LineDetector::LineDetector() : counter(0)
 	mode = MODE::CIRCUM;
 
 	/// Initialize values
-    min_h = 23;
-	max_h = 110;
+    min_h = 100;
+	max_h = 130;
 
-    min_s = 0;
-	max_s = 80;
+    min_s = 78;
+	max_s = 255;
 
 	min_v = 1;
 	max_v = 255;
@@ -29,7 +29,7 @@ LineDetector::LineDetector() : counter(0)
 	sliderValueValMin = min_v;
 	sliderValueValMax = max_v;
 	
-	int crop = 2;
+	int crop = 5;
 	img_crop = ::cv::Mat(250 - 2  * crop, 250 - 2 * crop, CV_8UC3);
 	thresholded_binary = ::cv::Mat(img_crop.size(),CV_8UC1);
 	
@@ -295,10 +295,10 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	::cv::imshow("thresholded", output);
 	::cv::waitKey(1);
 
-
+	//::std::cout << nonzero.size() << " points" << ::std::endl;
 	if (nonzero.size() > 50)
 	{
-		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 20, 20, 10);
+		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 40, 20, 10);
 
 		if (lines_hough.size() <= 0)
 			return false;
