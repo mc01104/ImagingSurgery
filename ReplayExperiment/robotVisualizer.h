@@ -16,7 +16,7 @@ class RobotVisualizer
 
 		~RobotVisualizer();
 
-		void update(const double* configuration);
+		void update(const double* configuration, const double* actualPosition = NULL);
 
 		void registerVisualizer(const vtkSmartPointer<vtkRenderer>& ren);
 

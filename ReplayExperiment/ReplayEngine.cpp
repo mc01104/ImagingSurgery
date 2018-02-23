@@ -89,8 +89,12 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	int count = getImList(imList, checkPath(pathToImages + "/" ));
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
-	this->offset = 700 + 900 + 3800;
-	//this->offset = 0;
+	//this->offset = 3240;
+	this->offset = 0;
+
+	::std::vector<::std::string> dataStr = ReadLinesFromFile(this->getDataPath());
+	::std::vector<double> tmpData = DoubleVectorFromString(dataStr[this->offset], ',');
+	memcpy(this->actualPosition, &tmpData.data()[9], 3 * sizeof(double));
 
 	for (int i = this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -116,8 +120,8 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 
 	this->initializeLeaks();
 
-	for (int i = 0; i < 3; ++i)
-		actualPosition[i] = 0.0;
+	//for (int i = 0; i < 3; ++i)
+	//	actualPosition[i] = 0.0;
 
 	m_valve_tangent_prev[0] = -1;
 	m_valve_tangent_prev[1] = 0;
@@ -246,7 +250,7 @@ void ReplayEngine::simulate(void* tData)
 				break;
 		}
 
-		//::std::cout << tDataSim->counter << ::std::endl;
+		::std::cout << tDataSim->counter << ::std::endl;
 		tDataSim->counter++;
 
 		double clockfacePosition = -1;
@@ -314,7 +318,7 @@ void ReplayEngine::displayRobot(void* tData)
 
 	tDataDisplayRobot->robotVis = new RobotVisualizer(*tDataDisplayRobot->kinematics);
 	double configuration[5] = {0, 0, 35, 0, 0};
-	tDataDisplayRobot->robotVis->update(configuration);
+	tDataDisplayRobot->robotVis->update(configuration, tDataDisplayRobot->actualPosition);
 	tDataDisplayRobot->robotVis->registerVisualizer(renDisplay3D);
 	//::std::vector<vtkSmartPointer<vtkActor>> actors;
 	//tDataDisplayRobot->robotVis->getActors(actors);
@@ -378,7 +382,7 @@ void ReplayEngine::displayRobot(void* tData)
 			try
 			{
 				start = std::chrono::high_resolution_clock::now();
-				tDataDisplayRobot->robotVis->update(tDataDisplayRobot->joints);
+				tDataDisplayRobot->robotVis->update(tDataDisplayRobot->joints, tDataDisplayRobot->actualPosition);
 
 				tDataDisplayRobot->getFrames(robotFrames);
 				//npts = robotFrames.size();
@@ -837,9 +841,9 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		}
 		
 		::Eigen::Vector3d centroidOnValve(0, 0, 0);
-		::Eigen::Vector2d channelCenter(82, 132);
+		::Eigen::Vector2d channelCenter(37, 102);
 		// store original centroid for adding points to the model
-		//this->iModel.setFollowedClockPosition(4.0);
+		this->iModel.setFollowedClockPosition(9.0);
 		if (this->contactCurr == 1 && this->lineDetected)
 		{
 			centroidOnValve.segment(0, 2) = centroidEig2;
@@ -860,33 +864,33 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		}
 
 
-		//::Eigen::Vector2d regCentroid;
-		//this->m_registrationHandler.setWorkingChannel(channelCenter);
-		////if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
-		//if (this->m_registrationHandler.processImage(img, regCentroid , innerTubeRotation, this->imageInitRotation, normal, regError, this->realClockPosition))
-		//{
+		::Eigen::Vector2d regCentroid;
+		this->m_registrationHandler.setWorkingChannel(channelCenter);
+		//if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
+		if (this->m_registrationHandler.processImage(img, regCentroid , innerTubeRotation, this->imageInitRotation, normal, regError, this->realClockPosition))
+		{
 
-		//	::std::cout << "in registration" << ::std::endl;
+			::std::cout << "in registration" << ::std::endl;
 
-		//	double marker = this->m_registrationHandler.getRecentMarker();
+			double marker = this->m_registrationHandler.getRecentMarker();
 
-		//	this->m_clock.setRegistrationOffset(regError/30.0, marker);
+			this->m_clock.setRegistrationOffset(regError/30.0, marker);
 
-		//	this->iModel.setRegistrationRotation(regError);
-		//}
+			this->iModel.setRegistrationRotation(regError);
+		}
 
 
 
-		//this->reg_detected = m_registrationHandler.getRegDetected();
+		this->reg_detected = m_registrationHandler.getRegDetected();
 
-		//if (this->reg_detected)
-		//{
-		//	this->m_registrationHandler.getCentroid(regCentroid);
-		//	regPointCV.x = regCentroid(0);
-		//	regPointCV.y = regCentroid(1);
-		//	this->cameraToImage(regPointCV);
+		if (this->reg_detected)
+		{
+			this->m_registrationHandler.getCentroid(regCentroid);
+			regPointCV.x = regCentroid(0);
+			regPointCV.y = regCentroid(1);
+			this->cameraToImage(regPointCV);
 
-		//}
+		}
 
 		this->applyVisualServoingController(centroidEig, tangentEigFiltered, velCommand);
 
@@ -894,21 +898,23 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		memcpy(this->velocityCommand, velCommand.data(), 2 * sizeof(double));
 		this->robot_mutex.unlock();
 	
+		::cv::imshow("unrotated", img);
+
 		::cv::Point center = ::cv::Point(img.cols/2, img.rows/2 );
 		::cv::Mat rot_mat = getRotationMatrix2D(center,this->imageInitRotation - this->robot_rotation * 180.0/3.141592, 1.0 );
 		warpAffine(img, img, rot_mat, img.size() );
 
 		if (this->lineDetected)
 		{
-			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
-			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 			::cv::circle(img, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
 
-			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*100, centroidEig(1)+tangentEigFiltered(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*(-100), centroidEig(1)+tangentEigFiltered(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*100, centroidEig(1)+tangentEigFiltered(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*(-100), centroidEig(1)+tangentEigFiltered(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
 
-			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
+			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
 
 
 		}
@@ -1364,7 +1370,7 @@ ReplayEngine::processKeyboardInput(char key)
 int
 ReplayEngine::getInitialPositionOnValve()
 {
-	return 12;
+	return 9;
 }
 
 

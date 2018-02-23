@@ -79,7 +79,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\MechanicsBasedKinematics;..\LineDetection;..\Classifier;..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories);C:\dev\VTK-6.3.0\Common\Core;C:\dev\opencv\build\install\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SystemDrive)\Program Files\Phidgets\Phidget22;..\MechanicsBasedKinematics;..\LineDetection;..\Classifier;..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories);C:\dev\VTK-6.3.0\Common\Core;C:\dev\opencv\build\install\include</AdditionalIncludeDirectories>
       <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
@@ -87,7 +87,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>LineDetection.lib;Classifier.lib;Utilities.lib;opencv_world310.lib;opencv_xfeatures2d310.lib;BagOfWords.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SystemDrive)\Program Files\Phidgets\Phidget22\phidget22.lib;LineDetection.lib;Classifier.lib;Utilities.lib;opencv_world310.lib;opencv_xfeatures2d310.lib;BagOfWords.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../$(Platform)/$(Configuration);$(OPENCV_DIR)\lib;$(SolutionDir)\\Lib\Naneye_lib\lib\x64;%(AdditionalLibraryDirectories);../$(Platform)/$(Configuration)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -96,12 +96,14 @@
     <ClCompile Include="Camera_processing.cpp" />
     <ClCompile Include="CSV_reader.cpp" />
     <ClCompile Include="Helpers.cpp" />
+    <ClCompile Include="LoadCell.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="awcorecpp.h" />
     <ClInclude Include="Camera_processing.h" />
     <ClInclude Include="CSV_reader.h" />
+    <ClInclude Include="LoadCell.h" />
     <ClInclude Include="vtkKeyboardInteractionStyle.h" />
     <ClInclude Include="Helpers.h" />
     <ClInclude Include="Queue.h" />

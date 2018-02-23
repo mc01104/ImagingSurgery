@@ -84,6 +84,8 @@ using namespace cimg_library;
 #include "CTRFactory.h"
 #include "FilterLibrary.h"
 
+
+
 using namespace Core;
 using namespace cv;
 using namespace RecursiveFilter;
@@ -134,7 +136,7 @@ public:
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 	, m_radius_filter(3), m_theta_filter(4), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
 	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false), realClockPosition(-1.0), manualRegistered(false),
-	counterLine(0), m_contact_filtered(0), normal(0, 0, 1), tmpCentroid(0, 0)
+	counterLine(0), m_contact_filtered(0), normal(0, 0, 1), tmpCentroid(0, 0), load_cell_sensor(30)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -829,6 +831,7 @@ void Camera_processing::recordImages(void)
 
     Mat rot_mat;
 	::cv::Mat video_image;
+	double force_measurement = -1;
 	while(m_running)
 	{
 		ImgBuf element;
@@ -908,6 +911,8 @@ void Camera_processing::recordImages(void)
 						bundle << m_model_robot_position[i] << ", ";
 
 					bundle << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio << ", " << m_breathing;
+					this->load_cell_sensor.getMeasurement(force_measurement);
+					bundle << ", " << force_measurement;
 					bundle << '\n';
 					bundle.flush();
 				}

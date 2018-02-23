@@ -66,6 +66,8 @@
 #include "LeakDetection.h"
 #include "OpenCVClock.h"
 
+#include "LoadCell.h"
+
 using namespace Core;
 using namespace cv;
 //using namespace std;
@@ -87,6 +89,8 @@ private:
 		CW,
 		CCW
 	} circStatus;
+
+	LoadCell load_cell_sensor;
 
 	/********** Members private *********/
 	bool m_running; 

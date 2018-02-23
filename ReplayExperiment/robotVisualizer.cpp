@@ -37,7 +37,7 @@ RobotVisualizer::~RobotVisualizer()
 }
 
 void 
-RobotVisualizer::update(const double* configuration)
+RobotVisualizer::update(const double* configuration, const double* actualPosition)
 {
 	double rotation[3] = {0};
 	double translation[3] = {0};
@@ -66,18 +66,22 @@ RobotVisualizer::update(const double* configuration)
 	::std::vector<::std::vector<double>> points;
 
 	::std::vector<int> indices(this->tubes.size());
+	double error[3] = {0};
+	if (actualPosition)
+		for (int i = 0; i < 3; ++i)
+			error[i] = actualPosition[i] - (frames.back().GetPosition()[i] + 20*frames[300-1].GetZ()[i]); 
 
 	for (int i = 0; i < frames.size(); ++i)
 	{
-		point[0] = frames[i].GetPosition()[0];
-		point[1] = frames[i].GetPosition()[1];
-		point[2] = frames[i].GetPosition()[2];
+		point[0] = frames[i].GetPosition()[0] + arcLength[i]/smax * error[0];
+		point[1] = frames[i].GetPosition()[1] + arcLength[i]/smax * error[1];
+		point[2] = frames[i].GetPosition()[2] + arcLength[i]/smax * error[2];
 		points.push_back(point);
 	}
 
-	point[0] = frames.back().GetPosition()[0] + frames.back().GetZ()[0] * 20;
-	point[1] = frames.back().GetPosition()[1] + frames.back().GetZ()[1] * 20;
-	point[2] = frames.back().GetPosition()[2] + frames.back().GetZ()[2] * 20;
+	point[0] = frames.back().GetPosition()[0] + frames.back().GetZ()[0] * 20 + error[0];
+	point[1] = frames.back().GetPosition()[1] + frames.back().GetZ()[1] * 20 + error[1];
+	point[2] = frames.back().GetPosition()[2] + frames.back().GetZ()[2] * 20 + error[2];
 
 	points.push_back(point);
 

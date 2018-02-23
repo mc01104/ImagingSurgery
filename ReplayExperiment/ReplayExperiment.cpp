@@ -150,13 +150,13 @@ void testRobotVisulization()
 
 	rVis.registerVisualizer(renderer);
 
-	double configuration[5] = {0, 0, 35, 0, 0};
-	rVis.update(configuration);
+	//double configuration[5] = {0, 0, 35, 0, 0};
+	//rVis.update(configuration);
 
-	iRen->Initialize();
-	renWindow->Render();
+	//iRen->Initialize();
+	//renWindow->Render();
 
-	iRen->Start();
+	//iRen->Start();
 }
 
 void testArrow()
@@ -399,8 +399,11 @@ int testReplayEngine()
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_13-09-06";
 
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-18_bypass_cardioscopy/Videos_2018-01-18/2018-01-18_13-56-46";
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-18_bypass_cardioscopy/Videos_2018-01-18/2018-01-18_13-59-02";	
-	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-18_bypass_cardioscopy/Videos_2018-01-18/2018-01-18_13-59-02";	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-18_bypass_cardioscopy/Videos_2018-01-18/2018-01-18_11-40-04";	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-51-57";	
+	::std::string img_path = "F:/debug/2018-02-22_13-17-10";	
+
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/Registration mark/blue_wire_tip_07";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/pierreswires/shortlisted/2018-01-23_16-03-33";
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/pierreswires/shortlisted/7-26";
