@@ -192,9 +192,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 
 	inner_tube_rotation = 0;
 	// channel center //
-	//// scope 1
-	//m_channel_center(0) = 37;
-	//m_channel_center(1) = 102;
+	// scope 1
+	m_channel_center(0) = 37;
+	m_channel_center(1) = 102;
 
 	//// scope 2
 	//m_channel_center(0) = 213;
@@ -212,13 +212,17 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 152;
 	//m_channel_center(1) = 151;
 
-	// scope 6
-	m_channel_center(0) = 120;
-	m_channel_center(1) = 110;
+	//// scope 6
+	//m_channel_center(0) = 120;
+	//m_channel_center(1) = 110;
 
 	//// scope 7
 	//m_channel_center(0) = 86;
 	//m_channel_center(1) = 118;
+
+	//// scope 8
+	//m_channel_center(0) = 72;
+	//m_channel_center(1) = 135;
 
 	//// scope 9
 	//m_channel_center(0) = 110;
@@ -1897,15 +1901,13 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 	::cv::Vec2f centroid2;
 	::cv::Vec4f line2;
 
-	if (m_linedetector.processImage(img, line2, centroid2, false, 10, LineDetector::MODE::TRANSITION) && m_use_original_line_transition)
+	if (m_linedetector.processImage(img, line2, centroid2, false, 5, LineDetector::MODE::TRANSITION) && m_use_original_line_transition)
 	{
 		this->detected_valve.push_back(true);
-		//::std::cout <<"in 1" <<::std::endl;
 	}
-	else if (m_linedetector.processImage(img, line2, centroid2, false, 10, LineDetector::MODE::CIRCUM) && m_use_green_line_transition)
+	else if (m_linedetector.processImage(img, line2, centroid2, false, 5, LineDetector::MODE::CIRCUM) && m_use_green_line_transition)
 	{
 		this->detected_valve.push_back(true);
-				//::std::cout <<"in 2" <<::std::endl;
 	}
 	if (this->detected_valve.size() > 5 && this->m_use_automatic_transition)
 	{
@@ -1915,7 +1917,6 @@ void Camera_processing::computeApexToValveParameters(const ::cv::Mat& img)
 
 	int x = 0, y = 0;
 	this->m_wall_detected = this->m_wall_detector.processImage(img, x, y, true);
-
 	// adjust for the cropping
 	::Eigen::Vector2d centroidEig;
 	centroidEig(0) = x;
