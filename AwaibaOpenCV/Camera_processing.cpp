@@ -546,8 +546,12 @@ void Camera_processing::processInput(char key)
 		::std::cout << "operator is moving CCW" << ::std::endl;
 		break;
 	case 'l':
-		m_leak_detection_active = !m_leak_detection_active;
-		::std::cout << "leak detection is " << (m_leak_detection_active ? "activated" : "deactivated") << ::std::endl;
+		//m_leak_detection_active = !m_leak_detection_active;
+		//::std::cout << "leak detection is " << (m_leak_detection_active ? "activated" : "deactivated") << ::std::endl;
+		double ref_voltage = 0;
+		this->load_cell_sensor.getRawMeasurement(ref_voltage);
+		this->load_cell_sensor.setZeroReference(ref_voltage);
+		break;
 	}
 }
 
@@ -832,6 +836,7 @@ void Camera_processing::recordImages(void)
     Mat rot_mat;
 	::cv::Mat video_image;
 	double force_measurement = -1;
+	double voltageRatio = 0;
 	while(m_running)
 	{
 		ImgBuf element;
@@ -912,7 +917,9 @@ void Camera_processing::recordImages(void)
 
 					bundle << m_contact_gain << ", " << m_contact_D_gain << ", " << m_contact_I_gain << ", " << m_is_control_active << ", " << m_contact_desired_ratio << ", " << m_breathing;
 					this->load_cell_sensor.getMeasurement(force_measurement);
-					bundle << ", " << force_measurement;
+					this->load_cell_sensor.getRawMeasurement(voltageRatio);
+
+					bundle << ", " << force_measurement  << ", " << voltageRatio;
 					bundle << '\n';
 					bundle.flush();
 				}
