@@ -551,6 +551,7 @@ void Camera_processing::processInput(char key)
 		double ref_voltage = 0;
 		this->load_cell_sensor.getRawMeasurement(ref_voltage);
 		this->load_cell_sensor.setZeroReference(ref_voltage);
+		::std::cout << "calibrated zero offset" << ::std::endl;
 		break;
 	}
 }
