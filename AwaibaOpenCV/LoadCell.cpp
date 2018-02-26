@@ -224,6 +224,6 @@ void CCONV LoadCell::onVoltageRatioChangeHandler(PhidgetVoltageRatioInputHandle 
 
 double LoadCell::voltageRatioToForce(double voltageRatio)
 {
-	double slope = 1.0;
-	return slope * (voltageRatio - this->zero_reference_voltage);
+	double slope = -9.1828;
+	return slope * (voltageRatio - this->zero_reference_voltage) * 1.0e-03;
 }
