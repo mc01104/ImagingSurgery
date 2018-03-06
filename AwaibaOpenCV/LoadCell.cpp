@@ -53,7 +53,7 @@ LoadCell::LoadCell(int dataInterval, PhidgetVoltageRatioInput_BridgeGain bridgeG
 		}
 	}
 
-	res = PhidgetVoltageRatioInput_setBridgeGain(ch, BRIDGE_GAIN_1);
+	res = PhidgetVoltageRatioInput_setBridgeGain(ch, BRIDGE_GAIN_128);
 	PhidgetVoltageRatioInput_BridgeGain gain;
 	PhidgetVoltageRatioInput_getBridgeGain(ch, &gain);
 
@@ -225,5 +225,5 @@ void CCONV LoadCell::onVoltageRatioChangeHandler(PhidgetVoltageRatioInputHandle 
 double LoadCell::voltageRatioToForce(double voltageRatio)
 {
 	double slope = -9.1828;
-	return slope * (voltageRatio - this->zero_reference_voltage) * 1.0e-03;
+	return slope * (voltageRatio - this->zero_reference_voltage) * 1.0e03;
 }

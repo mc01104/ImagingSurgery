@@ -136,7 +136,7 @@ public:
 Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(Manager::GetInstance(0)), m_FramesPerHeartCycle(period), m_sendContact(sendContact)
 	, m_radius_filter(3), m_theta_filter(4), m_wall_detector(), m_leak_detection_active(false), circStatus(CW), m_valveModel(), m_registrationHandler(&m_valveModel),
 	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false), realClockPosition(-1.0), manualRegistered(false),
-	counterLine(0), m_contact_filtered(0), normal(0, 0, 1), tmpCentroid(0, 0), load_cell_sensor(30)
+	counterLine(0), m_contact_filtered(0), normal(0, 0, 1), tmpCentroid(0, 0), load_cell_sensor(10)
 {
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -193,10 +193,10 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 		robot_position[i] = desired_vel[i] = m_model_robot_position[i] = 0;
 
 	inner_tube_rotation = 0;
-	// channel center //
-	// scope 1
-	m_channel_center(0) = 37;
-	m_channel_center(1) = 102;
+	//// channel center //
+	//// scope 1
+	//m_channel_center(0) = 37;
+	//m_channel_center(1) = 102;
 
 	//// scope 2
 	//m_channel_center(0) = 213;
@@ -222,9 +222,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 86;
 	//m_channel_center(1) = 118;
 
-	//// scope 8
-	//m_channel_center(0) = 72;
-	//m_channel_center(1) = 135;
+	// scope 8
+	m_channel_center(0) = 72;
+	m_channel_center(1) = 135;
 
 	//// scope 9
 	//m_channel_center(0) = 110;
@@ -705,6 +705,12 @@ void Camera_processing::displayImages(void)
 			if (this->m_sendContact)
 				::std::cout << "contact measurements:" << this->m_contact_response << " (raw), " << this->m_contact_filtered << " (filtered)" << ::std::endl; 
 
+			double force_measurement = 0;
+			double raw_measurement = 0;
+
+			//this->load_cell_sensor.getMeasurement(force_measurement);
+			//this->load_cell_sensor.getRawMeasurement(raw_measurement);
+			//:: std::cout << "force:" << force_measurement <<"    voltage_ratio:"  << raw_measurement << ::std::endl;
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
@@ -741,7 +747,7 @@ void Camera_processing::displayImages(void)
 			rot_mat = getRotationMatrix2D( center, rotation - rot * 180.0/3.141592, 1.0 );
 
 			warpAffine( frame, frame_rotated, rot_mat, frame_rotated.size() );
-
+			frame_rotated.copyTo(image_annotated);
 			if (leak_detected)
 				cv::circle( frame_rotated, Point(y, 250-x), 5, ::cv::Scalar( 0, 0, 0 ),  -1);
 
@@ -762,12 +768,12 @@ void Camera_processing::displayImages(void)
 				this->computeClockfacePosition();			// this updates the clock position based on measurements
 				this->m_clock.update(frame_rotated, this->realClockPosition);
 			}
-			double width = 50, height = 50;
-			::cv::Rect rec = ::cv::Rect(this->regPointCV.x - 0.5 * width, this->regPointCV.y - 0.5 * height, width, height);
-			if (this->reg_detected)
-				::cv::rectangle(frame_rotated, rec, ::cv::Scalar(0, 0, 255), 2);
-			
-			this->reg_detected = false;
+			//double width = 50, height = 50;
+			//::cv::Rect rec = ::cv::Rect(this->regPointCV.x - 0.5 * width, this->regPointCV.y - 0.5 * height, width, height);
+			//if (this->reg_detected)
+			//	::cv::rectangle(frame_rotated, rec, ::cv::Scalar(0, 0, 255), 2);
+			//
+			//this->reg_detected = false;
 
 			//::cv::Point p1 = ::cv::Point(this->line_to_plot[0] - 50 * this->m_tangent[0], this->line_to_plot[1] - 50 * this->m_tangent[1]);
 			//::cv::Point p2 = ::cv::Point(this->line_to_plot[0] + 50 * this->m_tangent[0], this->line_to_plot[1] + 50 * this->m_tangent[1]);
@@ -775,7 +781,7 @@ void Camera_processing::displayImages(void)
 
 			cv::imshow( "Display", frame_rotated );
 
-			frame_rotated.copyTo(image_annotated);
+			
 
 			key = waitKey(1);
 			processInput(key);
@@ -1873,7 +1879,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	this->updateModel();
 
-	this->updateRegistration(img);
+	//this->updateRegistration(img);
 
 }
 
@@ -2402,7 +2408,7 @@ Camera_processing::postProcessLine(const ::cv::Mat& img)
 
 		// filter
 		r = m_radius_filter.step(r);
-		//theta = m_theta_filter.step(theta);			
+		theta = m_theta_filter.step(theta);			
 
 		//bring back to centroid-tangent
 		this->centroidEig(0) = r * cos(theta);
