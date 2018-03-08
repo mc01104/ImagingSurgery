@@ -818,7 +818,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 			::cv::Vec2f centroid, centroid2;
 
-			this->lineDetected = this->lineDetector.processImage(img, line, centroid, true, 2, LineDetector::MODE::CIRCUM);
+			this->lineDetected = this->lineDetector.processImage(img, line, centroid, true, 5, LineDetector::MODE::CIRCUM);
 
 			if (this->lineDetected)
 			{
@@ -858,6 +858,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		{
 			if (this->m_registrationHandler.processImage(img, centroidEig2 , innerTubeRotation, this->imageInitRotation, normal, this->realClockPosition, regError))
 			{
+				::std::cout << "clock position: " << this->realClockPosition << ::std::endl;
 				::std::cout << "in registration" << ::std::endl;
 
 				double marker = this->m_registrationHandler.getRecentMarker();
@@ -1354,7 +1355,7 @@ ReplayEngine::processKeyboardInput(char key)
 int
 ReplayEngine::getInitialPositionOnValve()
 {
-	return 9;
+	return 12;
 }
 
 
@@ -1374,7 +1375,7 @@ ReplayEngine::computeClockfacePosition()
 	angle *= 180.0/M_PI;		
 
 	if (angle >= 180)
-		angle -= 2 * 180;
+		angle -= 1 * 180;
 
 
 	double clockAngle1 = 0, clockAngle2 = 0;
@@ -1395,8 +1396,8 @@ ReplayEngine::computeClockfacePosition()
 	if (c1 > 12) c1 -= 12;
 	if (c2 > 12) c2 -= 12;
 
-	if (c1 < 0) c1 += 12;
-	if (c2 < 0) c2 += 12;
+	//if (c1 < 0) c1 += 12;
+	//if (c2 < 0) c2 += 12;
 
 	static int counterLine = 0;
 

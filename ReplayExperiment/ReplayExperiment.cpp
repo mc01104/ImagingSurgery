@@ -338,11 +338,11 @@ void testRegistration()
 int testReplayEngine()
 {
 	
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-38-38";		
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-38-38";		
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-41-48";		
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-45-19";	
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-56-25";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_14-00-43";	
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_14-00-43";	
 
 
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
