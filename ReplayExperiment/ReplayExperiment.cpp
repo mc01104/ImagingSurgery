@@ -337,78 +337,14 @@ void testRegistration()
 
 int testReplayEngine()
 {
-	//// ------- WALL SEGMENTATION ----------- ///////
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-10-53";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-15-59";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-22-27";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-24-28";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-29-14";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_13-32-10";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_12-43-50";	// no tissue detection
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_14-40-02";	// OK
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-06-34";	// OK with mask
-	//// --------------------------------------////////
-
-
-	//// ------- CIRCUM ----------- ///////
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-57-11";	// OK 
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-15_bypass_cardioscopy/Videos_2017-08-15/2017-08-15_13-50-58";		// loses it when it goes to the margin
-
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_14-00-09";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_12-58-07";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-08-24_bypass_cardioscopy/Videos_2017-08-24/2017-08-24_13-49-13";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-15-33";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-07_bypass_cardioscopy/Videos_2017-09-07/2017-09-07_15-54-40";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-07-06_bypass_cardioscopy/Videos_2017-07-06/2017-07-06_15-17-56";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/sink_line_detection/2017-09-09_17-25-47";
 	
-	// test green line exvivo
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-58-17";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-12_exvivotest/2017-09-12_14-54-17";
-	
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-38-38";		
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-41-48";		
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-45-19";	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-56-25";	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_14-00-43";	
 
-	// test leak detection
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-09-14_bypass_cardioscopy/2017-09-14_15-16-00";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-05-11_bypass_cardioscopy/Videos_2017-05-11/2017-05-11_15-44-19";
-	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-30-33";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-31-12";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-33-19";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-41-10";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_12-43-14";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-03-41";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-06-02";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-07-24";
 
-	// switching directions
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-12_bypass_cardioscopy/Videos_2017-10-12/2017-10-12_13-39-12";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_15-11-37";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-10-19_bypass_cardioscopy/Videos_2017-10-19/2017-10-19_14-04-54";
-
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_12-14-23";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2017-11-09_bypass_cardioscopy/Videos_2017-11-09/2017-11-09_15-19-25";
-
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_11-35-45";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_11-46-55";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-04_bypass_cardioscopy/Videos_2018-01-04/2018-01-04_12-49-22";
-	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-19-31";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-21-04";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-26-46";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-34-51";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_13-09-06";
-
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-18_bypass_cardioscopy/Videos_2018-01-18/2018-01-18_13-56-46";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-18_bypass_cardioscopy/Videos_2018-01-18/2018-01-18_13-59-02";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-18_bypass_cardioscopy/Videos_2018-01-18/2018-01-18_11-40-04";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-01-11_bypass_cardioscopy/Videos_2018-01-11/2018-01-11_12-51-57";	
-	::std::string img_path = "F:/debug/2018-02-22_13-17-10";	
-
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/Registration mark/blue_wire_tip_07";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/pierreswires/shortlisted/2018-01-23_16-03-33";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/pierreswires/shortlisted/7-26";
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/pierreswires/2018-01-24_17-23-03";
-	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;
@@ -419,15 +355,6 @@ int testReplayEngine()
 	engine.setStatus(ReplayEngine::LINE_DETECTION); 
 	engine.run();
 
-	//testMapFunctions();
-	//testBenchtopDetection();
-	//testLeakDetection();
-	//testMultipleWires();
-	//testIncrementalModel();
-
-	//double a = 2.336;
-	//::std::cout << std::setprecision(50) << a << ::std::endl;
-	//::std::cout << std::setprecision(50) <<::std::pow(a, 4) << ::std::endl;
 	return 0;
 }
 

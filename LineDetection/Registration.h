@@ -93,6 +93,8 @@ public:
 
 		bool getRegDetected(){return this->regDetected;};
 
+		void setRegDetected(bool flag) {this->regDetected = false;};
+
 		double getRecentMarker() {return this->visitedMarkers.back();};
 
 		void computeMarkerOffset(const ::Eigen::Vector2d lineCentroid, double innerTubeRotation, double imageInitRotation, const ::Eigen::Vector3d& normal);

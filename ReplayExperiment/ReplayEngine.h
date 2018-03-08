@@ -150,6 +150,8 @@ class ReplayEngine
 
 		double clockPosition;
 		double realClockPosition;
+
+		double contact_filtered_med;
 public:
 		enum STATUS {LINE_DETECTION, WALL_DETECTION, LEAK_DETECTION} status;
 		enum WALL_TO_FOLLOW {LEFT, TOP, BOTTOM};

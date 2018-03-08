@@ -90,11 +90,11 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
 	//this->offset = 3240;
-	this->offset = 0;
+	this->offset = 1000;
 
-	::std::vector<::std::string> dataStr = ReadLinesFromFile(this->getDataPath());
-	::std::vector<double> tmpData = DoubleVectorFromString(dataStr[this->offset], ',');
-	memcpy(this->actualPosition, &tmpData.data()[9], 3 * sizeof(double));
+	//::std::vector<::std::string> dataStr = ReadLinesFromFile(this->getDataPath());
+	//::std::vector<double> tmpData = DoubleVectorFromString(dataStr[this->offset], ',');
+	//memcpy(this->actualPosition, &tmpData.data()[9], 3 * sizeof(double));
 
 	for (int i = this->offset; i < count; ++i)
 		imQueue.push_back(imList[i]);
@@ -211,6 +211,7 @@ void ReplayEngine::simulate(void* tData)
 			memcpy(tDataSim->actualPosition, &tmpData.data()[9], 3 * sizeof(double));
 			tDataSim->contactCurr = tmpData[8];
 			tDataSim->contact_ratio = tmpData[7];
+			tDataSim->contact_filtered_med = tDataSim->filter.step(tmpData[8]);
 		}
 		else
 		{
@@ -239,6 +240,9 @@ void ReplayEngine::simulate(void* tData)
 		{
 			case LINE_DETECTION:
 				tDataSim->detectLine(tmpImage);
+				//tDataSim->computeClockfacePosition();
+				//tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
+
 				break;
 			case WALL_DETECTION:
 				tDataSim->detectWall(tmpImage);
@@ -250,23 +254,26 @@ void ReplayEngine::simulate(void* tData)
 				break;
 		}
 
-		::std::cout << tDataSim->counter << ::std::endl;
+		//::std::cout << tDataSim->counter << ::std::endl;
+		//::std::cout << "clockface position:" << tDataSim->realClockPosition << ::std::endl;
 		tDataSim->counter++;
 
 		double clockfacePosition = -1;
 		::Eigen::Vector3d point;
-		if (tDataSim->iModel.isInitialized())
-		{
-			tDataSim->iModel.getClockfacePosition(tDataSim->actualPosition[0], tDataSim->actualPosition[1], tDataSim->actualPosition[2], clockfacePosition, point);
-			tDataSim->computeClockfacePosition();
+		//if (tDataSim->iModel.isInitialized())
+		//{
+		//	tDataSim->iModel.getClockfacePosition(tDataSim->actualPosition[0], tDataSim->actualPosition[1], tDataSim->actualPosition[2], clockfacePosition, point);
+		//	tDataSim->computeClockfacePosition();
+		if (tDataSim->realClockPosition >= 0)
 			tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
-
-			//::std::cout << "model position:" << clockfacePosition << "    measure position:"  << tDataSim->realClockPosition << ::std::endl;
-		}
+		//}
 
 		double width = 50, height = 50;
 		if (tDataSim->contactCurr)
 			::cv::putText(tmpImage, "contact", ::cv::Point(170, 180), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 255, 255), 2);
+
+		if (tDataSim->contact_filtered_med)
+			::cv::putText(tmpImage, "filtered", ::cv::Point(170, 150), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 0, 255), 2);
 
 		::cv::Rect rec = ::cv::Rect(tDataSim->regPointCV.x - 0.5 * width, tDataSim->regPointCV.y - 0.5 * height, width, height);
 		if (tDataSim->reg_detected)
@@ -283,23 +290,8 @@ void ReplayEngine::simulate(void* tData)
 			key = ::cv::waitKey(1);
 
 		tDataSim->processKeyboardInput(key);
-		//counterStr = ::std::to_string(tDataSim->counter);
-		//::cv::imwrite(filename_base + "cv_" + counterStr + ".png", tmpImage);
 
-		////get vtk image and write it on the disk
-		//::std::string vtkFilename = filename_base + "vtk_" + counterStr + ".png";
-		//tDataSim->writer->SetFileName(vtkFilename.c_str());
-
-		//if (tDataSim->readyToView)
-		//{
-		//	tDataSim->robot_mutex.lock();
-		//	tDataSim->writer->Write();
-		//	tDataSim->robot_mutex.unlock();
-		//}
-
-		// write opencv image and vtk snapshot for postprocessing
 		video.write(tmpImage);
-		
 
 	}
 
@@ -798,88 +790,84 @@ void ReplayEngine::applyVisualServoingController(const ::Eigen::Vector2d& centro
 
 void ReplayEngine::detectLine(::cv::Mat& img)
 {
-		bool breakingContact = false;
-		this->contactPrev = this->contactCurr;		
-
-		float response = 0;
-		this->bof.predict(img, response);
-		//this->contactCurr = response;
-
-		breakingContact = this->contactPrev && !this->contactCurr;
 		this->lineDetected = false;
 		
 		double position[3] = {0, 0, 0};
-
+		
+		// get inner tube rotation
 		double innerTubeRotation = 0;
 		this->robot_mutex.lock();
 		this->getInnerTubeRotation(innerTubeRotation);
 		this->robot_mutex.unlock();
 
+		// get the valve normal
 		::Eigen::Vector3d normal(0, 0, 1);
 		double normal_[3], center_[3];
 		iModel.getNormal(normal_);
 		iModel.getCenter(center_);
 		normal = ::Eigen::Map<::Eigen::Vector3d> (normal_, 3);
 
+		// robot position based on the Fourier model
 		double regError = 0;
 		::Eigen::Vector3d robot_positionEig = ::Eigen::Map<::Eigen::Vector3d> (this->actualPosition, 3);
 
 		::cv::Vec4f line;
 		::Eigen::Vector2d centroidEig, centroidEig2, tangentEig, velCommand,  tangentEigFiltered;
-		//if (this->contactCurr == 1)
+		if (this->contactCurr == 1)
 		{
-			//::std::cout << "contact" << ::std::endl;
+
 			::cv::Vec2f centroid, centroid2;
+
 			this->lineDetected = this->lineDetector.processImage(img, line, centroid, true, 2, LineDetector::MODE::CIRCUM);
 
-			centroidEig2(0) = line[2];
-			centroidEig2(1) = line[3];
+			if (this->lineDetected)
+			{
+				centroidEig2(0) = centroid[0];
+				centroidEig2(1) = centroid[1];
+			}
 
 			if (this->lineDetected)
 				this->processDetectedLine(line, img, centroid, centroidEig, tangentEig, tangentEigFiltered);
 
 		}
-		
+		this->applyVisualServoingController(centroidEig, tangentEigFiltered, velCommand);
+
 		::Eigen::Vector3d centroidOnValve(0, 0, 0);
-		::Eigen::Vector2d channelCenter(37, 102);
+		::Eigen::Vector2d channelCenter(72, 135);
+
 		// store original centroid for adding points to the model
-		this->iModel.setFollowedClockPosition(9.0);
+		this->iModel.setFollowedClockPosition(this->getInitialPositionOnValve());
 		if (this->contactCurr == 1 && this->lineDetected)
 		{
+			this->computeClockfacePosition();
+
 			centroidOnValve.segment(0, 2) = centroidEig2;
 			computePointOnValve(centroidOnValve, channelCenter, innerTubeRotation, imageInitRotation, normal);
 			centroidOnValve(2) = this->actualPosition[2];
 
-			//this->iModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2));
 			this->iModel.updateModel(centroidOnValve(0), centroidOnValve(1),centroidOnValve(2), this->realClockPosition);
-
-			//static bool reg_set = false;
-			//double reg_error = 0;
-			//if (!reg_set)
-			//{
-			//	iModel.setRegistrationRotation(reg_error);
-			//	this->m_clock.setRegistrationOffset(reg_error/30.0, 4);
-			//	reg_set = true;
-			//}
 		}
 
-
+		
 		::Eigen::Vector2d regCentroid;
 		this->m_registrationHandler.setWorkingChannel(channelCenter);
-		//if (this->m_registrationHandler.processImage(img, this->realClockPosition, regError))
-		if (this->m_registrationHandler.processImage(img, regCentroid , innerTubeRotation, this->imageInitRotation, normal, regError, this->realClockPosition))
+
+		this->m_registrationHandler.setRegDetected(false);
+
+		if (this->lineDetected)
 		{
+			if (this->m_registrationHandler.processImage(img, centroidEig2 , innerTubeRotation, this->imageInitRotation, normal, this->realClockPosition, regError))
+			{
+				::std::cout << "in registration" << ::std::endl;
 
-			::std::cout << "in registration" << ::std::endl;
+				double marker = this->m_registrationHandler.getRecentMarker();
 
-			double marker = this->m_registrationHandler.getRecentMarker();
+				this->m_clock.setRegistrationOffset(regError/30.0, marker);
 
-			this->m_clock.setRegistrationOffset(regError/30.0, marker);
+				this->iModel.setRegistrationRotation(regError);
+			}
 
-			this->iModel.setRegistrationRotation(regError);
 		}
-
-
 
 		this->reg_detected = m_registrationHandler.getRegDetected();
 
@@ -892,7 +880,6 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 		}
 
-		this->applyVisualServoingController(centroidEig, tangentEigFiltered, velCommand);
 
 		this->robot_mutex.lock();
 		memcpy(this->velocityCommand, velCommand.data(), 2 * sizeof(double));
@@ -909,9 +896,6 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(0, 255, 0), 2, CV_AA);
 			::cv::circle(img, ::cv::Point(centroidEig[0], centroidEig[1]), 5, ::cv::Scalar(255,0,0));
-
-			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*100, centroidEig(1)+tangentEigFiltered(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
-			//::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEigFiltered(0)*(-100), centroidEig(1)+tangentEigFiltered(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
 
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*100, centroidEig(1)+tangentEig(1)*100), ::cv::Scalar(255, 255, 0), 2, CV_AA);
 			::cv::line( img, ::cv::Point(centroidEig(0), centroidEig(1)), ::cv::Point(centroidEig(0)+tangentEig(0)*(-100), centroidEig(1)+tangentEig(1)*(-100)), ::cv::Scalar(255, 255, 0), 2, CV_AA);
@@ -1390,7 +1374,7 @@ ReplayEngine::computeClockfacePosition()
 	angle *= 180.0/M_PI;		
 
 	if (angle >= 180)
-		angle -= 180;
+		angle -= 2 * 180;
 
 
 	double clockAngle1 = 0, clockAngle2 = 0;
@@ -1411,6 +1395,9 @@ ReplayEngine::computeClockfacePosition()
 	if (c1 > 12) c1 -= 12;
 	if (c2 > 12) c2 -= 12;
 
+	if (c1 < 0) c1 += 12;
+	if (c2 < 0) c2 += 12;
+
 	static int counterLine = 0;
 
 	double d1;
@@ -1418,8 +1405,8 @@ ReplayEngine::computeClockfacePosition()
 
 	if (counterLine == 0)
 	{
-		d1 = this->computeClockDistance(this->clockPosition, c1);
-		d2 = this->computeClockDistance(this->clockPosition, c2);
+		d1 = this->computeClockDistance(this->getInitialPositionOnValve(), c1);
+		d2 = this->computeClockDistance(this->getInitialPositionOnValve(), c2);
 	}
 	else
 	{
@@ -1497,17 +1484,17 @@ void ReplayEngine::checkDirection(::Eigen::Matrix<double, 3, 1>& err)
 
 	if (tmp < 0)
 	{
-		::std::cout << "reverting vel->";
+		//::std::cout << "reverting vel->";
 		tangent_vel *= -1;
 	}
 
-	::std::cout << "cross-product [before]: " << commandedDirection(2) << ", ";
+	//::std::cout << "cross-product [before]: " << commandedDirection(2) << ", ";
 
 	::Eigen::Vector3d final_vel = center_vel + tangent_vel;
 
 	commandedDirection = axisToTipPositionVector.cross(tangent_vel);
 	commandedDirection.normalize();
 	/*tmp = circDirection(2) * commandedDirection(2);*/
-	::std::cout << "cross-product [after]: " << commandedDirection(2) << ::std::endl;
+	//::std::cout << "cross-product [after]: " << commandedDirection(2) << ::std::endl;
 	err.block(0, 0, 3, 1) = final_vel;
 }

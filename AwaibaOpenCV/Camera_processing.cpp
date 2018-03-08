@@ -1868,6 +1868,7 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	m_linedetected = false;
 	this->m_valveModel.setInitialOffset(this->registrationOffset);
+	
 	// make sure the initialized valve is correct based on which wall we followed
 	this->m_valveModel.setWallFollowingState(this->wall_followed);
 	if (this->wall_followed == IncrementalValveModel::WALL_FOLLOWED::USER)
@@ -1879,7 +1880,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 
 	this->updateModel();
 
-	//this->updateRegistration(img);
+	if (this->m_linedetected)
+		this->updateRegistration(img);
 
 }
 
@@ -2249,7 +2251,7 @@ Camera_processing::computeClockfacePosition()
 	angle *= 180.0/M_PI;		
 
 	if (angle >= 180)
-		angle -= 180;
+		angle -= 2 * 180;
 
 
 	double clockAngle1 = 0, clockAngle2 = 0;
@@ -2259,14 +2261,11 @@ Camera_processing::computeClockfacePosition()
 	::Eigen::Vector3d point;
 	double clockfacePosition = -1.0;
 
-	if (this->m_valveModel.isInitialized())
-		this->m_valveModel.getClockfacePosition(this->m_model_robot_position[0], this->m_model_robot_position[1], this->m_model_robot_position[2], clockfacePosition, point);
-	else
-		clockfacePosition = this->getInitialClockPosition();
+	clockfacePosition = this->getInitialClockPosition();
 	
 	double offset = 0.0;
-	//if (this->m_valveModel.isRegistered())
-		offset = this->m_valveModel.getRegistrationOffset();
+
+	offset = this->m_valveModel.getRegistrationOffset();
 
 	clockAngle1 -= offset;
 	clockAngle2 -= offset;
@@ -2276,6 +2275,9 @@ Camera_processing::computeClockfacePosition()
 	
 	if (c1 > 12) c1 -= 12;
 	if (c2 > 12) c2 -= 12;
+
+	if (c1 < 0) c1 += 12;
+	if (c2 < 0) c2 += 12;
 
 	double d1;
 	double d2;
@@ -2445,15 +2447,16 @@ Camera_processing::postProcessLine(const ::cv::Mat& img)
 	this->line_to_plot[1] = centroidEig(1);
 	this->line_to_plot[2] = tangentEig(0);
 	this->line_to_plot[3] = tangentEig(1);
+
 	if (m_linedetected)
 	{
-	// last transformation to align image frame with robot frame for convenience
-	this->rot2 = RotateZ( -90 * M_PI/180.0);
-	this->centroidEig = this->rot2.block(0, 0, 2, 2).transpose() * this->centroidEig - this->rot2.block(0, 0, 2, 2).transpose() * this->displacement;
-	this->tangentEig = this->rot2.block(0, 0, 2, 2).transpose() * this->tangentEig;
+		// last transformation to align image frame with robot frame for convenience
+		this->rot2 = RotateZ( -90 * M_PI/180.0);
+		this->centroidEig = this->rot2.block(0, 0, 2, 2).transpose() * this->centroidEig - this->rot2.block(0, 0, 2, 2).transpose() * this->displacement;
+		this->tangentEig = this->rot2.block(0, 0, 2, 2).transpose() * this->tangentEig;
 
-	memcpy(m_centroid, centroidEig.data(), 2 * sizeof(double));
-	memcpy(m_tangent, tangentEig.data(), 2 * sizeof(double));
+		memcpy(m_centroid, centroidEig.data(), 2 * sizeof(double));
+		memcpy(m_tangent, tangentEig.data(), 2 * sizeof(double));
 	}
 }
 

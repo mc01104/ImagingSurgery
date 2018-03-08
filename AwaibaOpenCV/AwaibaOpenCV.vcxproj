@@ -61,12 +61,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\LineDetection;..\Classifier;..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SystemDrive)\Program Files\Phidgets\Phidget22;..\LineDetection;..\Classifier;..\BagOfWords;$(OPENCV_DIR)\..\..\include;$(SolutionDir)\BagOfWords;$(SolutionDir)\AwaibaOpenCV;$(SolutionDir)\Lib\Naneye_lib\cppapi;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>LineDetection.lib;Classifier.lib;opencv_world310d.lib;opencv_xfeatures2d310d.lib;BagOfWords.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SystemDrive)\Program Files\Phidgets\Phidget22\phidget22.lib;LineDetection.lib;Classifier.lib;opencv_world310d.lib;opencv_xfeatures2d310d.lib;BagOfWords.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../$(Platform)/$(Configuration);$(OPENCV_DIR)\lib;$(SolutionDir)\\Lib\Naneye_lib\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
