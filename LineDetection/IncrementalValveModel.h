@@ -45,7 +45,7 @@ class IncrementalValveModel
 
 		WALL_FOLLOWED wallFollowingState;
 
-		int clockFollowed;
+		double clockFollowed;
 
 		double prevClockPosition;
 
@@ -92,7 +92,7 @@ class IncrementalValveModel
 
 		void getNearestPointOnCircle(double position[3], double closestPoint[3]);
 
-		double getNumberOfPoints() {return  this->points.size();};
+		int getNumberOfPoints() {return  this->points.size();};
 
 		void clockfaceToWorldPosition(double angle, ::Eigen::Vector3d& point);
 

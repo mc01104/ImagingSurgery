@@ -1,5 +1,7 @@
 #include "LoadCell.h"
 
+#include <iostream>
+
 std::mutex sensorLock;  
 
 LoadCell::LoadCell(int dataInterval, PhidgetVoltageRatioInput_BridgeGain bridgeGain)
@@ -80,10 +82,12 @@ LoadCell::LoadCell(int dataInterval, PhidgetVoltageRatioInput_BridgeGain bridgeG
 
 LoadCell::~LoadCell()
 {
-	Phidget_close((PhidgetHandle)ch);
-	PhidgetVoltageRatioInput_delete(&ch);
+	res = Phidget_close((PhidgetHandle)ch);
+	res = PhidgetVoltageRatioInput_delete(&ch);
 
-	exit(res);
+	delete(this->errs);
+
+	::std::cout << "exited with code: " << this->res << ::std::endl;
 }
 
 PhidgetReturnCode 

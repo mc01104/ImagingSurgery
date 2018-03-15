@@ -9,11 +9,11 @@ RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125,
 {
 	model = new IncrementalValveModel();
 
-    l_thres = 32;
-	h_thres = 100;
+    l_thres = 30;
+	h_thres = 90;
 
-    l_thres_s = 0;
-	h_thres_s = 116;
+    l_thres_s = 25;
+	h_thres_s = 255;
 
 	l_thres_v = 1;
 	h_thres_v = 255;
@@ -35,11 +35,11 @@ RegistrationHandler::RegistrationHandler() : centroid(0, 0), workingChannel(125,
 RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(model), centroid(0, 0), workingChannel(125, 200), registrationError(0),
 	markers(12, 4, 8), regDetected(false), clockface(-1), offset(0, 0, 1), iter(0)
 {
-    l_thres = 32;
-	h_thres = 100;
+    l_thres = 30;
+	h_thres = 90;
 
-    l_thres_s = 0;
-	h_thres_s = 116;
+    l_thres_s = 20;
+	h_thres_s = 255;
 
 	l_thres_v = 1;
 	h_thres_v = 255;
@@ -144,6 +144,7 @@ RegistrationHandler::threshold(const ::cv::Mat& img, ::cv::Mat& thresholdedImg)
 
 	::cv::findNonZero(bin, nonzero);
 
+	::std::cout << "number of registration points: " << nonzero.size() << :: std::endl;
  	if (nonzero.size() < 100) // used to be 500 - test
 		return false;
 

@@ -93,10 +93,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="awcorecpp.cpp" />
-    <ClCompile Include="Camera_processing.cpp" />
+    <ClCompile Include="Camera_processing.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Level4</WarningLevel>
+    </ClCompile>
     <ClCompile Include="CSV_reader.cpp" />
     <ClCompile Include="Helpers.cpp" />
-    <ClCompile Include="LoadCell.cpp" />
+    <ClCompile Include="LoadCell.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Level4</WarningLevel>
+    </ClCompile>
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>

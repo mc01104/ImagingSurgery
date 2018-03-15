@@ -19,7 +19,7 @@ class RegistrationHandler
 	double registrationError;
 
 	::Eigen::Vector3d markers;
-	::std::vector<int> visitedMarkers;
+	::std::vector<double> visitedMarkers;
 
 	bool isInitialized;
 

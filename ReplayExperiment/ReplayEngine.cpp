@@ -90,7 +90,7 @@ ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::strin
 	std::sort(imList.begin(), imList.end(), numeric_string_compare);	
 
 	//this->offset = 3240;
-	this->offset = 1000;
+	this->offset = 0;
 
 	//::std::vector<::std::string> dataStr = ReadLinesFromFile(this->getDataPath());
 	//::std::vector<double> tmpData = DoubleVectorFromString(dataStr[this->offset], ',');
@@ -167,7 +167,7 @@ void ReplayEngine::run()
 
 void ReplayEngine::simulate(void* tData)
 {
-	::std::string filename = GetDateString() + "_threads.avi";
+	::std::string filename = GetDateString() + "_new_reg_marker.avi";
 
 	::cv::VideoWriter video(filename, ::cv::VideoWriter::fourcc('M','P','E','G'), 20, ::cv::Size(250, 250));
 
@@ -264,16 +264,16 @@ void ReplayEngine::simulate(void* tData)
 		//{
 		//	tDataSim->iModel.getClockfacePosition(tDataSim->actualPosition[0], tDataSim->actualPosition[1], tDataSim->actualPosition[2], clockfacePosition, point);
 		//	tDataSim->computeClockfacePosition();
-		if (tDataSim->realClockPosition >= 0)
-			tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
-		//}
+		//if (tDataSim->realClockPosition >= 0)
+		//	tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
+		////}
 
 		double width = 50, height = 50;
-		if (tDataSim->contactCurr)
-			::cv::putText(tmpImage, "contact", ::cv::Point(170, 180), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 255, 255), 2);
+		//if (tDataSim->contactCurr)
+		//	::cv::putText(tmpImage, "contact", ::cv::Point(170, 180), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 255, 255), 2);
 
-		if (tDataSim->contact_filtered_med)
-			::cv::putText(tmpImage, "filtered", ::cv::Point(170, 150), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 0, 255), 2);
+		//if (tDataSim->contact_filtered_med)
+		//	::cv::putText(tmpImage, "filtered", ::cv::Point(170, 150), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 0, 255), 2);
 
 		::cv::Rect rec = ::cv::Rect(tDataSim->regPointCV.x - 0.5 * width, tDataSim->regPointCV.y - 0.5 * height, width, height);
 		if (tDataSim->reg_detected)
@@ -813,7 +813,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 
 		::cv::Vec4f line;
 		::Eigen::Vector2d centroidEig, centroidEig2, tangentEig, velCommand,  tangentEigFiltered;
-		if (this->contactCurr == 1)
+		//if (this->contactCurr == 1)
 		{
 
 			::cv::Vec2f centroid, centroid2;

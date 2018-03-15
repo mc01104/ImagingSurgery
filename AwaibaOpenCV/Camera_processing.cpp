@@ -1336,7 +1336,7 @@ void Camera_processing::robotDisplay(void)
 	double normal[3] = {0};
 
 	// populate Points with dummy data for initialization
-	unsigned int npts = 1;
+	int npts = 1;
 	vtkSmartPointer<vtkPolyLineSource> lineSource = vtkSmartPointer<vtkPolyLineSource>::New();
 	for (unsigned int i=0;i<npts;i++)
 		lineSource->SetPoint(i, i,i,i);
@@ -1739,7 +1739,6 @@ void Camera_processing::OnLinePlot()
 
     // No longer need server socket
     closesocket(ListenSocket);
-	int counter = 0;
 	
     do {
 		::std::ostringstream ss;

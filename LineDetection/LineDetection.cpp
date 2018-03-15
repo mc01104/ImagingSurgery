@@ -11,14 +11,14 @@ LineDetector::LineDetector() : counter(0)
 	mode = MODE::CIRCUM;
 
 	/// Initialize values
-    min_h = 100;
-	max_h = 130;
+    min_h = 92;
+	max_h = 135;
 
-    min_s = 78;
+    min_s = 40;
 	max_s = 255;
 
 	min_v = 1;
-	max_v = 255;
+	max_v = 220;
 
 	sliderValueHueMin = min_h;
 	sliderValueHueMax = max_h;
@@ -296,9 +296,10 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	::cv::waitKey(1);
 
 	//::std::cout << nonzero.size() << " points" << ::std::endl;
+	::std::cout << "number of line points: " << nonzero.size() << :: std::endl;
 	if (nonzero.size() > 50)
 	{
-		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 20, 2);
+		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 15, 2);
 
 		if (lines_hough.size() <= 0)
 			return false;
