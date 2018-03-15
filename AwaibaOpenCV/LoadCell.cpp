@@ -215,9 +215,12 @@ void CCONV LoadCell::errorHandler(PhidgetHandle phid, void *ctx, Phidget_ErrorEv
 void CCONV LoadCell::onVoltageRatioChangeHandler(PhidgetVoltageRatioInputHandle ch, void *ctx, double ratio)
 {
 	LoadCell* cellPtr = reinterpret_cast<LoadCell*> (ctx);
+
 	sensorLock.lock();
+
 	cellPtr->setMeasurement(cellPtr->voltageRatioToForce(ratio));
 	cellPtr->setRawMeasurement(ratio);
+
 	sensorLock.unlock();
 }
 
@@ -225,5 +228,6 @@ void CCONV LoadCell::onVoltageRatioChangeHandler(PhidgetVoltageRatioInputHandle 
 double LoadCell::voltageRatioToForce(double voltageRatio)
 {
 	double slope = -9.1828;
+
 	return slope * (voltageRatio - this->zero_reference_voltage) * 1.0e03;
 }
