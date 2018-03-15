@@ -383,7 +383,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 			::std::thread t_network (&Camera_processing::networkKinematics, this);
 			::std::thread t_vtk (&Camera_processing::robotDisplay, this);
 			::std::thread t_vtk_render (&Camera_processing::vtkRender, this);
-			//::std::thread t_plot(&Camera_processing::OnLinePlot, this);
+			::std::thread t_plot(&Camera_processing::OnLinePlot, this);
 
 #ifndef __DESKTOP_DEVELOPMENT__
 			t_acquire.join();
@@ -394,7 +394,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 			t_network.join();
 			t_vtk_render.join();
 			t_vtk.join();
-			//t_plot.join();
+			t_plot.join();
 		}
 
 		else
@@ -708,9 +708,9 @@ void Camera_processing::displayImages(void)
 			double force_measurement = 0;
 			double raw_measurement = 0;
 
-			//this->load_cell_sensor.getMeasurement(force_measurement);
-			//this->load_cell_sensor.getRawMeasurement(raw_measurement);
-			//:: std::cout << "force:" << force_measurement <<"    voltage_ratio:"  << raw_measurement << ::std::endl;
+			this->load_cell_sensor.getMeasurement(force_measurement);
+			this->load_cell_sensor.getRawMeasurement(raw_measurement);
+			:: std::cout << "force:" << force_measurement <<"    voltage_ratio:"  << raw_measurement << ::std::endl;
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
@@ -1740,13 +1740,15 @@ void Camera_processing::OnLinePlot()
     // No longer need server socket
     closesocket(ListenSocket);
 	int counter = 0;
-	
+	double force_measurement = 0;
     do {
 		::std::ostringstream ss;
 		//ss << sin(2 * M_PI * (double) counter/100);
 		//ss << "sin,cos," << sin(2 * M_PI * (double) counter/100) << "," << cos(2 * M_PI * (double) counter/100);
 		//data[18] = 20 + 1 * sin(2*M_PI * (double) counter/400);
-		ss <<"frequency,CR,tipZ," << m_input_frequency << "," << m_contactAvgOverHeartCycle << "," << m_SolutionFrames.back().GetPosition()[2];
+		this->load_cell_sensor.getMeasurement(force_measurement);
+		ss <<"CR,force," << m_contactAvgOverHeartCycle << "," << force_measurement; 
+
 		//for(int i = 0; i < 22; ++i)
 		//	ss << data[i] << " ";
 		//counter++;
@@ -1761,7 +1763,7 @@ void Camera_processing::OnLinePlot()
         else if (iSendResult == 0)
             printf("Connection closing...\n");
  
-		iResult = recv(ClientSocket, recvbuf, DEFAULT_BUFLEN, 0);
+		iResult = recv(ClientSocket, recvbuf, 512, 0);
 
     } while (iResult > 0);
 

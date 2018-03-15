@@ -2,14 +2,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef __cplusplus
 
-extern "C" {
-#endif
+//#ifdef __cplusplus
+//
+//extern "C" {
+//#endif
 #include <phidget22.h> 
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//}
+//#endif
 
 #include <mutex>
 
