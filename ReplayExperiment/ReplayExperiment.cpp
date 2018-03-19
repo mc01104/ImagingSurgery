@@ -344,7 +344,7 @@ int testReplayEngine()
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-56-25";	
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_14-00-43";	
 
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/2018-03-13_11-19-39";	
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/2018-03-15_14-09-51";	
 
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
