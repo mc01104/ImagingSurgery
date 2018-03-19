@@ -708,9 +708,9 @@ void Camera_processing::displayImages(void)
 			double force_measurement = 0;
 			double raw_measurement = 0;
 
-			//this->load_cell_sensor.getMeasurement(force_measurement);
-			//this->load_cell_sensor.getRawMeasurement(raw_measurement);
-			//:: std::cout << "force:" << force_measurement <<"    voltage_ratio:"  << raw_measurement << ::std::endl;
+			this->load_cell_sensor.getMeasurement(force_measurement);
+			this->load_cell_sensor.getRawMeasurement(raw_measurement);
+			:: std::cout << "force:" << force_measurement <<"    voltage_ratio:"  << raw_measurement << ::std::endl;
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
