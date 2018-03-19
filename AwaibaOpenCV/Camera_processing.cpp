@@ -210,9 +210,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 51;
 	//m_channel_center(1) = 133;
 
-	//// scope 5
-	//m_channel_center(0) = 152;
-	//m_channel_center(1) = 151;
+	// scope 5
+	m_channel_center(0) = 152;
+	m_channel_center(1) = 151;
 
 	//// scope 6
 	//m_channel_center(0) = 120;
@@ -222,9 +222,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 86;
 	//m_channel_center(1) = 118;
 
-	// scope 8
-	m_channel_center(0) = 72;
-	m_channel_center(1) = 135;
+	//// scope 8
+	//m_channel_center(0) = 72;
+	//m_channel_center(1) = 135;
 
 	//// scope 9
 	//m_channel_center(0) = 110;
@@ -768,12 +768,12 @@ void Camera_processing::displayImages(void)
 				this->computeClockfacePosition();			// this updates the clock position based on measurements
 				this->m_clock.update(frame_rotated, this->realClockPosition);
 			}
-			//double width = 50, height = 50;
-			//::cv::Rect rec = ::cv::Rect(this->regPointCV.x - 0.5 * width, this->regPointCV.y - 0.5 * height, width, height);
-			//if (this->reg_detected)
-			//	::cv::rectangle(frame_rotated, rec, ::cv::Scalar(0, 0, 255), 2);
-			//
-			//this->reg_detected = false;
+			double width = 50, height = 50;
+			::cv::Rect rec = ::cv::Rect(this->regPointCV.x - 0.5 * width, this->regPointCV.y - 0.5 * height, width, height);
+			if (this->reg_detected)
+				::cv::rectangle(frame_rotated, rec, ::cv::Scalar(0, 0, 255), 2);
+			
+			this->reg_detected = false;
 
 			//::cv::Point p1 = ::cv::Point(this->line_to_plot[0] - 50 * this->m_tangent[0], this->line_to_plot[1] - 50 * this->m_tangent[1]);
 			//::cv::Point p2 = ::cv::Point(this->line_to_plot[0] + 50 * this->m_tangent[0], this->line_to_plot[1] + 50 * this->m_tangent[1]);
@@ -1200,8 +1200,11 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 			this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::BOTTOM;
 			break;
 		default:
+			//this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::USER;
 			this->wall_followed = IncrementalValveModel::WALL_FOLLOWED::USER;
+			
 			this->clockFollowed = tmp;
+			//::std::cout << this->clockFollowed << ::std::endl;
 			break;
 	}
 
@@ -2341,7 +2344,7 @@ Camera_processing::getInitialClockPosition()
 			return 6.0;
 			break;
 		default:
-			return this->wall_followed;			
+			return this->clockFollowed;			
 			break;
 	}
 }

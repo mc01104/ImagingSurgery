@@ -296,7 +296,7 @@ bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, :
 	::cv::waitKey(1);
 
 	//::std::cout << nonzero.size() << " points" << ::std::endl;
-	::std::cout << "number of line points: " << nonzero.size() << :: std::endl;
+	//::std::cout << "number of line points: " << nonzero.size() << :: std::endl;
 	if (nonzero.size() > 50)
 	{
 		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 15, 2);
