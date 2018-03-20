@@ -77,7 +77,7 @@ public:
 
 ReplayEngine::ReplayEngine(const ::std::string& dataFilename, const ::std::string& pathToImages)
 	: dataFilename(dataFilename), pathToImages(pathToImages), r_filter(10), theta_filter(1, &angularDistanceMinusPItoPI),
-	lineDetected(false), robot_rotation(0), imageInitRotation(-90), wallDetector(), wallDetected(false),
+	lineDetected(false), robot_rotation(0), imageInitRotation(+90), wallDetector(), wallDetected(false),
 	filter(5), theta_filter_complex(4), new_version(true), contactCurr(0), contactPrev(0), centroidEig2(0, 0),
 	m_clock(), reg_detected(false), clockPosition(-1.0), realClockPosition(-1), contact_ratio(0),
 	lineDetector(), m_registrationHandler(&iModel)
@@ -240,8 +240,8 @@ void ReplayEngine::simulate(void* tData)
 		{
 			case LINE_DETECTION:
 				tDataSim->detectLine(tmpImage);
-				//tDataSim->computeClockfacePosition();
-				//tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
+				tDataSim->computeClockfacePosition();
+				tDataSim->m_clock.update(tmpImage, tDataSim->realClockPosition);
 
 				break;
 			case WALL_DETECTION:
@@ -1355,7 +1355,7 @@ ReplayEngine::processKeyboardInput(char key)
 int
 ReplayEngine::getInitialPositionOnValve()
 {
-	return 12;
+	return 6;
 }
 
 

@@ -2493,3 +2493,16 @@ Camera_processing::detectLine(const ::cv::Mat& img)
 	this->centroid_unrotated(0) = this->centroidEig(0);
 	this->centroid_unrotated(1) = this->centroidEig(1);
 }
+
+
+void
+Camera_processing::readFromForceSensor()
+{
+	double force = 0.0;
+	while (1)
+	{
+		this->load_cell_sensor.getMeasurement(force);
+		::std::cout << force << ::std::endl;
+		Sleep(8);
+	}
+}

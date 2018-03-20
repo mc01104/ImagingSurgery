@@ -214,6 +214,8 @@ private:
 	void vtkRender(void);
 	void OnLinePlot(void);
 	void initializeValveDisplay();
+	void readFromForceSensor();
+
 	// keyboard input processing
 	void processInput(char key);
 	void displayValve(double normal[3], double center[3], double radius);
