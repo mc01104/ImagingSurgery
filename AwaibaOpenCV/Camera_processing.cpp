@@ -708,9 +708,9 @@ void Camera_processing::displayImages(void)
 			double force_measurement = 0;
 			double raw_measurement = 0;
 
-			this->load_cell_sensor.getMeasurement(force_measurement);
-			this->load_cell_sensor.getRawMeasurement(raw_measurement);
-			:: std::cout << "force:" << force_measurement <<"    voltage_ratio:"  << raw_measurement << ::std::endl;
+			//this->load_cell_sensor.getMeasurement(force_measurement);
+			//this->load_cell_sensor.getRawMeasurement(raw_measurement);
+			//:: std::cout << "force:" << force_measurement <<"    voltage_ratio:"  << raw_measurement << ::std::endl;
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
@@ -765,7 +765,7 @@ void Camera_processing::displayImages(void)
 
 			if (m_circumnavigation)
 			{
-				this->computeClockfacePosition();			// this updates the clock position based on measurements
+				//this->computeClockfacePosition();			// this updates the clock position based on measurements
 				this->m_clock.update(frame_rotated, this->realClockPosition);
 			}
 			double width = 50, height = 50;
@@ -1882,6 +1882,8 @@ void Camera_processing::computeCircumnavigationParameters(const ::cv::Mat& img)
 	this->detectLine(img);
 
 	this->postProcessLine(img);
+
+	this->computeClockfacePosition();
 
 	this->updateModel();
 
