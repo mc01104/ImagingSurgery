@@ -36,9 +36,9 @@ RegistrationHandler::RegistrationHandler(IncrementalValveModel* model) : model(m
 	markers(12, 4, 8), regDetected(false), clockface(-1), offset(0, 0, 1), iter(0)
 {
     l_thres = 30;
-	h_thres = 90;
+	h_thres = 100;
 
-    l_thres_s = 20;
+    l_thres_s = 0;
 	h_thres_s = 255;
 
 	l_thres_v = 1;

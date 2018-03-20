@@ -702,7 +702,7 @@ void ReplayEngine::processDetectedLine(const ::cv::Vec4f& line, ::cv::Mat& img ,
 	// filter
 	r = this->r_filter.step(r);
 	
-	theta = this->theta_filter_complex.step(theta); 
+	//theta = this->theta_filter_complex.step(theta); 
 
 	//::Eigen::Vector2d tmp2(cos(theta_previous), sin(theta_previous));
 	//::Eigen::Vector2d tmp3(cos(theta), sin(theta));
@@ -840,7 +840,7 @@ void ReplayEngine::detectLine(::cv::Mat& img)
 		if (this->contactCurr == 1 && this->lineDetected)
 		{
 			this->computeClockfacePosition();
-
+			::std::cout << "robot clockface position:" << this->realClockPosition << ::std::endl;
 			centroidOnValve.segment(0, 2) = centroidEig2;
 			computePointOnValve(centroidOnValve, channelCenter, innerTubeRotation, imageInitRotation, normal);
 			centroidOnValve(2) = this->actualPosition[2];
@@ -1355,7 +1355,7 @@ ReplayEngine::processKeyboardInput(char key)
 int
 ReplayEngine::getInitialPositionOnValve()
 {
-	return 6;
+	return 7;
 }
 
 
@@ -1375,7 +1375,7 @@ ReplayEngine::computeClockfacePosition()
 	angle *= 180.0/M_PI;		
 
 	if (angle >= 180)
-		angle -= 1 * 180;
+		angle -= 2 * 180;
 
 
 	double clockAngle1 = 0, clockAngle2 = 0;
@@ -1386,6 +1386,7 @@ ReplayEngine::computeClockfacePosition()
 	if (this->iModel.isRegistered())
 		offset = this->iModel.getRegistrationOffset();
 
+	//::std::cout << "total offset:" << offset <<  ::std::endl;
 	clockAngle1 -= offset;
 	clockAngle2 -= offset;
 
@@ -1396,8 +1397,8 @@ ReplayEngine::computeClockfacePosition()
 	if (c1 > 12) c1 -= 12;
 	if (c2 > 12) c2 -= 12;
 
-	//if (c1 < 0) c1 += 12;
-	//if (c2 < 0) c2 += 12;
+	if (c1 < 0) c1 += 12;
+	if (c2 < 0) c2 += 12;
 
 	static int counterLine = 0;
 

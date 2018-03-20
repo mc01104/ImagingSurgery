@@ -80,7 +80,7 @@ class IncrementalValveModel
 
 		void setRegistrationRotation(double rotation);
 
-		double getRegistrationOffset() {return this->registrationRotation + this->initialOffset;};
+		double getRegistrationOffset() {return this->totalOffset + this->initialOffset;};
 
 		double getInitialOffset(){return this->initialOffset;};
 
