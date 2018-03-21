@@ -505,13 +505,6 @@ void Camera_processing::processInput(char key)
 		::std::cout << "model was reset" << ::std::endl;
 		break;
 	case 'f':
-		//m_estimateFreq = !m_estimateFreq;
-		//if (m_estimateFreq)
-		//{
-		//	::std::cout << "frequency estimation is switched on" << ::std::endl;
-		//	m_freqFilter->resetFilter();
-		//}
-		//break;
 		this->manualRegistration = !this->manualRegistration;
 		::std::cout << "automatic registration is switched " << (this->manualRegistration ? "off" : "on") << ::std::endl;
 		this->m_valveModel.resetRegistration();
