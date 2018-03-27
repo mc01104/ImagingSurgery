@@ -345,9 +345,10 @@ int testReplayEngine()
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_14-00-43";	
 
 	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/2018-03-15_14-09-51";	
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/0319-exvivo/2018-03-20_11-49-25";	
+	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/0319-exvivo/2018-03-20_11-49-25";	
 	//::std::string img_path = "F:/2018-03-15_14-09-51";	
 	
+	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-03-22_bypass_cardioscopy/Videos_2018-03-22/2018-03-22_14-12-01";	
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
 
 	BagOfFeatures contact_classifier;

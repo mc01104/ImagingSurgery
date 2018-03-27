@@ -138,6 +138,7 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	wall_followed(IncrementalValveModel::WALL_FOLLOWED::LEFT), manualRegistration(false), m_clock(), reg_detected(false), realClockPosition(-1.0), manualRegistered(false),
 	counterLine(0), m_contact_filtered(0), normal(0, 0, 1), tmpCentroid(0, 0), load_cell_sensor(10)
 {
+	m_converged = false;
 	// Animate CRT to dump leaks to console after termination.
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	m_points = false;
@@ -502,6 +503,7 @@ void Camera_processing::processInput(char key)
 		this->counterLine = 0;
 		this->realClockPosition = -1.0;
 		this->reg_detected = false;
+		this->m_converged = false;
 		::std::cout << "model was reset" << ::std::endl;
 		break;
 	case 'f':
@@ -760,6 +762,9 @@ void Camera_processing::displayImages(void)
 			{
 				//this->computeClockfacePosition();			// this updates the clock position based on measurements
 				this->m_clock.update(frame_rotated, this->realClockPosition);
+
+				if (m_converged)
+					::cv::putText(frame_rotated, ::cv::String("Yeah!!"), ::cv::Point(125, 125), ::cv::FONT_HERSHEY_PLAIN, 1.0, ::cv::Scalar(255, 255, 255));
 			}
 			double width = 50, height = 50;
 			::cv::Rect rec = ::cv::Rect(this->regPointCV.x - 0.5 * width, this->regPointCV.y - 0.5 * height, width, height);
@@ -1205,17 +1210,19 @@ void Camera_processing::parseNetworkMessage(::std::vector<double>& msg)
 	this->m_valveModel.setInitialOffset(this->registrationOffset);
 	this->m_clock.setInitialOffset(this->registrationOffset/30.0);
 
-	m_input_plane_received = msg.data()[26];
+	this->m_converged = msg.data()[26];
+
+	m_input_plane_received = msg.data()[27];
 	if (m_input_plane_received)
 	{
-		memcpy(m_normal, &msg.data()[27], 3 * sizeof(double));
-		memcpy(m_center, &msg.data()[30], 3 * sizeof(double));
-		m_radius = msg.data()[33];
+		memcpy(m_normal, &msg.data()[28], 3 * sizeof(double));
+		memcpy(m_center, &msg.data()[31], 3 * sizeof(double));
+		m_radius = msg.data()[34];
 
 		pointsOnValve.clear();
-		int num_of_points = msg.data()[34];
+		int num_of_points = msg.data()[35];
 		for (int i = 0; i < 3 * num_of_points; ++i)
-			pointsOnValve.push_back(msg[35+i]);
+			pointsOnValve.push_back(msg[36+i]);
 	}
 	this->mutex_robotshape.unlock();
 

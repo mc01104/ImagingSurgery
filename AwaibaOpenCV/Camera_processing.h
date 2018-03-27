@@ -128,6 +128,7 @@ private:
 	bool m_network;
 	std::vector<SE3> m_SolutionFrames;
 
+	bool m_converged;
 	// mutex for image sharing between threads
 	::std::mutex mutex_img;
 	::std::mutex mutex_img_force;
