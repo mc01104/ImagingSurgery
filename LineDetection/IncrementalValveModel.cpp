@@ -165,6 +165,7 @@ IncrementalValveModel::resetModel()
 	this->resetRegistration();
 
 	this->registered = false;
+	this->totalOffset = 0;
 }
 
 void
@@ -426,6 +427,8 @@ IncrementalValveModel::resetRegistration()
 	this->referencePosition = ::Eigen::Vector3d(0, 1, 0);
 
 	this->initialOffset = 0;
+
+	this->totalOffset = 0;
 
 	this->updateReferencePosition();
 

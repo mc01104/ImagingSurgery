@@ -210,9 +210,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 51;
 	//m_channel_center(1) = 133;
 
-	// scope 5
-	m_channel_center(0) = 152;
-	m_channel_center(1) = 151;
+	//// scope 5
+	//m_channel_center(0) = 152;
+	//m_channel_center(1) = 151;
 
 	//// scope 6
 	//m_channel_center(0) = 120;
@@ -222,9 +222,9 @@ Camera_processing::Camera_processing(int period, bool sendContact) : m_Manager(M
 	//m_channel_center(0) = 86;
 	//m_channel_center(1) = 118;
 
-	//// scope 8
-	//m_channel_center(0) = 72;
-	//m_channel_center(1) = 135;
+	// scope 8
+	m_channel_center(0) = 72;
+	m_channel_center(1) = 135;
 
 	//// scope 9
 	//m_channel_center(0) = 110;
@@ -701,9 +701,9 @@ void Camera_processing::displayImages(void)
 			double force_measurement = 0;
 			double raw_measurement = 0;
 
-			//this->load_cell_sensor.getMeasurement(force_measurement);
-			//this->load_cell_sensor.getRawMeasurement(raw_measurement);
-			//:: std::cout << "force:" << force_measurement <<"    voltage_ratio:"  << raw_measurement << ::std::endl;
+			this->load_cell_sensor.getMeasurement(force_measurement);
+			this->load_cell_sensor.getRawMeasurement(raw_measurement);
+			:: std::cout << "force:" << force_measurement <<"    voltage_ratio:"  << raw_measurement << ::std::endl;
 			if (m_circumnavigation)
 				this->computeCircumnavigationParameters(frame);
 			else if (m_apex_to_valve)
