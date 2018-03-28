@@ -4,6 +4,10 @@
 
 WallSegmentation::WallSegmentation()
 {
+	sliderValueSat = 98;
+	sliderValueAlphaMin = 130;
+	sliderValueAlphaMax = 160;
+	counter = 0;
 }
 
 WallSegmentation::~WallSegmentation()
@@ -12,8 +16,12 @@ WallSegmentation::~WallSegmentation()
 
 bool WallSegmentation::processImage(::cv::Mat img, int& x, int& y, bool display, int cx, int cy, int radius)
 {
+	if (this->counter < 1)
+		this->initializeTrackbars();
  
-	int numOfPoints = (int) 3.14 * radius*radius *0.10;
+	this->counter++;
+
+	int numOfPoints = (int) 3.14 * radius*radius *0.05;
 
     // Blur  the image to remove small artifacts (color defects from camera, blood flow ..)
     ::cv::Mat img_blur;
@@ -58,22 +66,17 @@ void WallSegmentation::thresholdImage(const cv::Mat &img, ::cv::Mat &output)
     ::cv::Mat S, A, V;
     convertImage(img, S, A, V);
 
-    // Apply thresholds
-    const int thresh_S = 64;
-	const int thresh_V = 250;
-    const int min_a = 130, max_a = 150;
+	const int thresh_S = this->sliderValueSat;
+	const int min_a = this->sliderValueAlphaMin;
+	const int max_a = this->sliderValueAlphaMax;
 
     ::cv::Mat mask_s;
     ::cv::threshold(S, mask_s, thresh_S,255, ::cv::THRESH_BINARY_INV);
-
-	::cv::Mat mask_v;
-	::cv::threshold(V, mask_v, thresh_V, 255, ::cv::THRESH_BINARY_INV);
 
     ::cv::Mat mask_a;
     ::cv::inRange(A, min_a, max_a, mask_a);
 
 	::cv::bitwise_and(mask_s, mask_a, output); 
-    //::cv::bitwise_and(output,mask_a,output);
 
     // Apply morphological opening to remove small things
     ::cv::Mat kernel = ::cv::getStructuringElement(::cv::MORPH_ELLIPSE,::cv::Size(9,9));
@@ -97,4 +100,40 @@ void WallSegmentation::convertImage(const cv::Mat &img, cv::Mat& S, cv::Mat& A, 
     S = hsv_split[1];
 	V = hsv_split[2];
     A = lab_split[1];   
+}
+
+void WallSegmentation::initializeTrackbars()
+{
+	::cv::namedWindow("apex-to-valve thresholds", 1);
+
+    /// Create Trackbars
+    ::cv::createTrackbar("Sat", "apex-to-valve thresholds", &sliderValueSat, 255, &WallSegmentation::onTrackbarChangeS, this);
+	::cv::createTrackbar("Val_min", "apex-to-valve thresholds", &sliderValueAlphaMin, 255, &WallSegmentation::onTrackbarChangeAL, this);
+	::cv::createTrackbar("Val_max", "apex-to-valve thresholds", &sliderValueAlphaMax, 255, &WallSegmentation::onTrackbarChangeAH, this);
+
+}
+
+void WallSegmentation::onTrackbarChangeS(int newValue, void * object)
+{
+	WallSegmentation* localObj = reinterpret_cast<WallSegmentation*> (object);
+
+	localObj->s_thres = newValue;
+
+}
+
+
+void WallSegmentation::onTrackbarChangeAL(int newValue, void * object)
+{
+	WallSegmentation* localObj = reinterpret_cast<WallSegmentation*> (object);
+
+	localObj->alpha_min = newValue;
+
+}
+
+void WallSegmentation::onTrackbarChangeAH(int newValue, void * object)
+{
+	WallSegmentation* localObj = reinterpret_cast<WallSegmentation*> (object);
+
+	localObj->alpha_max = newValue;
+
 }

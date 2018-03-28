@@ -338,25 +338,24 @@ void testRegistration()
 int testReplayEngine()
 {
 	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-38-38";		
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-41-48";		
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-45-19";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_13-56-25";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-02-27_bypass_cardioscopy/Videos_2018-02-27/2018-02-27_14-00-43";	
+	::std::string base_path = "Z:/Public/Data/Cardioscopy_project/2018-03-22_bypass_cardioscopy/Videos_2018-03-22/";	
 
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/GreenWire Line detection and Registration/2018-03-15_14-09-51";	
-	//::std::string img_path = "Z:/Public/Data/Cardioscopy_project/0319-exvivo/2018-03-20_11-49-25";	
-	//::std::string img_path = "F:/2018-03-15_14-09-51";	
-	
-	::std::string img_path = "Z:/Public/Data/Cardioscopy_project/2018-03-22_bypass_cardioscopy/Videos_2018-03-22/2018-03-22_14-12-01";	
+	//::std::string video = "2018-03-22_12-14-29";
+	//::std::string video = "2018-03-22_13-56-48";
+	::std::string video = "2018-03-22_13-58-14";
+	//::std::string video = "2018-03-22_13-58-58";
+	//::std::string video = "2018-03-22_14-02-58";
+	//::std::string video = "2018-03-22_14-12-01";
+
+	::std::string img_path = base_path + video;
+
 	::std::string path_to_classifier = "../Export_executables/SVM_params_surgery/output_";
-
 	BagOfFeatures contact_classifier;
 	contact_classifier.load(path_to_classifier);
 
 	ReplayEngine engine(checkPath(img_path + "/data.txt"), img_path);
 	engine.setClassifier(contact_classifier);
-	engine.setStatus(ReplayEngine::LINE_DETECTION); 
+	engine.setStatus(ReplayEngine::WALL_DETECTION); 
 	engine.run();
 
 	return 0;

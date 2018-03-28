@@ -280,7 +280,8 @@ void ReplayEngine::simulate(void* tData)
 			::cv::rectangle(tmpImage, rec, ::cv::Scalar(0, 0, 255), 2);
 			
 		tDataSim->reg_detected = false;
-		tDataSim->plotCommandedVelocities(tmpImage, tDataSim->centroid, tDataSim->tangent);
+		if (tDataSim->status == LINE_DETECTION)
+			tDataSim->plotCommandedVelocities(tmpImage, tDataSim->centroid, tDataSim->tangent);
 		::cv::putText(tmpImage, ::std::to_string(tDataSim->counter + tDataSim->offset) + "/" + ::std::to_string(dataStr.size()), ::cv::Point(170, 40), ::cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1, ::cv::Scalar(255, 255, 255), 2);
 		::cv::imshow("Display", tmpImage);
 
@@ -929,7 +930,7 @@ void ReplayEngine::detectWall(::cv::Mat& img)
 	int x=0, y=0;
 	this->wallDetected = this->wallDetector.processImage(img, x, y, true, center.x, center.y, 125);
 
-	this->applyVisualServoingController(x, y,velCommand, LEFT);
+	this->applyVisualServoingController(x, y,velCommand, TOP);
 
 	//::std::cout << "servoing commands:" << velCommand.transpose() << ::std::endl;
 	this->robot_mutex.lock();
@@ -1355,7 +1356,7 @@ ReplayEngine::processKeyboardInput(char key)
 int
 ReplayEngine::getInitialPositionOnValve()
 {
-	return 1;
+	return 11;
 }
 
 

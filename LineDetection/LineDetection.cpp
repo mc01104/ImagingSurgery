@@ -284,19 +284,29 @@ bool LineDetector::detectLineSynthetic(const ::cv::Mat img, ::cv::Vec4f &line, :
 bool LineDetector::detectLineAllChannels(const ::cv::Mat img, cv::Vec4f &line, ::cv::Vec2f& centroid)
 {
 
-	this->thresholdImageWire(img,thresholded);
+    ::cv::Mat img_blur;
+    ::cv::GaussianBlur(img, img_blur, ::cv::Size(15,15), 0);
+
+	this->thresholdImageWire(img_blur, thresholded);
+
+
+	int erosion_type = ::cv::MORPH_ELLIPSE; 
+	int erosion_size = 3;
+	::cv::Mat element = ::cv::getStructuringElement( erosion_type,
+						::cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+						::cv::Point( erosion_size, erosion_size ) );
+
+	/// Apply the erosion operation
+	::cv::erode( thresholded, thresholded, element );
 
     thresholded.convertTo(thresholded_binary,CV_8UC1);
-  
+
     ::cv::findNonZero(thresholded_binary, this->nonzero);
 
 	::cv::cvtColor(thresholded, output, CV_GRAY2BGR);
-
 	::cv::imshow("thresholded", output);
 	::cv::waitKey(1);
 
-	//::std::cout << nonzero.size() << " points" << ::std::endl;
-	//::std::cout << "number of line points: " << nonzero.size() << :: std::endl;
 	if (nonzero.size() > 50)
 	{
 		::cv::HoughLinesP(thresholded_binary, lines_hough, 1, 1 * pi/180.0, 30, 15, 2);
